@@ -4,7 +4,7 @@
     "web": {
       "root": "client/",
       "framework": "vite",
-      "installCommand": "cd .. && npm install --workspace=client",
+      "installCommand": "cd .. && npm install --workspace=client --include=dev",
       "buildCommand": "npm run build",
       "outputDirectory": "dist",
       "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
@@ -23,7 +23,7 @@
       "root": "server/",
       "framework": "express",
       "entrypoint": "src/app.js",
-      "installCommand": "cd .. && npm install --workspace=server",
+      "installCommand": "cd .. && npm install --workspace=server --include=dev",
       "buildCommand": "npm run db:migrate",
       "bindings": [{ "type": "service", "service": "web", "format": "url", "env": "WEB_URL" }]
     }
