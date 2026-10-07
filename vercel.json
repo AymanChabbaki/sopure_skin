@@ -1,29 +1,41 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": null,
-  "installCommand": "npm install",
-  "buildCommand": "npm run vercel-build",
-  "outputDirectory": "client/dist",
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 60,
-      "includeFiles": "client/dist/index.html"
+  "services": {
+    "web": {
+      "root": "client/",
+      "framework": "vite",
+      "installCommand": "cd .. && npm install --workspace=client",
+      "buildCommand": "npm run build",
+      "outputDirectory": "dist",
+      "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+      "headers": [
+        {
+          "source": "/assets/(.*)",
+          "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+        },
+        {
+          "source": "/hero/(.*)",
+          "headers": [{ "key": "Cache-Control", "value": "public, max-age=2592000" }]
+        }
+      ]
+    },
+    "api": {
+      "root": "server/",
+      "framework": "express",
+      "entrypoint": "src/app.js",
+      "installCommand": "cd .. && npm install --workspace=server",
+      "buildCommand": "npm run db:migrate",
+      "bindings": [{ "type": "service", "service": "web", "format": "url", "env": "WEB_URL" }]
     }
   },
   "redirects": [{ "source": "/", "destination": "/fr", "permanent": false }],
   "rewrites": [
-    { "source": "/admin", "destination": "/index.html" },
-    { "source": "/admin/(.*)", "destination": "/index.html" },
-    { "source": "/(.*)", "destination": "/api" }
-  ],
-  "headers": [
-    {
-      "source": "/assets/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
-    },
-    {
-      "source": "/hero/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=2592000" }]
-    }
+    { "source": "/api/(.*)", "destination": { "service": "api" } },
+    { "source": "/sitemap.xml", "destination": { "service": "api" } },
+    { "source": "/robots.txt", "destination": { "service": "api" } },
+    { "source": "/llms.txt", "destination": { "service": "api" } },
+    { "source": "/:lang(fr|en|ar)", "destination": { "service": "api" } },
+    { "source": "/:lang(fr|en|ar)/:path*", "destination": { "service": "api" } },
+    { "source": "/(.*)", "destination": { "service": "web" } }
   ]
 }

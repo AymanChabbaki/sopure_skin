@@ -19,20 +19,29 @@ import { errorHandler, notFound } from './middleware/errors.js';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 
-/** The built client: next to the sources locally, under the project root on Vercel. */
-const TEMPLATE_CANDIDATES = [
-  path.resolve(root, '../../client/dist/index.html'),
-  path.join(process.cwd(), 'client/dist/index.html'),
-];
-const templatePath = TEMPLATE_CANDIDATES.find((p) => existsSync(p));
+/** The built client when it sits next to the server (local / single-server hosting). */
+const templatePath = [path.resolve(root, '../../client/dist/index.html'), path.join(process.cwd(), 'client/dist/index.html')].find((p) =>
+  existsSync(p),
+);
 export const clientDist = templatePath ? path.dirname(templatePath) : null;
 
 let cachedTemplate = null;
+
+/**
+ * The SPA shell that receives the SEO tags.
+ * - Local / VPS: read from client/dist (re-read in development so a client rebuild is picked up).
+ * - Vercel Services: the client is a separate "web" service; WEB_URL is injected by the service binding
+ *   declared in vercel.json and is only available at runtime.
+ */
 async function getTemplate() {
-  if (!templatePath) return null;
-  // Cached in production; re-read in development so a client rebuild is picked up
-  if (config.isProd && cachedTemplate) return cachedTemplate;
-  cachedTemplate = await readFile(templatePath, 'utf8');
+  if (cachedTemplate && (config.isProd || !templatePath)) return cachedTemplate;
+  if (templatePath) {
+    cachedTemplate = await readFile(templatePath, 'utf8');
+  } else if (process.env.WEB_URL) {
+    const res = await fetch(new URL('index.html', process.env.WEB_URL.replace(/\/?$/, '/')));
+    if (!res.ok) throw new Error(`Could not load the client shell from the web service (${res.status})`);
+    cachedTemplate = await res.text();
+  }
   return cachedTemplate;
 }
 
@@ -79,7 +88,7 @@ if (clientDist) {
 // Every page: the SPA shell with SEO tags and crawler-readable content injected
 app.get('/{*splat}', async (req, res, next) => {
   const template = await getTemplate();
-  if (!template) return next();
+  if (!template) return next(); // API-only deployment without a client
   if (req.path.startsWith('/admin')) return res.type('html').send(template);
   if (req.path === '/') return res.redirect(302, '/fr');
   res
@@ -89,3 +98,6 @@ app.get('/{*splat}', async (req, res, next) => {
 });
 
 app.use(errorHandler);
+
+// Vercel (framework "express") uses the default export as the function handler
+export default app;

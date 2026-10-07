@@ -1,6 +1,7 @@
 # Not needed to build or run the site on Vercel (keeps CLI uploads small)
 node_modules
 client/dist
+api
 server/uploads
 .env
 .env.*
