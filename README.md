@@ -30,15 +30,20 @@ npm run dev                          # boutique http://localhost:5173 · API htt
 > Les avis d'exemple sont marqués `is_sample` : supprimez-les avant le lancement
 > (Admin → Avis clients → « Supprimer les exemples »). Ils ne sont jamais envoyés à Google.
 
-## Déploiement sur Vercel
+## Déploiement sur Vercel (Services)
 
-Tout est configuré dans `vercel.json` :
+Le dépôt est **un seul projet Vercel avec deux services**, déclarés dans `vercel.json` :
 
-- `client/dist` est servi par le CDN de Vercel ;
-- toutes les autres URL passent par la fonction `api/index.js` (Express), qui injecte les balises SEO dans chaque page ;
-- `npm run vercel-build` construit le client **et applique les migrations** de la base.
+| Service | Dossier | Rôle |
+|---|---|---|
+| `web` | `client/` (Vite) | Fichiers statiques sur le CDN : JS/CSS, images, polices, `/admin` |
+| `api` | `server/` (Express, `src/app.js`) | `/api/*`, `sitemap.xml`, `robots.txt`, `llms.txt` et les pages `/fr`, `/en`, `/ar` avec injection SEO |
 
-1. Poussez le projet sur GitHub, puis **Add New Project** sur Vercel et importez le dépôt (laisser *Root Directory* à la racine, *Framework* : Other).
+- Les règles publiques (redirection `/` → `/fr`, routage vers chaque service) sont au niveau racine de `vercel.json`.
+- `api` récupère le gabarit HTML du client via la *binding* interne `WEB_URL` : aucune URL à configurer.
+- Le build du service `api` applique les migrations : `DATABASE_URL` doit être défini **avant** le premier déploiement.
+
+1. Poussez le dépôt sur GitHub et importez-le dans Vercel (*Root Directory* : racine du dépôt).
 2. Dans **Settings → Environment Variables**, ajoutez :
 
    | Variable | Valeur |
@@ -52,12 +57,12 @@ Tout est configuré dans `vercel.json` :
    | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_URL` | Cloudflare R2 |
    | `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_FALLBACK_MODELS` | Groq |
 
-3. **Deploy**. Ajoutez ensuite votre domaine dans **Settings → Domains**.
+3. Redéployez, puis ajoutez votre domaine dans **Settings → Domains**.
 
-Limites à connaître : les requêtes vers une fonction Vercel sont limitées à 4,5 Mo (l'admin compresse
-automatiquement les grosses photos avant l'envoi) et le disque est en lecture seule, d'où R2 obligatoire.
+Limites : 4,5 Mo par requête vers une fonction (l'admin compresse les grosses photos avant l'envoi)
+et disque en lecture seule, d'où R2 obligatoire. En local, `vercel dev` lance les deux services ensemble.
 
-Hors Vercel (VPS, AlwaysData Node.js) : `npm run build` puis `NODE_ENV=production npm start`.
+Hors Vercel (VPS, AlwaysData Node.js) : `npm run build` puis `NODE_ENV=production npm start` (un seul serveur Express sert tout).
 
 ## Règles métier
 
@@ -81,14 +86,14 @@ et réintégré si la commande est annulée ou retournée.
 ## Structure
 
 ```
-api/index.js      point d'entrée Vercel (importe l'app Express)
+vercel.json       services web + api et routage public
 client/src
   components/     layout, home (hero, slogan, témoignages…), product (fiche, avis), chat (Soso), ui
   pages/          Home, Shop, Product, Cart, Checkout, OrderSuccess, InfoPages
   admin/          tableau de bord (chargé à la demande)
   i18n/           fr.js, en.js, ar.js (RTL automatique en arabe)
 server/src
-  app.js          application Express (sans listen) · index.js : lancement local
+  app.js          application Express (export par défaut pour Vercel) · index.js : lancement local
   routes/         public.js, chat.js (Soso + outils), admin/*
   lib/            catalogue, réglages (livraison), stockage R2, images WebP
   db/             migrations SQL et scripts de données
