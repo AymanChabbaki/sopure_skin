@@ -1,0 +1,20 @@
+# Not needed to build or run the site on Vercel (keeps CLI uploads small)
+node_modules
+client/dist
+server/uploads
+.env
+.env.*
+downloaded_images
+drive-download-*
+*.zip
+ChatGPT Image*.png
+logo
+wc-product-export-*.csv
+wc-products-local.csv
+download_images.py
+download_report.json
+download_errors.json
+testing
+cursor_log.md
+server/src/db/brand-logos
+seed_products.json

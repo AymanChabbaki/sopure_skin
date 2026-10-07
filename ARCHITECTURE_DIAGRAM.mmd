@@ -1,0 +1,22 @@
+graph TD
+    A["WooCommerce Export CSV<br/>(wc-product-export-29-9-2026-1790676029313.csv)"] -->|Read & Parse UTF-8| B["Python Extractor & Downloader<br/>(download_images.py)"]
+    
+    B -->|Sequential HTTP GET<br/>User-Agent + Retries| C["sopureskin.com Storage<br/>(Remote Media Assets)"]
+    
+    C -->|Binary Raw Stream| B
+    
+    B -->|Write Raw High-Quality Files| D["Local Storage Directory<br/>(downloaded_images/{product_id}/)"]
+    D --> E["01_main.jpg / png"]
+    D --> F["02_gallery_1.jpg / png"]
+    
+    B -->|Generate Normalized Payload| G["Database Seed JSON<br/>(seed_products.json)"]
+    B -->|Update Image URIs| H["Local Updated CSV<br/>(wc-products-local.csv)"]
+    B -->|Write Execution Summary| I["Download Report & Errors<br/>(download_report.json / download_errors.json)"]
+
+    subgraph Testing & Quality Gate
+        J["Test Suite (testing/test_download.py)"] -->|Verify File Existence & Sizes| D
+        J -->|Verify JSON Payload Integrity| G
+        J -->|Verify CSV Row Alignment| H
+        K["Test Runner (testing/run_all_test_scripts.sh)"] -->|Execute| J
+        J -->|Record Results| L["cursor_log.md"]
+    end

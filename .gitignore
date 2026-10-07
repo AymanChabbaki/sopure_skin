@@ -1,0 +1,41 @@
+# Dependencies & builds
+node_modules/
+client/dist/
+dist/
+.vite/
+*.tsbuildinfo
+
+# Secrets (configure them in the Vercel dashboard instead)
+.env
+.env.*
+!.env.example
+
+# Local image storage (production uses Cloudflare R2)
+server/uploads/
+
+# Vercel
+.vercel/
+
+# One-off import material: already uploaded to R2 / imported in the database
+downloaded_images/
+drive-download-*/
+*.zip
+ChatGPT Image*.png
+logo/
+wc-product-export-*.csv
+wc-products-local.csv
+download_images.py
+download_report.json
+download_errors.json
+testing/
+cursor_log.md
+
+# Logs & OS / editor files
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
