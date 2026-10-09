@@ -12,9 +12,11 @@ export const publicRouter = Router();
 // Every storefront request carries ?lang=fr|en|ar
 publicRouter.use((req, res, next) => {
   req.locale = pickLocale(req.query.lang);
-  // Browsers always revalidate (admin edits show up on the next request);
-  // the CDN keeps a copy 15 s to absorb traffic spikes.
-  res.set('Cache-Control', 'public, max-age=0, s-maxage=15, stale-while-revalidate=60');
+  // Browsers must not serve stale data (Chrome honours stale-while-revalidate in its own cache):
+  // "no-cache" = always revalidate via ETag, a cheap 304 when nothing changed.
+  // The CDN gets its own directive (ignored by browsers) and keeps a copy 15 s to absorb traffic spikes.
+  res.set('Cache-Control', 'no-cache');
+  res.set('CDN-Cache-Control', 'public, s-maxage=15, stale-while-revalidate=60');
   next();
 });
 
