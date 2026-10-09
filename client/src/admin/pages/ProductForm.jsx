@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { ArrowLeft, Loader2, Save, Trash2, ExternalLink, Search as SearchIcon } from 'lucide-react';
-import { Card, ConfirmDialog, Field, I18nInput, ImageUploader, Switch, adminApi, useAdminMutation, useAdminQuery } from '../ui.jsx';
+import { Card, ConfirmDialog, EDITING, Field, I18nInput, ImageUploader, Switch, adminApi, useAdminMutation, useAdminQuery } from '../ui.jsx';
 import { Skeleton } from '../../components/ui/Primitives.jsx';
 import { cn } from '../../lib/format.js';
 
@@ -32,7 +32,7 @@ export default function ProductForm() {
   const navigate = useNavigate();
   const [form, setForm] = useState(EMPTY);
   const [confirm, setConfirm] = useState(false);
-  const { data, isLoading } = useAdminQuery(['product', id], `/products/${id}`, undefined, { enabled: !isNew });
+  const { data, isLoading } = useAdminQuery(['product', id], `/products/${id}`, undefined, { enabled: !isNew, ...EDITING });
   const { data: categories = [] } = useAdminQuery(['categories'], '/categories');
   const { data: brands = [] } = useAdminQuery(['brands'], '/brands');
 

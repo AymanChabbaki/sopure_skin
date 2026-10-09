@@ -17,7 +17,8 @@ document.querySelectorAll('[data-ssr]').forEach((el) => el.remove());
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { refetchOnWindowFocus: false, retry: 1 },
+    // Coming back to a tab refreshes what it shows (admin edits made elsewhere appear without reloading)
+    queries: { refetchOnWindowFocus: true, retry: 1 },
   },
 });
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, Reorder } from 'motion/react';
 import { MessageCircleHeart, Truck, Megaphone, Image as ImageIcon, Phone, Search, Plus, Trash2, GripVertical, Loader2, Save, Cloud, HardDrive } from 'lucide-react';
-import { Card, Field, I18nInput, ImageUploader, PageTitle, adminApi, useAdminMutation, useAdminQuery } from '../ui.jsx';
+import { Card, EDITING, Field, I18nInput, ImageUploader, PageTitle, adminApi, useAdminMutation, useAdminQuery } from '../ui.jsx';
 import { Skeleton } from '../../components/ui/Primitives.jsx';
 import { cn } from '../../lib/format.js';
 
@@ -248,7 +248,7 @@ function SeoTab({ value, save }) {
 
 export default function Settings() {
   const [tab, setTab] = useState('shipping');
-  const { data, isLoading } = useAdminQuery(['settings'], '/settings');
+  const { data, isLoading } = useAdminQuery(['settings'], '/settings', undefined, EDITING);
   const save = useAdminMutation(([key, value]) => adminApi(`/settings/${key}`, { method: 'PUT', body: value }), { success: 'Paramètres enregistrés' });
   const [mounted, setMounted] = useState(0);
   useEffect(() => setMounted((m) => m + 1), [data]);

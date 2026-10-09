@@ -1,5 +1,5 @@
-import { lazy, Suspense, useState } from 'react';
-import { NavLink, Route, Routes, useLocation, Link } from 'react-router';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { NavLink, Route, Routes, useLocation, useNavigate, Link } from 'react-router';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'motion/react';
 import {
@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Logo, LogoMark } from '../components/ui/Logo.jsx';
-import { adminApi } from './ui.jsx';
+import { adminApi, LIVE_INTERVAL, money } from './ui.jsx';
 import { cn } from '../lib/format.js';
 
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
@@ -105,7 +105,8 @@ function Sidebar({ me, onNavigate }) {
   const { data: counts } = useQuery({
     queryKey: ['admin', 'orders', 'counts'],
     queryFn: () => adminApi('/orders', { params: { limit: 1 } }),
-    refetchInterval: 60_000,
+    refetchInterval: LIVE_INTERVAL,
+    refetchOnWindowFocus: true,
   });
   const pending = counts?.statusCounts?.pending || 0;
 
@@ -164,6 +165,38 @@ function Sidebar({ me, onNavigate }) {
   );
 }
 
+/** Polls the latest order: notifies the admin of each new one and shows the pending count in the tab title. */
+function useNewOrderAlerts(enabled) {
+  const navigate = useNavigate();
+  const lastSeen = useRef(null);
+  const { data } = useQuery({
+    queryKey: ['admin', 'orders', 'counts'],
+    queryFn: () => adminApi('/orders', { params: { limit: 1 } }),
+    refetchInterval: LIVE_INTERVAL,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    enabled,
+  });
+  const latest = data?.rows?.[0];
+  const pending = data?.statusCounts?.pending || 0;
+
+  useEffect(() => {
+    if (!latest) return;
+    if (lastSeen.current !== null && latest.id > lastSeen.current) {
+      toast.success(`Nouvelle commande ${latest.number}`, {
+        description: `${latest.customerName} · ${latest.city} · ${money(latest.total)}`,
+        duration: 10000,
+        action: { label: 'Voir', onClick: () => navigate(`/admin/orders/${latest.id}`) },
+      });
+    }
+    lastSeen.current = Math.max(lastSeen.current ?? 0, latest.id);
+  }, [latest, navigate]);
+
+  useEffect(() => {
+    document.title = pending > 0 ? `(${pending}) Administration | So Pure Skin` : 'Administration | So Pure Skin';
+  }, [pending]);
+}
+
 function Loading() {
   return (
     <div className="grid min-h-[50vh] place-items-center">
@@ -181,11 +214,12 @@ export default function AdminApp() {
     staleTime: 5 * 60_000,
   });
 
+  useNewOrderAlerts(Boolean(me));
+
   if (isLoading) return <Loading />;
 
   return (
     <div className="min-h-screen bg-zinc-50/70 font-sans" dir="ltr" lang="fr">
-      <title>Administration | So Pure Skin</title>
       <meta name="robots" content="noindex, nofollow" />
       {!me ? (
         <Login />

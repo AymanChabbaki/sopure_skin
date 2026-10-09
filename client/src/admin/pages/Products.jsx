@@ -2,13 +2,17 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { Plus, Star, Eye, EyeOff, Trash2, Pencil, ExternalLink } from 'lucide-react';
-import { Card, ConfirmDialog, PageTitle, Pagination, SearchInput, adminApi, useAdminMutation, useAdminQuery, money } from '../ui.jsx';
+import { Card, ConfirmDialog, PageTitle, Pagination, SearchInput, adminApi, patchCache, useAdminMutation, useAdminQuery, money } from '../ui.jsx';
 import { Skeleton } from '../../components/ui/Primitives.jsx';
 import { cn } from '../../lib/format.js';
 
 function StockCell({ product }) {
   const [value, setValue] = useState(product.stock);
-  const save = useAdminMutation((stock) => adminApi(`/products/${product.id}/stock`, { method: 'PATCH', body: { stock } }), { success: 'Stock mis à jour' });
+  const save = useAdminMutation((stock) => adminApi(`/products/${product.id}/stock`, { method: 'PATCH', body: { stock } }), {
+    success: 'Stock mis à jour',
+    optimistic: (qc, stock) =>
+      patchCache(qc, ['admin', 'products'], (data) => ({ ...data, rows: data.rows.map((r) => (r.id === product.id ? { ...r, stock } : r)) })),
+  });
   return (
     <input
       type="number"
@@ -54,7 +58,15 @@ export default function Products() {
       setConfirm(false);
     },
   });
-  const toggle = useAdminMutation(({ id, action }) => adminApi('/products/bulk', { method: 'PATCH', body: { ids: [id], action } }), { success: null });
+  // Toggles flip on screen instantly, the server confirms in the background (rolled back on error)
+  const TOGGLE_FIELDS = { activate: ['isActive', true], deactivate: ['isActive', false], feature: ['isFeatured', true], unfeature: ['isFeatured', false] };
+  const toggle = useAdminMutation(({ id, action }) => adminApi('/products/bulk', { method: 'PATCH', body: { ids: [id], action } }), {
+    success: null,
+    optimistic: (qc, { id, action }) => {
+      const [field, value] = TOGGLE_FIELDS[action];
+      return patchCache(qc, ['admin', 'products'], (data) => ({ ...data, rows: data.rows.map((r) => (r.id === id ? { ...r, [field]: value } : r)) }));
+    },
+  });
 
   const rows = data?.rows ?? [];
   const allSelected = rows.length > 0 && rows.every((r) => selected.includes(r.id));

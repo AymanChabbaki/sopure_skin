@@ -5,6 +5,7 @@ import { ImagePlus, Loader2, X, GripVertical, AlertTriangle, ChevronLeft, Chevro
 import { toast } from 'sonner';
 import { api } from '../lib/api.js';
 import { cn } from '../lib/format.js';
+import { broadcastChange } from '../lib/live.js';
 
 /* --------------------------------- Data --------------------------------- */
 
@@ -12,6 +13,9 @@ export const adminApi = (path, options) => api(`/admin${path}`, options);
 
 /** Admin data stays live: refetched every 15 s while the tab is visible and whenever it regains focus. */
 export const LIVE_INTERVAL = 15_000;
+
+/** For edit forms: never refetch in the background, it would overwrite what the admin is typing. */
+export const EDITING = { refetchInterval: false, refetchOnWindowFocus: false };
 
 export function useAdminQuery(key, path, params, options) {
   return useQuery({

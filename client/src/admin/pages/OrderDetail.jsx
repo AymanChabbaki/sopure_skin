@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
 import { ArrowLeft, Phone, MapPin, Mail, Printer, Trash2, Check, StickyNote } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa6';
-import { Card, ConfirmDialog, StatusBadge, ORDER_STATUSES, adminApi, useAdminMutation, useAdminQuery, money, dateTime } from '../ui.jsx';
+import { Card, ConfirmDialog, StatusBadge, ORDER_STATUSES, adminApi, patchCache, useAdminMutation, useAdminQuery, money, dateTime } from '../ui.jsx';
 import { Skeleton } from '../../components/ui/Primitives.jsx';
 import { waNumber } from './Orders.jsx';
 import { cn } from '../../lib/format.js';
@@ -19,7 +19,16 @@ export default function OrderDetail() {
 
   useEffect(() => setNotes(order?.admin_notes || ''), [order?.admin_notes]);
 
-  const update = useAdminMutation((body) => adminApi(`/orders/${id}`, { method: 'PATCH', body }), { success: 'Commande mise à jour' });
+  const update = useAdminMutation((body) => adminApi(`/orders/${id}`, { method: 'PATCH', body }), {
+    success: 'Commande mise à jour',
+    // The status stepper moves immediately
+    optimistic: (qc, body) =>
+      patchCache(qc, ['admin', 'order', id], (order) => ({
+        ...order,
+        ...(body.status ? { status: body.status } : {}),
+        ...(body.adminNotes !== undefined ? { admin_notes: body.adminNotes } : {}),
+      })),
+  });
   const remove = useAdminMutation(() => adminApi(`/orders/${id}`, { method: 'DELETE' }), {
     success: 'Commande supprimée',
     onSuccess: () => navigate('/admin/orders'),

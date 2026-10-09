@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { Check, EyeOff, Trash2, Sparkles, AlertTriangle } from 'lucide-react';
-import { Card, ConfirmDialog, PageTitle, Pagination, adminApi, useAdminMutation, useAdminQuery, dateTime } from '../ui.jsx';
+import { Card, ConfirmDialog, PageTitle, Pagination, adminApi, patchCache, useAdminMutation, useAdminQuery, dateTime } from '../ui.jsx';
 import { Skeleton } from '../../components/ui/Primitives.jsx';
 import { Stars } from '../../components/ui/Stars.jsx';
 import { cn } from '../../lib/format.js';
@@ -21,7 +21,11 @@ export default function Reviews() {
   const [confirmSamples, setConfirmSamples] = useState(false);
   const { data, isLoading } = useAdminQuery(['reviews'], '/reviews', { status, page });
 
-  const approve = useAdminMutation(({ id, isApproved }) => adminApi(`/reviews/${id}`, { method: 'PATCH', body: { isApproved } }), { success: 'Avis mis à jour' });
+  const approve = useAdminMutation(({ id, isApproved }) => adminApi(`/reviews/${id}`, { method: 'PATCH', body: { isApproved } }), {
+    success: 'Avis mis à jour',
+    optimistic: (qc, { id, isApproved }) =>
+      patchCache(qc, ['admin', 'reviews'], (data) => ({ ...data, rows: data.rows.map((r) => (r.id === id ? { ...r, isApproved } : r)) })),
+  });
   const remove = useAdminMutation((id) => adminApi(`/reviews/${id}`, { method: 'DELETE' }), { success: 'Avis supprimé' });
   const removeSamples = useAdminMutation(() => adminApi('/reviews/samples', { method: 'DELETE' }), {
     success: 'Avis d’exemple supprimés',

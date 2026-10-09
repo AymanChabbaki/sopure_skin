@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router';
 import { StoreLayout } from './components/layout/StoreLayout.jsx';
 import i18n, { LOCALES } from './i18n/index.js';
+import { useLiveSync } from './lib/live.js';
 
 const Home = lazy(() => import('./pages/Home.jsx'));
 const Shop = lazy(() => import('./pages/Shop.jsx'));
@@ -62,5 +63,6 @@ const router = createBrowserRouter([
 ]);
 
 export default function App() {
+  useLiveSync();
   return <RouterProvider router={router} />;
 }
