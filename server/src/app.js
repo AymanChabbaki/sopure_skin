@@ -93,7 +93,7 @@ app.get('/{*splat}', async (req, res, next) => {
   if (req.path === '/') return res.redirect(302, '/fr');
   res
     .type('html')
-    .set('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=86400')
+    .set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=600')
     .send(await renderIndex(template, req.path));
 });
 

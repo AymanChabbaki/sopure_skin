@@ -12,7 +12,9 @@ export const publicRouter = Router();
 // Every storefront request carries ?lang=fr|en|ar
 publicRouter.use((req, res, next) => {
   req.locale = pickLocale(req.query.lang);
-  res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+  // Browsers always revalidate (admin edits show up on the next request);
+  // the CDN keeps a copy 15 s to absorb traffic spikes.
+  res.set('Cache-Control', 'public, max-age=0, s-maxage=15, stale-while-revalidate=60');
   next();
 });
 

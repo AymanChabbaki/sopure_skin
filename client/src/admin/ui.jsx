@@ -10,27 +10,58 @@ import { cn } from '../lib/format.js';
 
 export const adminApi = (path, options) => api(`/admin${path}`, options);
 
+/** Admin data stays live: refetched every 15 s while the tab is visible and whenever it regains focus. */
+export const LIVE_INTERVAL = 15_000;
+
 export function useAdminQuery(key, path, params, options) {
-  return useQuery({ queryKey: ['admin', ...key, params], queryFn: () => adminApi(path, { params }), ...options });
+  return useQuery({
+    queryKey: ['admin', ...key, params],
+    queryFn: () => adminApi(path, { params }),
+    refetchInterval: LIVE_INTERVAL,
+    refetchOnWindowFocus: true,
+    ...options,
+  });
 }
 
-/** Mutation that toasts and invalidates admin queries on success. */
-export function useAdminMutation(fn, { success = 'Enregistré', invalidate = [['admin']], onSuccess } = {}) {
+/**
+ * Patches every cached admin query whose key starts with `prefix` (e.g. ['admin', 'products'])
+ * and returns a function that restores the previous values.
+ */
+export function patchCache(qc, prefix, updater) {
+  const snapshots = qc.getQueriesData({ queryKey: prefix });
+  snapshots.forEach(([key, data]) => data !== undefined && qc.setQueryData(key, updater(data)));
+  return () => snapshots.forEach(([key, data]) => qc.setQueryData(key, data));
+}
+
+/**
+ * Mutation that toasts, refreshes every view (this tab and the other open tabs) on success.
+ * `optimistic(queryClient, variables)` may update the screen immediately and return a rollback function.
+ */
+export function useAdminMutation(fn, { success = 'Enregistré', invalidate = [['admin']], onSuccess, optimistic } = {}) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: fn,
+    onMutate: async (vars) => {
+      if (!optimistic) return undefined;
+      await qc.cancelQueries({ queryKey: ['admin'] });
+      return { rollback: optimistic(qc, vars) };
+    },
     onSuccess: (data, vars) => {
-      invalidate.forEach((queryKey) => qc.invalidateQueries({ queryKey }));
-      // Storefront caches too, so changes show up immediately
-      qc.invalidateQueries({ predicate: (q) => q.queryKey[0] !== 'admin' });
       if (success) toast.success(success);
       onSuccess?.(data, vars);
     },
-    onError: (err) => {
+    onError: (err, _vars, context) => {
+      context?.rollback?.();
       const details = err.body?.details;
       toast.error(err.body?.error || 'Erreur', {
         description: Array.isArray(details) ? details.map((d) => `${d.path}: ${d.message}`).join('\n') : undefined,
       });
+    },
+    onSettled: () => {
+      invalidate.forEach((queryKey) => qc.invalidateQueries({ queryKey }));
+      // Storefront caches too, so changes show up immediately
+      qc.invalidateQueries({ predicate: (q) => q.queryKey[0] !== 'admin' });
+      broadcastChange();
     },
   });
 }

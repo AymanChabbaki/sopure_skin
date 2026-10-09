@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router';
 import { StoreLayout } from './components/layout/StoreLayout.jsx';
-import i18n from './i18n/index.js';
+import i18n, { LOCALES } from './i18n/index.js';
 
 const Home = lazy(() => import('./pages/Home.jsx'));
 const Shop = lazy(() => import('./pages/Shop.jsx'));
@@ -33,30 +33,32 @@ const page = (Component) => (
   </Suspense>
 );
 
+// Store pages, mounted once per language under a STATIC prefix (/fr, /en, /ar).
+// A dynamic "/:lang" segment would also match /admin/brands (lang = "admin") and outrank /admin/*.
+const storeRoutes = [
+  { index: true, element: page(Home) },
+  { path: 'shop', element: page(Shop) },
+  { path: 'category/:slug', element: page(Shop) },
+  { path: 'brand/:brandSlug', element: page(Shop) },
+  { path: 'product/:slug', element: page(Product) },
+  { path: 'cart', element: page(Cart) },
+  { path: 'checkout', element: page(Checkout) },
+  { path: 'order/success', element: page(OrderSuccess) },
+  { path: 'wishlist', element: page(Wishlist) },
+  { path: 'brands', element: page(Brands) },
+  { path: 'about', element: page(About) },
+  { path: 'faq', element: page(Faq) },
+  { path: 'contact', element: page(Contact) },
+  { path: 'shipping', element: page(ShippingInfo) },
+  { path: '*', element: page(NotFound) },
+];
+
 const router = createBrowserRouter([
   { path: '/', element: <Navigate to={`/${i18n.language}`} replace /> },
   { path: '/admin/*', element: page(AdminApp) },
-  {
-    path: '/:lang',
-    element: <StoreLayout />,
-    children: [
-      { index: true, element: page(Home) },
-      { path: 'shop', element: page(Shop) },
-      { path: 'category/:slug', element: page(Shop) },
-      { path: 'brand/:brandSlug', element: page(Shop) },
-      { path: 'product/:slug', element: page(Product) },
-      { path: 'cart', element: page(Cart) },
-      { path: 'checkout', element: page(Checkout) },
-      { path: 'order/success', element: page(OrderSuccess) },
-      { path: 'wishlist', element: page(Wishlist) },
-      { path: 'brands', element: page(Brands) },
-      { path: 'about', element: page(About) },
-      { path: 'faq', element: page(Faq) },
-      { path: 'contact', element: page(Contact) },
-      { path: 'shipping', element: page(ShippingInfo) },
-      { path: '*', element: page(NotFound) },
-    ],
-  },
+  ...LOCALES.map((lang) => ({ path: `/${lang}`, element: <StoreLayout lang={lang} />, children: storeRoutes })),
+  // Unknown first segment (old links, typos): back to the store in the current language
+  { path: '*', element: <Navigate to={`/${i18n.language}`} replace /> },
 ]);
 
 export default function App() {

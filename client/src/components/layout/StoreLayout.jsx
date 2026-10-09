@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Navigate, Outlet, ScrollRestoration, useParams } from 'react-router';
+import { Outlet, ScrollRestoration } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { AnnouncementBar } from './AnnouncementBar.jsx';
 import { Header } from './Header.jsx';
@@ -7,19 +7,15 @@ import { Footer } from './Footer.jsx';
 import { CartDrawer } from './CartDrawer.jsx';
 import { SearchOverlay } from './SearchOverlay.jsx';
 import { MobileMenu, MobileBottomNav } from './MobileNav.jsx';
-import { isLocale } from '../../i18n/index.js';
 import { Assistant } from '../chat/Assistant.jsx';
 import { FloatingCart } from './FloatingCart.jsx';
 
-export function StoreLayout() {
-  const { lang } = useParams();
+export function StoreLayout({ lang }) {
   const { i18n } = useTranslation();
 
   useEffect(() => {
-    if (isLocale(lang) && i18n.language !== lang) i18n.changeLanguage(lang);
+    if (i18n.language !== lang) i18n.changeLanguage(lang);
   }, [lang, i18n]);
-
-  if (!isLocale(lang)) return <Navigate to={`/${i18n.language}`} replace />;
 
   return (
     <>
