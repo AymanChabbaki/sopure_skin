@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Hero } from '../components/home/Hero.jsx';
-import { Benefits, SloganBand, CategoryRail, RoutineFinder, PromoBanner, BrandMarquee, RitualSteps, NewsletterSection } from '../components/home/Sections.jsx';
+import { SloganBand, CategoryRail, RoutineFinder, PromoBanner, BrandMarquee, RitualSteps, NewsletterSection } from '../components/home/Sections.jsx';
 import { Testimonials } from '../components/home/Testimonials.jsx';
 import { ProductCarousel, ProductGrid } from '../components/product/ProductGrid.jsx';
 import { SectionHeading } from '../components/ui/Primitives.jsx';
@@ -34,7 +34,7 @@ export default function Home() {
         }}
       />
       <Hero />
-      <Benefits />
+      <BrandMarquee />
       <SloganBand />
       <CategoryRail />
 
@@ -60,7 +60,6 @@ export default function Home() {
       )}
 
       <RitualSteps />
-      <BrandMarquee />
       <Testimonials />
       <NewsletterSection />
     </>

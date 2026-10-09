@@ -69,10 +69,10 @@ export function Footer() {
     : [];
 
   return (
-    <footer className="bg-brand-950 pb-24 text-white/70 md:pb-0" style={{ '--logo-bg': 'var(--color-brand-950)' }}>
+    <footer className="bg-brand-950 pb-24 text-white/70 md:pb-0">
       <div className="container-x grid gap-12 py-16 lg:grid-cols-12">
         <div className="lg:col-span-4">
-          <LogoMark className="size-24 text-white" />
+          <LogoMark tone="light" className="w-28" />
           <p className="mt-6 font-serif text-2xl leading-snug text-white italic" dir="ltr">{SLOGAN.full}</p>
           <p className="mt-3 max-w-xs text-sm leading-relaxed">{t('footer.about')}</p>
           <div className="mt-6 flex gap-2">

@@ -1,52 +1,46 @@
 import { cn } from '../../lib/format.js';
 
-/** Vector recreation of the So Pure Skin monogram: S | O split by a hairline, "PURE SKIN" across. */
-export function LogoMark({ className, title = 'So Pure Skin' }) {
+/**
+ * Official So Pure Skin logo (S | O monogram with "PURE SKIN"), transparent WebP.
+ * tone="dark" for light backgrounds, tone="light" for dark ones (footer, admin login).
+ */
+const SOURCES = {
+  dark: { sm: '/brand/logo-dark-sm.webp', lg: '/brand/logo-dark.webp' },
+  light: { sm: '/brand/logo-light-sm.webp', lg: '/brand/logo-light.webp' },
+};
+
+export function LogoMark({ className, tone = 'dark', eager = false }) {
+  const src = SOURCES[tone] || SOURCES.dark;
   return (
-    <svg viewBox="0 0 140 140" role="img" aria-label={title} className={cn('text-ink', className)}>
-      <line x1="70" y1="8" x2="70" y2="132" stroke="currentColor" strokeWidth="1.2" />
-      <text x="67" y="101" textAnchor="end" fontFamily="Cormorant Garamond, serif" fontSize="88" fill="currentColor">
-        S
-      </text>
-      <text x="73" y="101" fontFamily="Cormorant Garamond, serif" fontSize="88" fill="currentColor">
-        O
-      </text>
-      <rect x="16" y="60" width="108" height="18" fill="var(--logo-bg, #fff)" />
-      <text
-        x="70"
-        y="73.5"
-        textAnchor="middle"
-        fontFamily="Jost Variable, Jost, sans-serif"
-        fontSize="11"
-        letterSpacing="4.2"
-        fill="currentColor"
-      >
-        PURE SKIN
-      </text>
-    </svg>
+    <img
+      src={src.lg}
+      srcSet={`${src.sm} 143w, ${src.lg} 286w`}
+      sizes="(max-width: 640px) 143px, 286px"
+      alt="So Pure Skin"
+      width="286"
+      height="240"
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+      draggable={false}
+      className={cn('h-auto select-none', className)}
+    />
   );
 }
 
-/** Horizontal lockup for the header: monogram + wordmark. */
-export function Logo({ className, compact = false }) {
+/** Header / navigation logo: same artwork, sized for a toolbar. */
+export function Logo({ className, compact = false, tone = 'dark' }) {
+  const src = SOURCES[tone] || SOURCES.dark;
   return (
-    <span className={cn('inline-flex items-center gap-2.5', className)} dir="ltr">
-      <svg viewBox="0 0 76 64" aria-hidden="true" className="h-9 w-auto text-ink sm:h-10">
-        <line x1="36" y1="3" x2="36" y2="61" stroke="currentColor" strokeWidth="1" />
-        <text x="34" y="47" textAnchor="end" fontFamily="Cormorant Garamond, serif" fontSize="46" fill="currentColor">
-          S
-        </text>
-        <text x="38.5" y="47" fontFamily="Cormorant Garamond, serif" fontSize="46" fill="currentColor">
-          O
-        </text>
-      </svg>
-      {!compact && (
-        <span className="flex flex-col leading-none">
-          <span className="font-sans text-[13px] font-medium tracking-[0.42em] text-ink sm:text-sm">PURE SKIN</span>
-          <span className="mt-1 font-sans text-[9px] tracking-[0.3em] text-brand-600 uppercase">K-beauty · Maroc</span>
-        </span>
-      )}
-      <span className="sr-only">So Pure Skin</span>
-    </span>
+    <img
+      src={src.sm}
+      srcSet={`${src.sm} 1x, ${src.lg} 2x`}
+      alt="So Pure Skin"
+      width="143"
+      height="120"
+      fetchPriority="high"
+      decoding="async"
+      draggable={false}
+      className={cn('w-auto select-none', compact ? 'h-10' : 'h-12 sm:h-14 lg:h-16', className)}
+    />
   );
 }

@@ -53,10 +53,10 @@ function Login() {
 
   return (
     <div className="grid min-h-screen bg-gradient-to-br from-brand-50 via-white to-sand lg:grid-cols-2">
-      <div className="relative hidden overflow-hidden bg-brand-950 lg:grid lg:place-items-center" style={{ '--logo-bg': 'var(--color-brand-950)' }}>
+      <div className="relative hidden overflow-hidden bg-brand-950 lg:grid lg:place-items-center">
         <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 10, repeat: Infinity }} className="absolute -top-20 -left-20 size-96 rounded-full bg-brand-500/30 blur-3xl" />
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1 }}>
-          <LogoMark className="size-72 text-white" />
+          <LogoMark tone="light" eager className="w-72" />
         </motion.div>
       </div>
       <div className="flex items-center justify-center p-6">

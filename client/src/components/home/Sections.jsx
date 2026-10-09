@@ -3,10 +3,6 @@ import { Link, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  BadgeCheck,
-  HandCoins,
-  Truck,
-  MessagesSquare,
   ArrowRight,
   Droplets,
   Sun,
@@ -25,43 +21,6 @@ import { NewsletterForm } from '../layout/Footer.jsx';
 import { BrandLogo } from '../ui/BrandLogo.jsx';
 import { SLOGAN } from '../../lib/brand.js';
 import { cn } from '../../lib/format.js';
-
-/* ------------------------------- Benefits ------------------------------- */
-
-export function Benefits() {
-  const { t } = useTranslation();
-  const { data } = useSettings();
-  const s = data?.shipping;
-  const items = [
-    [BadgeCheck, t('benefits.authentic.title'), t('benefits.authentic.text')],
-    [HandCoins, t('benefits.cod.title'), t('benefits.cod.text')],
-    [Truck, t('benefits.delivery.title'), t('product.deliveryInfo', { casa: s?.casablancaFee ?? 20, other: s?.otherFee ?? 35 })],
-    [MessagesSquare, t('benefits.support.title'), t('benefits.support.text')],
-  ];
-  return (
-    <section className="border-y border-line bg-white">
-      <motion.ul
-        variants={staggerContainer}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true }}
-        className="container-x grid grid-cols-2 gap-6 py-8 lg:grid-cols-4"
-      >
-        {items.map(([Icon, title, text]) => (
-          <motion.li key={title} variants={staggerItem} className="flex items-start gap-3 sm:items-center">
-            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-50 text-brand-600">
-              <Icon className="size-5" strokeWidth={1.75} />
-            </span>
-            <span>
-              <span className="block text-sm font-medium text-ink">{title}</span>
-              <span className="block text-xs text-muted">{text}</span>
-            </span>
-          </motion.li>
-        ))}
-      </motion.ul>
-    </section>
-  );
-}
 
 /* -------------------------------- Slogan -------------------------------- */
 
@@ -309,9 +268,9 @@ export function BrandMarquee() {
     </ul>
   );
   return (
-    <section className="overflow-hidden py-16 sm:py-20">
+    <section className="overflow-hidden border-b border-line bg-white py-8 sm:py-10">
       <Reveal>
-        <p className="eyebrow mb-8 text-center">{t('home.brandsTitle')}</p>
+        <p className="eyebrow mb-4 text-center">{t('home.brandsTitle')}</p>
       </Reveal>
       <div className="group relative" dir="ltr">
         <div className="flex w-max animate-marquee group-hover:[animation-play-state:paused]" style={{ '--marquee-duration': `${data.length * 3}s` }}>

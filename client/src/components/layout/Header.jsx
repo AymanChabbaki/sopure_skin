@@ -12,6 +12,34 @@ import { useBrands, useCategories } from '../../hooks/useStore.js';
 import { useLocalePath } from '../../hooks/useLocalePath.js';
 import { cn } from '../../lib/format.js';
 
+const ease = [0.22, 1, 0.36, 1];
+
+// Panel unrolls from the top, then its columns and links cascade in
+const panelVariants = {
+  hidden: { opacity: 0, clipPath: 'inset(0% 0% 100% 0%)' },
+  show: {
+    opacity: 1,
+    clipPath: 'inset(0% 0% 0% 0%)',
+    transition: { duration: 0.45, ease, staggerChildren: 0.08, delayChildren: 0.08 },
+  },
+  exit: { opacity: 0, clipPath: 'inset(0% 0% 100% 0%)', transition: { duration: 0.22, ease: 'easeIn' } },
+};
+const columnVariants = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease, staggerChildren: 0.025 } },
+};
+const itemVariants = {
+  hidden: { opacity: 0, x: -8 },
+  show: { opacity: 1, x: 0, transition: { duration: 0.3, ease } },
+};
+const cardVariants = {
+  hidden: { opacity: 0, scale: 0.94, y: 10 },
+  show: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.5, ease } },
+};
+
+const linkCls = 'group/link inline-flex items-center gap-1.5 text-sm text-ink/80 transition hover:text-brand-600';
+const Dot = () => <span className="size-1 rounded-full bg-brand-400 opacity-0 transition group-hover/link:opacity-100" aria-hidden />;
+
 function MegaMenu({ id, onNavigate }) {
   const { t } = useTranslation();
   const lp = useLocalePath();
@@ -22,81 +50,94 @@ function MegaMenu({ id, onNavigate }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.22, ease: 'easeOut' }}
+      variants={panelVariants}
+      initial="hidden"
+      animate="show"
+      exit="exit"
       className="absolute inset-x-0 top-full border-t border-line bg-white shadow-soft"
     >
       <div className="container-x grid gap-10 py-10 lg:grid-cols-12">
         {id === 'shop' ? (
           <>
-            <div className="lg:col-span-5">
-              <p className="eyebrow mb-4">{t('nav.shopByType')}</p>
+            <motion.div variants={columnVariants} className="lg:col-span-5">
+              <motion.p variants={itemVariants} className="eyebrow mb-4">
+                {t('nav.shopByType')}
+              </motion.p>
               <ul className="grid grid-cols-2 gap-x-6 gap-y-2.5">
                 {types.map((c) => (
-                  <li key={c.id}>
-                    <Link onClick={onNavigate} to={lp(`/category/${c.slug}`)} className="text-sm text-ink/80 transition hover:text-brand-600">
+                  <motion.li key={c.id} variants={itemVariants}>
+                    <Link onClick={onNavigate} to={lp(`/category/${c.slug}`)} className={linkCls}>
+                      <Dot />
                       {c.name}
                     </Link>
-                  </li>
+                  </motion.li>
                 ))}
               </ul>
-            </div>
-            <div className="lg:col-span-3">
-              <p className="eyebrow mb-4">{t('nav.shopByRoutine')}</p>
+            </motion.div>
+            <motion.div variants={columnVariants} className="lg:col-span-3">
+              <motion.p variants={itemVariants} className="eyebrow mb-4">
+                {t('nav.shopByRoutine')}
+              </motion.p>
               <ul className="space-y-2.5">
                 {routines.map((c) => (
-                  <li key={c.id}>
-                    <Link onClick={onNavigate} to={lp(`/category/${c.slug}`)} className="text-sm text-ink/80 transition hover:text-brand-600">
+                  <motion.li key={c.id} variants={itemVariants}>
+                    <Link onClick={onNavigate} to={lp(`/category/${c.slug}`)} className={linkCls}>
+                      <Dot />
                       {c.name}
                     </Link>
-                  </li>
+                  </motion.li>
                 ))}
-                <li>
-                  <Link onClick={onNavigate} to={lp('/shop')} className="inline-flex items-center gap-1 text-sm font-medium text-brand-700">
-                    {t('nav.allProducts')} <ArrowRight className="size-3.5 rtl:-scale-x-100" />
+                <motion.li variants={itemVariants}>
+                  <Link onClick={onNavigate} to={lp('/shop')} className="group inline-flex items-center gap-1 text-sm font-medium text-brand-700">
+                    {t('nav.allProducts')} <ArrowRight className="size-3.5 transition group-hover:translate-x-1 rtl:-scale-x-100 rtl:group-hover:-translate-x-1" />
                   </Link>
-                </li>
+                </motion.li>
               </ul>
-            </div>
-            <Link
-              onClick={onNavigate}
-              to={lp('/shop?onSale=true')}
-              className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-100 via-brand-50 to-sand p-8 lg:col-span-4"
-            >
-              <p className="eyebrow">{t('nav.offers')}</p>
-              <p className="mt-3 font-display text-3xl leading-tight text-ink">{t('home.offersTitle')}</p>
-              <p className="mt-2 text-sm text-muted">{t('home.offersSubtitle')}</p>
-              <span className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-brand-700">
-                {t('common.discover')} <ArrowRight className="size-4 transition group-hover:translate-x-1 rtl:-scale-x-100" />
-              </span>
-              <div className="absolute -end-10 -bottom-10 size-40 rounded-full bg-brand-300/30 blur-2xl transition group-hover:scale-125" />
-            </Link>
+            </motion.div>
+            <motion.div variants={cardVariants} className="lg:col-span-4">
+              <Link
+                onClick={onNavigate}
+                to={lp('/shop?onSale=true')}
+                className="group relative block h-full overflow-hidden rounded-3xl bg-gradient-to-br from-brand-100 via-brand-50 to-sand p-8"
+              >
+                <p className="eyebrow">{t('nav.offers')}</p>
+                <p className="mt-3 font-display text-3xl leading-tight text-ink">{t('home.offersTitle')}</p>
+                <p className="mt-2 text-sm text-muted">{t('home.offersSubtitle')}</p>
+                <span className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-brand-700">
+                  {t('common.discover')} <ArrowRight className="size-4 transition group-hover:translate-x-1 rtl:-scale-x-100" />
+                </span>
+                <motion.div
+                  aria-hidden
+                  className="absolute -end-10 -bottom-10 size-40 rounded-full bg-brand-300/30 blur-2xl"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                />
+              </Link>
+            </motion.div>
           </>
         ) : (
-          <div className="lg:col-span-12">
-            <div className="mb-5 flex items-center justify-between">
+          <motion.div variants={columnVariants} className="lg:col-span-12">
+            <motion.div variants={itemVariants} className="mb-5 flex items-center justify-between">
               <p className="eyebrow">{t('nav.brands')}</p>
               <Link onClick={onNavigate} to={lp('/brands')} className="text-sm font-medium text-brand-700">
                 {t('nav.viewAll')}
               </Link>
-            </div>
+            </motion.div>
             <ul className="grid grid-cols-3 gap-2 xl:grid-cols-6">
               {brands.map((b) => (
-                <li key={b.id}>
+                <motion.li key={b.id} variants={itemVariants}>
                   <Link
                     onClick={onNavigate}
                     to={lp(`/brand/${b.slug}`)}
-                    className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm text-ink/80 transition hover:bg-brand-50 hover:text-brand-700"
+                    className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm text-ink/80 transition hover:-translate-y-0.5 hover:bg-brand-50 hover:text-brand-700"
                   >
                     {b.name}
                     <span className="text-xs text-muted">{b.productCount}</span>
                   </Link>
-                </li>
+                </motion.li>
               ))}
             </ul>
-          </div>
+          </motion.div>
         )}
       </div>
     </motion.div>
@@ -145,16 +186,19 @@ export function Header() {
       )}
       onMouseLeave={scheduleClose}
     >
-      <div className={cn('container-x flex items-center gap-4 transition-all duration-300', scrolled ? 'h-16' : 'h-16 lg:h-20')}>
-        <button type="button" className="icon-btn -ms-2 xl:hidden" onClick={() => setMenuOpen(true)} aria-label={t('nav.menu')}>
-          <Menu className="size-5" />
-        </button>
+      <div className={cn('container-x relative flex items-center gap-4 transition-all duration-300', scrolled ? 'h-16' : 'h-16 lg:h-20')}>
+        {/* Logo side and icons side share the free space equally, so the menu sits exactly in the center */}
+        <div className="flex flex-1 items-center gap-2">
+          <button type="button" className="icon-btn -ms-2 xl:hidden" onClick={() => setMenuOpen(true)} aria-label={t('nav.menu')}>
+            <Menu className="size-5" />
+          </button>
+          {/* Centered on phones/tablets (hamburger layout), left-aligned next to the menu on desktop */}
+          <Link to={lp('/')} className="absolute left-1/2 shrink-0 -translate-x-1/2 xl:static xl:translate-x-0" aria-label="So Pure Skin">
+            <Logo />
+          </Link>
+        </div>
 
-        <Link to={lp('/')} className="shrink-0" aria-label="So Pure Skin">
-          <Logo />
-        </Link>
-
-        <nav className="ms-6 hidden h-full items-center xl:flex" aria-label="Main">
+        <nav className="hidden h-full shrink-0 items-center xl:flex" aria-label="Main">
           {links.map((l) => (
             <div key={l.id} className="h-full" onMouseEnter={() => (l.mega ? openMega(l.id) : setMega(null))}>
               <NavLink
@@ -178,7 +222,7 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="ms-auto flex items-center gap-0.5 sm:gap-1">
+        <div className="flex flex-1 items-center justify-end gap-0.5 sm:gap-1">
           <button
             type="button"
             onClick={() => setSearchOpen(true)}
@@ -215,8 +259,23 @@ export function Header() {
         </div>
       </div>
 
+      {/* Soft veil over the page while a menu is open (moving onto it closes the menu) */}
+      <AnimatePresence>
+        {mega && (
+          <motion.div
+            key="veil"
+            aria-hidden
+            className="absolute inset-x-0 top-full hidden h-screen bg-ink/20 backdrop-blur-[2px] xl:block"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            onMouseEnter={scheduleClose}
+          />
+        )}
+      </AnimatePresence>
       <div onMouseEnter={() => clearTimeout(closeTimer.current)}>
-        <AnimatePresence>{mega && <MegaMenu key={mega} id={mega} onNavigate={() => setMega(null)} />}</AnimatePresence>
+        <AnimatePresence mode="wait">{mega && <MegaMenu key={mega} id={mega} onNavigate={() => setMega(null)} />}</AnimatePresence>
       </div>
     </header>
   );

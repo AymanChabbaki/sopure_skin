@@ -9,6 +9,7 @@ import { SearchOverlay } from './SearchOverlay.jsx';
 import { MobileMenu, MobileBottomNav } from './MobileNav.jsx';
 import { isLocale } from '../../i18n/index.js';
 import { Assistant } from '../chat/Assistant.jsx';
+import { FloatingCart } from './FloatingCart.jsx';
 
 export function StoreLayout() {
   const { lang } = useParams();
@@ -35,6 +36,7 @@ export function StoreLayout() {
       <SearchOverlay />
       <MobileMenu />
       <MobileBottomNav />
+      <FloatingCart />
       <Assistant />
       <ScrollRestoration getKey={(location) => location.pathname} />
     </>
