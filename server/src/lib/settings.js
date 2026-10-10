@@ -83,7 +83,6 @@ export const DEFAULT_SETTINGS = {
     whatsapp: '212625370841',
     email: 'so.pure.skin1@gmail.com',
     city: 'Casablanca',
-    // Public profile URL still to confirm (the link received was the account settings page)
     instagram: 'https://www.instagram.com/sopure.skin/',
     tiktok: 'https://www.tiktok.com/@sopure.skin',
   },
