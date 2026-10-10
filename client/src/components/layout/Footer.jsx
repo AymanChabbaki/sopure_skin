@@ -71,7 +71,8 @@ export function Footer() {
   return (
     <footer className="bg-brand-950 pb-24 text-white/70 md:pb-0">
       <div className="container-x grid gap-12 py-16 lg:grid-cols-12">
-        <div className="lg:col-span-4">
+        {/* Brand block: centered on phones, aligned to the start from tablets up */}
+        <div className="flex flex-col items-center text-center sm:items-start sm:text-start lg:col-span-4">
           <LogoMark tone="light" className="w-28" />
           <p className="mt-6 font-serif text-2xl leading-snug text-white italic" dir="ltr">{SLOGAN.full}</p>
           <p className="mt-3 max-w-xs text-sm leading-relaxed">{t('footer.about')}</p>
