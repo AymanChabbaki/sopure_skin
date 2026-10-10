@@ -79,13 +79,13 @@ export const DEFAULT_SETTINGS = {
   // WhatsApp screenshots from customers: [{ url, thumbUrl }]
   testimonials: [],
   contact: {
-    phone: '+212 600 000 000',
-    whatsapp: '212600000000',
-    email: 'contact@sopureskin.com',
+    phone: '+212 6 25 37 08 41',
+    whatsapp: '212625370841',
+    email: 'so.pure.skin1@gmail.com',
     city: 'Casablanca',
-    instagram: 'https://www.instagram.com/sopureskin',
-    facebook: '',
-    tiktok: '',
+    // Public profile URL still to confirm (the link received was the account settings page)
+    instagram: 'https://www.instagram.com/sopure.skin/',
+    tiktok: 'https://www.tiktok.com/@sopure.skin',
   },
   seo: {
     title: {
