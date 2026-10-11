@@ -500,7 +500,7 @@ seoRouter.get('/sitemap.xml', async (_req, res) => {
 
   res
     .type('application/xml')
-    .set('Cache-Control', 'public, max-age=3600')
+    .set('Cache-Control', 'no-cache').set('CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600')
     .send(
       `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" ` +
         `xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">${body}</urlset>`,
@@ -565,7 +565,7 @@ seoRouter.get('/llms.txt', async (_req, res) => {
         `- [${p.name}](${SITE}/fr/product/${p.slug}): ${p.price} MAD${p.brand ? ` · ${p.brand}` : ''}${p.types ? ` · ${p.types}` : ''}. ${truncate(stripHtml(p.short_description?.fr || ''), 140)}`,
     ),
   ];
-  res.type('text/plain; charset=utf-8').set('Cache-Control', 'public, max-age=3600').send(lines.join('\n'));
+  res.type('text/plain; charset=utf-8').set('Cache-Control', 'no-cache').set('CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600').send(lines.join('\n'));
 });
 
 seoRouter.get('/llms-full.txt', async (_req, res) => {
@@ -585,7 +585,7 @@ seoRouter.get('/llms-full.txt', async (_req, res) => {
       '',
     );
   });
-  res.type('text/plain; charset=utf-8').set('Cache-Control', 'public, max-age=3600').send(lines.filter((l, i, a) => l !== '' || a[i - 1] !== '').join('\n'));
+  res.type('text/plain; charset=utf-8').set('Cache-Control', 'no-cache').set('CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600').send(lines.filter((l, i, a) => l !== '' || a[i - 1] !== '').join('\n'));
 });
 
 /* ------------------------- Google Merchant Center feed ------------------------ */
@@ -632,7 +632,7 @@ seoRouter.get('/feeds/google-merchant.xml', async (_req, res) => {
   };
   res
     .type('application/xml')
-    .set('Cache-Control', 'public, max-age=3600')
+    .set('Cache-Control', 'no-cache').set('CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600')
     .send(
       `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"><channel>` +
         `<title>${BRAND}</title><link>${SITE}/fr</link><description>${esc(tr(settings.seo.description, 'fr'))}</description>` +
