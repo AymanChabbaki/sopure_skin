@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, useLocation } from 'react-router';
+import { useDeferredValue, useEffect, useRef, useState } from 'react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'motion/react';
-import { Search, Heart, ShoppingBag, Menu, ChevronDown, ArrowRight, Sparkles } from 'lucide-react';
+import { Search, Heart, ShoppingBag, Menu, ChevronDown, ArrowRight, Sparkles, X, Loader2 } from 'lucide-react';
 import { Logo } from '../ui/Logo.jsx';
+import { Price } from '../ui/Primitives.jsx';
 import { LanguageSwitcher } from './LanguageSwitcher.jsx';
 import { useCart, useCartCount } from '../../store/cart.js';
 import { useWishlist } from '../../store/wishlist.js';
 import { useUi } from '../../store/ui.js';
-import { useBrands, useCategories } from '../../hooks/useStore.js';
+import { useBrands, useCategories, useProducts } from '../../hooks/useStore.js';
 import { useLocalePath } from '../../hooks/useLocalePath.js';
 import { cn } from '../../lib/format.js';
 
@@ -149,6 +150,97 @@ function MegaMenu({ id, onNavigate }) {
   );
 }
 
+/** Desktop search bar that unfolds in the middle of the header, with live results underneath. */
+function InlineSearch({ onClose }) {
+  const { t } = useTranslation();
+  const lp = useLocalePath();
+  const navigate = useNavigate();
+  const [q, setQ] = useState('');
+  const deferred = useDeferredValue(q.trim());
+  const root = useRef(null);
+  const { data, isFetching } = useProducts({ q: deferred, limit: 6 }, { enabled: deferred.length >= 2 });
+  const results = deferred.length >= 2 ? data?.rows ?? [] : [];
+
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose();
+    const onDown = (e) => !root.current?.contains(e.target) && !e.target.closest?.('[aria-expanded]') && onClose();
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onDown);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onDown);
+    };
+  }, [onClose]);
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (q.trim()) navigate(lp(`/shop?q=${encodeURIComponent(q.trim())}`));
+  };
+
+  return (
+    <motion.div
+      ref={root}
+      initial={{ opacity: 0, scaleX: 0.4 }}
+      animate={{ opacity: 1, scaleX: 1 }}
+      exit={{ opacity: 0, scaleX: 0.4 }}
+      transition={{ duration: 0.3, ease }}
+      className="absolute top-1/2 left-1/2 z-10 hidden w-[min(640px,52vw)] -translate-x-1/2 -translate-y-1/2 xl:block"
+    >
+      <form onSubmit={submit} className="flex h-11 items-center gap-3 rounded-full border border-brand-200 bg-white px-4 shadow-soft">
+        {isFetching ? <Loader2 className="size-4 animate-spin text-brand-500" /> : <Search className="size-4 text-muted" />}
+        <input
+          autoFocus
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder={t('search.placeholder')}
+          className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted/70"
+          type="search"
+          enterKeyHint="search"
+          aria-label={t('nav.search')}
+        />
+        <kbd className="rounded-md border border-line px-1.5 py-0.5 text-[10px] text-muted">Esc</kbd>
+      </form>
+
+      <AnimatePresence>
+        {deferred.length >= 2 && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            className="absolute inset-x-0 top-full mt-2 overflow-hidden rounded-3xl border border-line bg-white p-2 shadow-2xl"
+          >
+            {results.length === 0 && !isFetching ? (
+              <p className="px-4 py-6 text-center text-sm text-muted">{t('search.noResults', { q: deferred })}</p>
+            ) : (
+              <ul className="grid grid-cols-2 gap-1">
+                {results.map((p) => (
+                  <li key={p.id}>
+                    <Link to={lp(`/product/${p.slug}`)} className="flex items-center gap-3 rounded-2xl p-2 transition hover:bg-brand-50">
+                      <span className="size-12 shrink-0 overflow-hidden rounded-xl bg-sand">
+                        {p.images[0] && <img src={p.images[0].thumbUrl} alt="" className="size-full object-contain p-1 mix-blend-multiply" />}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-[10px] tracking-wider text-brand-600 uppercase">{p.brand?.name}</span>
+                        <span className="line-clamp-1 text-sm">{p.name}</span>
+                        <Price price={p.price} compareAt={p.compareAtPrice} size="sm" />
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {data?.total > results.length && (
+              <button type="button" onClick={submit} className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-medium text-brand-700 hover:bg-brand-50">
+                {t('search.seeAll')} ({data.total}) <ArrowRight className="size-4 rtl:-scale-x-100" />
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
 export function Header() {
   const { t } = useTranslation();
   const lp = useLocalePath();
@@ -160,11 +252,15 @@ export function Header() {
   const setMenuOpen = useUi((s) => s.setMenuOpen);
   const [mega, setMega] = useState(null);
   const [scrolled, setScrolled] = useState(false);
+  const [searching, setSearching] = useState(false);
   const closeTimer = useRef();
   const { scrollY } = useScroll();
 
   useMotionValueEvent(scrollY, 'change', (y) => setScrolled(y > 12));
-  useEffect(() => setMega(null), [pathname]);
+  useEffect(() => {
+    setMega(null);
+    setSearching(false);
+  }, [pathname, search]);
 
   const openMega = (id) => {
     clearTimeout(closeTimer.current);
@@ -181,6 +277,7 @@ export function Header() {
     { id: 'best', to: lp('/shop?sort=popular'), label: t('nav.bestSellers'), query: 'sort=popular' },
     { id: 'new', to: lp('/shop?sort=newest'), label: t('nav.newArrivals'), query: 'sort=newest' },
     { id: 'offers', to: lp('/shop?onSale=true'), label: t('nav.offers'), accent: true, query: 'onSale=true' },
+    { id: 'routine', to: lp('/routine'), label: t('nav.myRoutine'), icon: Sparkles },
   ];
 
   return (
@@ -203,7 +300,15 @@ export function Header() {
           </Link>
         </div>
 
-        <nav className="hidden h-full shrink-0 items-center xl:flex" aria-label="Main">
+        {/* Desktop: the inline search takes the menu's place while it is open */}
+        <AnimatePresence>{searching && <InlineSearch onClose={() => setSearching(false)} />}</AnimatePresence>
+        <motion.nav
+          animate={{ opacity: searching ? 0 : 1, y: searching ? -8 : 0 }}
+          transition={{ duration: 0.2 }}
+          className={cn('hidden h-full shrink-0 items-center xl:flex', searching && 'pointer-events-none')}
+          aria-label="Main"
+          aria-hidden={searching || undefined}
+        >
           {links.map((l) => (
             <div key={l.id} className="h-full" onMouseEnter={() => (l.mega ? openMega(l.id) : setMega(null))}>
               <NavLink
@@ -219,24 +324,34 @@ export function Header() {
                   );
                 }}
               >
+                {l.icon && <l.icon className="size-3.5" />}
                 {l.label}
                 {l.mega && <ChevronDown className={cn('size-3.5 transition-transform', mega === l.id && 'rotate-180')} />}
                 {mega === l.id && <motion.span layoutId="nav-underline" className="absolute inset-x-3.5 bottom-0 h-0.5 rounded-full bg-brand-500" />}
               </NavLink>
             </div>
           ))}
-        </nav>
+        </motion.nav>
 
         <div className="flex flex-1 items-center justify-end gap-0.5 sm:gap-1">
+          {/* Desktop: toggles the inline search; smaller screens: full-screen search */}
           <button
             type="button"
-            onClick={() => setSearchOpen(true)}
-            className="hidden h-10 items-center gap-2 rounded-full border border-line px-4 text-sm text-muted transition hover:border-brand-300 md:flex 2xl:w-56"
+            onClick={() => {
+              setMega(null);
+              setSearching((s) => !s);
+            }}
+            className={cn('icon-btn hidden xl:inline-flex', searching && 'bg-brand-50 text-brand-700')}
+            aria-label={searching ? t('nav.close') : t('nav.search')}
+            aria-expanded={searching}
           >
-            <Search className="size-4" />
-            <span className="hidden 2xl:inline">{t('nav.search')}…</span>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span key={searching ? 'x' : 's'} initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
+                {searching ? <X className="size-5" /> : <Search className="size-5" />}
+              </motion.span>
+            </AnimatePresence>
           </button>
-          <button type="button" onClick={() => setSearchOpen(true)} className="icon-btn md:hidden" aria-label={t('nav.search')}>
+          <button type="button" onClick={() => setSearchOpen(true)} className="icon-btn xl:hidden" aria-label={t('nav.search')}>
             <Search className="size-5" />
           </button>
           <LanguageSwitcher />

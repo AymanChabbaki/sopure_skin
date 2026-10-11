@@ -4,6 +4,7 @@ export default {
   },
   nav: {
     routineBuilder: 'Build my routine',
+    myRoutine: 'My routine',
     home: 'Home',
     shop: 'Shop',
     categories: 'Categories',

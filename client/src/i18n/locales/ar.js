@@ -4,6 +4,7 @@ export default {
   },
   nav: {
     routineBuilder: 'كوّني روتينك',
+    myRoutine: 'روتيني',
     home: 'الرئيسية',
     shop: 'المتجر',
     categories: 'الفئات',
