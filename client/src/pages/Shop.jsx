@@ -7,7 +7,6 @@ import { ProductGrid } from '../components/product/ProductGrid.jsx';
 import { PageHeader } from '../components/ui/Primitives.jsx';
 import { Drawer } from '../components/ui/Drawer.jsx';
 import { BrandLogo } from '../components/ui/BrandLogo.jsx';
-import { Seo } from '../components/ui/Seo.jsx';
 import { useBrands, useCategories, useProducts } from '../hooks/useStore.js';
 import { useLocalePath } from '../hooks/useLocalePath.js';
 import { cn } from '../lib/format.js';
@@ -169,7 +168,6 @@ export default function Shop() {
 
   return (
     <>
-      <Seo title={title} description={subtitle} noindex={Boolean(q)} />
       <PageHeader eyebrow={brand ? t('nav.brands') : category ? (category.kind === 'routine' ? t('nav.routines') : t('nav.categories')) : null} title={title} subtitle={subtitle}>
         {brand?.logo && (
           <div className="mt-6 inline-flex rounded-2xl bg-white/80 px-6 py-4 shadow-sm backdrop-blur">

@@ -1,7 +1,7 @@
-import { mkdir, writeFile, unlink } from 'node:fs/promises';
+import { copyFile, mkdir, writeFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3';
 import { config, r2Enabled } from '../config.js';
 
 export const LOCAL_UPLOAD_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../uploads');
@@ -35,6 +35,27 @@ export async function putObject(key, body, contentType) {
   await mkdir(path.dirname(target), { recursive: true });
   await writeFile(target, body);
   return `/uploads/${key}`;
+}
+
+/** Server-side copy (no download/upload) to a new key; returns the new public URL. */
+export async function copyObject(fromKey, toKey) {
+  if (s3) {
+    await s3.send(
+      new CopyObjectCommand({
+        Bucket: config.r2.bucket,
+        CopySource: `${config.r2.bucket}/${encodeURIComponent(fromKey)}`,
+        Key: toKey,
+        ContentType: 'image/webp',
+        CacheControl: 'public, max-age=31536000, immutable',
+        MetadataDirective: 'REPLACE',
+      }),
+    );
+    return `${config.r2.publicUrl}/${toKey}`;
+  }
+  const target = path.join(LOCAL_UPLOAD_DIR, toKey);
+  await mkdir(path.dirname(target), { recursive: true });
+  await copyFile(path.join(LOCAL_UPLOAD_DIR, fromKey), target);
+  return `/uploads/${toKey}`;
 }
 
 export async function deleteObject(key) {

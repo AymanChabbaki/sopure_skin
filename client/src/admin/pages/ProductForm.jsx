@@ -112,7 +112,7 @@ export default function ProductForm() {
 
           <Card className="p-5 sm:p-6">
             <h2 className="mb-4 font-semibold">Images</h2>
-            <ImageUploader images={form.images} onChange={set('images')} />
+            <ImageUploader images={form.images} onChange={set('images')} nameHint={form.name.fr} />
             <p className="mt-2 text-xs text-muted">Glissez les vignettes pour réordonner. La première image est l'image principale.</p>
           </Card>
 

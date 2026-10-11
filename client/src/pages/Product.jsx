@@ -7,7 +7,6 @@ import { Heart, ShoppingBag, Truck, HandCoins, BadgeCheck, Zap, Share2, Gift, Pa
 import { toast } from 'sonner';
 import { ProductCarousel } from '../components/product/ProductGrid.jsx';
 import { Price, QuantityInput, SectionHeading, Skeleton } from '../components/ui/Primitives.jsx';
-import { Seo } from '../components/ui/Seo.jsx';
 import { Stars } from '../components/ui/Stars.jsx';
 import { Reviews } from '../components/product/Reviews.jsx';
 import { useProduct, useSettings } from '../hooks/useStore.js';
@@ -169,7 +168,7 @@ export default function Product() {
   if (isError || !product) {
     return (
       <div className="container-x flex flex-col items-center py-24 text-center">
-        <Seo title={t('notFound.title')} noindex />
+        {/* Metadata and structured data come from the server (ServerSeo) */}
         <PackageX className="size-14 text-brand-200" strokeWidth={1.25} />
         <p className="mt-4 text-muted">{error?.status === 404 ? t('product.notFound') : t('common.error')}</p>
         <Link to={lp('/shop')} className="btn-dark mt-6">
@@ -209,40 +208,7 @@ export default function Product() {
 
   return (
     <>
-      <Seo
-        title={product.metaTitle || product.name}
-        description={description}
-        image={product.images[0]?.url}
-        type="product"
-        jsonLd={[
-          {
-            '@context': 'https://schema.org',
-            '@type': 'Product',
-            name: product.name,
-            description: product.description || description,
-            image: product.images.map((i) => i.url),
-            sku: product.sku || String(product.id),
-            brand: product.brand ? { '@type': 'Brand', name: product.brand.name } : undefined,
-            offers: {
-              '@type': 'Offer',
-              priceCurrency: 'MAD',
-              price: product.price,
-              availability: product.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-              url: window.location.href,
-            },
-          },
-          {
-            '@context': 'https://schema.org',
-            '@type': 'BreadcrumbList',
-            itemListElement: [
-              { '@type': 'ListItem', position: 1, name: t('nav.home'), item: `${window.location.origin}${lp('/')}` },
-              { '@type': 'ListItem', position: 2, name: t('nav.shop'), item: `${window.location.origin}${lp('/shop')}` },
-              { '@type': 'ListItem', position: 3, name: product.name },
-            ],
-          },
-        ]}
-      />
-
+      
       <div className="container-x py-6 lg:py-10">
         <nav aria-label="Breadcrumb" className="mb-6 truncate text-xs text-muted">
           <Link to={lp('/')} className="hover:text-brand-600">

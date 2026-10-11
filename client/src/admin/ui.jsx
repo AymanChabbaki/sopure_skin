@@ -201,20 +201,21 @@ async function shrink(file) {
   return new File([blob], file.name.replace(/\.\w+$/, '.webp'), { type: 'image/webp' });
 }
 
-export async function uploadFiles(files, folder = 'products') {
+export async function uploadFiles(files, folder = 'products', name = '') {
   const ready = await Promise.all([...files].map(shrink));
   // One request per file keeps every body under the serverless limit
   const results = [];
   for (const file of ready) {
     const form = new FormData();
     form.append('files', file);
-    results.push(...(await adminApi(`/uploads?folder=${folder}`, { method: 'POST', body: form })));
+    results.push(...(await adminApi('/uploads', { method: 'POST', body: form, params: { folder, name } })));
   }
   return results;
 }
 
 /** Drag & drop multi-upload with drag-to-reorder. First image = main image. */
-export function ImageUploader({ images, onChange, folder = 'products', multiple = true }) {
+/** nameHint (product / brand name) gives uploaded files descriptive names, a Google Images signal. */
+export function ImageUploader({ images, onChange, folder = 'products', multiple = true, nameHint = '' }) {
   const [busy, setBusy] = useState(false);
   const [over, setOver] = useState(false);
   const input = useRef(null);
@@ -223,7 +224,7 @@ export function ImageUploader({ images, onChange, folder = 'products', multiple 
     if (!files?.length) return;
     setBusy(true);
     try {
-      const uploaded = await uploadFiles(files, folder);
+      const uploaded = await uploadFiles(files, folder, nameHint);
       onChange(multiple ? [...images, ...uploaded] : uploaded.slice(0, 1));
     } catch (err) {
       toast.error(err.body?.error || 'Échec du téléversement');

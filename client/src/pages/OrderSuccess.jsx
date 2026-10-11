@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'motion/react';
 import { Check } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa6';
-import { Seo } from '../components/ui/Seo.jsx';
 import { useSettings } from '../hooks/useStore.js';
 import { useLocalePath } from '../hooks/useLocalePath.js';
 import { formatPrice } from '../lib/format.js';
@@ -19,7 +18,6 @@ export default function OrderSuccess() {
 
   return (
     <div className="container-x flex flex-col items-center py-20 text-center">
-      <Seo title={t('success.title')} noindex />
       <div className="relative">
         {Array.from({ length: 12 }, (_, i) => (
           <motion.span

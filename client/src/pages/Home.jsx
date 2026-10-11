@@ -4,35 +4,18 @@ import { SloganBand, CategoryRail, RoutineFinder, PromoBanner, BrandMarquee, Rit
 import { Testimonials } from '../components/home/Testimonials.jsx';
 import { ProductCarousel, ProductGrid } from '../components/product/ProductGrid.jsx';
 import { SectionHeading } from '../components/ui/Primitives.jsx';
-import { Seo } from '../components/ui/Seo.jsx';
-import { useProducts, useSettings } from '../hooks/useStore.js';
+import { useProducts } from '../hooks/useStore.js';
 import { useLocalePath } from '../hooks/useLocalePath.js';
 
 export default function Home() {
   const { t } = useTranslation();
   const lp = useLocalePath();
-  const { data: settings } = useSettings();
   const best = useProducts({ sort: 'popular', limit: 10 });
   const fresh = useProducts({ sort: 'newest', limit: 8 });
   const offers = useProducts({ onSale: true, sort: 'popular', limit: 10 });
-  const faq = t('faq.items', {
-    returnObjects: true,
-    casa: settings?.shipping?.casablancaFee ?? 20,
-    other: settings?.shipping?.otherFee ?? 35,
-    count: settings?.shipping?.freeAboveItems ?? 5,
-  });
-
   return (
     <>
-      <Seo
-        title={settings?.seo?.title?.replace(/^So Pure Skin \| /, '')}
-        description={settings?.seo?.description}
-        jsonLd={{
-          '@context': 'https://schema.org',
-          '@type': 'FAQPage',
-          mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
-        }}
-      />
+      {/* Metadata and structured data come from the server (ServerSeo) */}
       <Hero />
       <BrandMarquee />
       <SloganBand />

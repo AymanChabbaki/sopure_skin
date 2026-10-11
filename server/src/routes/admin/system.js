@@ -6,6 +6,7 @@ import { query } from '../../db/pool.js';
 import { DEFAULT_SETTINGS, getSettings, saveSetting } from '../../lib/settings.js';
 import { storeImage } from '../../lib/images.js';
 import { storageDriver } from '../../lib/storage.js';
+import { localizedUrls, submitUrls } from '../../lib/indexnow.js';
 import { HttpError } from '../../lib/utils.js';
 import { validate } from '../../middleware/errors.js';
 import { requireOwner } from '../../middleware/auth.js';
@@ -25,10 +26,24 @@ const shippingSchema = z.object({
   casablancaAliases: z.array(z.string().min(1)).min(1),
 });
 
+const returnsSchema = z.object({ enabled: z.boolean(), days: z.number().int().min(1).max(365), fees: z.enum(['free', 'customer']) });
+
+/** Sends every public URL (from the sitemap) to IndexNow: Bing, Yandex, Seznam, Naver. */
+settingsRouter.post('/indexnow', async (_req, res) => {
+  const [{ rows: products }, { rows: categories }, { rows: brands }] = await Promise.all([
+    query('SELECT slug FROM products WHERE is_active'),
+    query('SELECT slug FROM categories WHERE is_visible'),
+    query('SELECT slug FROM brands'),
+  ]);
+  const paths = ['/', '/shop', '/brands', '/faq', '/shipping', '/about', '/contact',
+    ...categories.map((c) => `/category/${c.slug}`), ...brands.map((b) => `/brand/${b.slug}`), ...products.map((p) => `/product/${p.slug}`)];
+  res.json(await submitUrls(paths.flatMap(localizedUrls)));
+});
+
 settingsRouter.put('/:key', async (req, res) => {
   const { key } = req.params;
   if (!(key in DEFAULT_SETTINGS)) throw new HttpError(400, `Unknown setting "${key}"`);
-  const value = key === 'shipping' ? shippingSchema.parse(req.body) : req.body;
+  const value = key === 'shipping' ? shippingSchema.parse(req.body) : key === 'returns' ? returnsSchema.parse(req.body) : req.body;
   await saveSetting(key, value);
   res.json({ ok: true });
 });
@@ -46,7 +61,9 @@ const upload = multer({
 uploadsRouter.post('/', upload.array('files', 12), async (req, res) => {
   if (!req.files?.length) throw new HttpError(400, 'No valid image received');
   const folder = ['products', 'categories', 'brands', 'banners', 'testimonials'].includes(req.query.folder) ? req.query.folder : 'products';
-  const stored = await Promise.all(req.files.map((f) => storeImage(f.buffer, folder)));
+  // Optional ?name= (product / brand name) gives the files descriptive names for image SEO
+  const name = String(req.query.name || '').slice(0, 120);
+  const stored = await Promise.all(req.files.map((f) => storeImage(f.buffer, folder, name)));
   res.status(201).json(stored);
 });
 

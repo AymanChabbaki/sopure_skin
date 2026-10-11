@@ -23,7 +23,6 @@ export function Wishlist() {
 
   return (
     <>
-      <Seo title={t('wishlist.title')} noindex />
       <PageHeader title={t('wishlist.title')} />
       <div className="container-x pb-24">
         {ids.length === 0 ? (
@@ -56,7 +55,6 @@ export function Brands() {
 
   return (
     <>
-      <Seo title={t('brandsPage.title')} description={t('brandsPage.subtitle')} />
       <PageHeader title={t('brandsPage.title')} subtitle={t('brandsPage.subtitle')} />
       <div className="container-x pb-24">
         <motion.ul variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
@@ -107,7 +105,6 @@ export function About() {
   const icons = [BadgeCheck, Sparkles, MessagesSquare];
   return (
     <>
-      <Seo title={t('nav.about')} description={t('about.lead')} />
       <PageHeader title={t('about.title')} subtitle={t('about.lead')} />
       <div className="container-x grid items-center gap-12 pb-16 lg:grid-cols-2">
         <Reveal className="space-y-5 text-lg leading-relaxed text-ink/80">
@@ -194,7 +191,6 @@ export function Contact() {
     : [];
   return (
     <>
-      <Seo title={t('contact.title')} description={t('contact.subtitle')} />
       <PageHeader title={t('contact.title')} subtitle={t('contact.subtitle')} />
       <div className="container-x pb-24">
         <motion.ul variants={staggerContainer} initial="hidden" animate="show" className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -234,7 +230,6 @@ export function ShippingInfo() {
   ];
   return (
     <>
-      <Seo title={t('shippingPage.title')} />
       <PageHeader title={t('shippingPage.title')} />
       <div className="container-x pb-24">
         <motion.ul variants={staggerContainer} initial="hidden" animate="show" className="grid gap-5 md:grid-cols-3">
@@ -270,7 +265,6 @@ export function NotFound() {
   const lp = useLocalePath();
   return (
     <div className="container-x flex flex-col items-center py-24 text-center">
-      <Seo title={t('notFound.title')} noindex />
       <motion.p initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="font-display text-[9rem] leading-none text-brand-100">
         404
       </motion.p>

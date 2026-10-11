@@ -68,10 +68,11 @@ app.get('/api/health', async (_req, res) => {
 });
 app.use('/api/admin', adminRouter);
 app.use('/api/chat', chatRouter);
+// Before the /api 404: serves /api/seo plus robots, sitemap, llms.txt, feeds and the IndexNow key
+app.use(seoRouter);
 app.use('/api', publicRouter);
 app.use('/api', notFound);
 app.use('/uploads', express.static(LOCAL_UPLOAD_DIR, { maxAge: '30d', immutable: true }));
-app.use(seoRouter);
 
 // Static files (local production only: on Vercel the CDN serves them before reaching this function)
 if (clientDist) {
@@ -95,7 +96,7 @@ app.get('/{*splat}', async (req, res, next) => {
     .type('html')
     .set('Cache-Control', 'no-cache')
     .set('CDN-Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600')
-    .send(await renderIndex(template, req.path));
+    .send(await renderIndex(template, req.path, req.originalUrl.split('?')[1] || ''));
 });
 
 app.use(errorHandler);

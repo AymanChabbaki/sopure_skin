@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { motion, Reorder } from 'motion/react';
-import { MessageCircleHeart, Truck, Megaphone, Image as ImageIcon, Phone, Search, Plus, Trash2, GripVertical, Loader2, Save, Cloud, HardDrive } from 'lucide-react';
-import { Card, EDITING, Field, I18nInput, ImageUploader, PageTitle, adminApi, useAdminMutation, useAdminQuery } from '../ui.jsx';
+import { MessageCircleHeart, Truck, Megaphone, Image as ImageIcon, Phone, Search, Plus, Trash2, GripVertical, Loader2, Save, Cloud, HardDrive, Send, Copy } from 'lucide-react';
+import { toast } from 'sonner';
+import { Card, EDITING, Field, I18nInput, ImageUploader, PageTitle, Switch, adminApi, useAdminMutation, useAdminQuery } from '../ui.jsx';
 import { Skeleton } from '../../components/ui/Primitives.jsx';
 import { cn } from '../../lib/format.js';
 
@@ -229,19 +230,91 @@ function ContactTab({ value, save }) {
   );
 }
 
-function SeoTab({ value, save }) {
+const SEO_FILES = [
+  ['/sitemap.xml', 'Plan du site : toutes les pages en 3 langues + toutes les images (à soumettre dans Google Search Console)'],
+  ['/feeds/google-merchant.xml', 'Flux produits Google Merchant Center (fiches gratuites Google Shopping / Images)'],
+  ['/llms.txt', 'Résumé du catalogue pour les IA (ChatGPT, Perplexity, Claude, Gemini)'],
+  ['/llms-full.txt', 'Catalogue complet avec descriptions pour les IA'],
+  ['/robots.txt', 'Règles d’exploration (moteurs et assistants IA autorisés)'],
+];
+
+function SeoTab({ value, save, all }) {
   const [s, setS] = useState(value);
+  const [returns, setReturns] = useState(all.returns || { enabled: false, days: 7, fees: 'customer' });
+  const ping = useAdminMutation(() => adminApi('/settings/indexnow', { method: 'POST' }), {
+    success: null,
+    onSuccess: (r) =>
+      r.skipped
+        ? toast.info('IndexNow s’active une fois le site en ligne sur votre domaine (https).')
+        : toast.success(`${r.count} adresses envoyées à Bing, Yandex, Seznam et Naver`),
+  });
+  const origin = window.location.origin;
+
   return (
-    <div className="space-y-5">
-      <I18nInput label="Titre du site (page d’accueil)" value={s.title} onChange={(v) => setS({ ...s, title: v })} />
-      <I18nInput label="Méta description" value={s.description} onChange={(v) => setS({ ...s, description: v })} multiline rows={3} />
-      <div className="rounded-2xl bg-zinc-50 p-4 text-sm text-muted">
-        Générés automatiquement : <code>/sitemap.xml</code> (3 langues + hreflang), <code>/robots.txt</code>, <code>/llms.txt</code> (catalogue lisible par les IA), données
-        structurées Product / Organization / FAQ / Breadcrumb.
-      </div>
-      <div className="flex justify-end">
-        <SaveButton mutation={save} onClick={() => save.mutate(['seo', s])} />
-      </div>
+    <div className="space-y-8">
+      <section className="space-y-5">
+        <I18nInput label="Titre du site (page d’accueil)" value={s.title} onChange={(v) => setS({ ...s, title: v })} />
+        <I18nInput label="Méta description" value={s.description} onChange={(v) => setS({ ...s, description: v })} multiline rows={3} />
+        <div className="flex justify-end">
+          <SaveButton mutation={save} onClick={() => save.mutate(['seo', s])} />
+        </div>
+      </section>
+
+      <section className="space-y-4 border-t border-line pt-6">
+        <div>
+          <h3 className="font-semibold">Politique de retour</h3>
+          <p className="mt-1 text-sm text-muted">Affichée par Google sur les fiches produits. Publiée uniquement si vous l’activez : n’indiquez que ce que vous appliquez réellement.</p>
+        </div>
+        <Switch checked={returns.enabled} onChange={(enabled) => setReturns({ ...returns, enabled })} label="J’accepte les retours" />
+        {returns.enabled && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Délai de retour (jours)">
+              <input type="number" min="1" max="365" value={returns.days} onChange={(e) => setReturns({ ...returns, days: Number(e.target.value) || 1 })} className="input" />
+            </Field>
+            <Field label="Frais de retour">
+              <select value={returns.fees} onChange={(e) => setReturns({ ...returns, fees: e.target.value })} className="input">
+                <option value="customer">À la charge de la cliente</option>
+                <option value="free">Gratuits</option>
+              </select>
+            </Field>
+          </div>
+        )}
+        <div className="flex justify-end">
+          <SaveButton mutation={save} onClick={() => save.mutate(['returns', returns])} />
+        </div>
+      </section>
+
+      <section className="space-y-4 border-t border-line pt-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="font-semibold">Indexation instantanée (IndexNow)</h3>
+            <p className="mt-1 text-sm text-muted">Chaque modification est déjà envoyée automatiquement. Ce bouton renvoie tout le site d’un coup.</p>
+          </div>
+          <button type="button" onClick={() => ping.mutate()} disabled={ping.isPending} className="btn-outline py-2.5">
+            {ping.isPending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Notifier les moteurs
+          </button>
+        </div>
+        <ul className="divide-y divide-line rounded-2xl border border-line">
+          {SEO_FILES.map(([path, label]) => (
+            <li key={path} className="flex items-center gap-3 px-4 py-3 text-sm">
+              <span className="min-w-0 flex-1">
+                <a href={path} target="_blank" rel="noreferrer" className="font-mono text-brand-700 hover:underline">
+                  {path}
+                </a>
+                <span className="block text-xs text-muted">{label}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => navigator.clipboard.writeText(origin + path).then(() => toast.success('Lien copié'))}
+                className="icon-btn size-9"
+                aria-label="Copier le lien"
+              >
+                <Copy className="size-4" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }
@@ -280,7 +353,7 @@ export default function Settings() {
             </button>
           ))}
         </nav>
-        <Card className="p-5 sm:p-6">{isLoading ? <Skeleton className="h-64" /> : <Panel key={`${tab}-${mounted}`} value={data[tab]} save={save} />}</Card>
+        <Card className="p-5 sm:p-6">{isLoading ? <Skeleton className="h-64" /> : <Panel key={`${tab}-${mounted}`} value={data[tab]} all={data} save={save} />}</Card>
       </div>
     </>
   );

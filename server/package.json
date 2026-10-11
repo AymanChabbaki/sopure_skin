@@ -11,7 +11,9 @@
     "db:seed": "node --env-file-if-exists=.env src/db/seed.js",
     "db:logos": "node --env-file-if-exists=.env src/db/logos.js",
     "db:sample-reviews": "node --env-file-if-exists=.env src/db/sample-reviews.js",
-    "db:testimonials": "node --env-file-if-exists=.env src/db/testimonials.js"
+    "db:testimonials": "node --env-file-if-exists=.env src/db/testimonials.js",
+    "db:translate": "node --env-file-if-exists=.env src/db/translate.js",
+    "db:rename-images": "node --env-file-if-exists=.env src/db/rename-images.js"
   },
   "dependencies": {
     "express": "^5.2.1",

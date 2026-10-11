@@ -12,9 +12,6 @@ import './i18n/index.js';
 import './index.css';
 import App from './App.jsx';
 
-// Server-injected SEO tags are replaced by React-managed ones once the app boots
-document.querySelectorAll('[data-ssr]').forEach((el) => el.remove());
-
 const queryClient = new QueryClient({
   defaultOptions: {
     // Coming back to a tab refreshes what it shows (admin edits made elsewhere appear without reloading)

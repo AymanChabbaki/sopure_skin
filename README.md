@@ -78,10 +78,30 @@ et réintégré si la commande est annulée ou retournée.
 
 ## SEO / GEO
 
-- `/sitemap.xml` : toutes les pages × 3 langues avec hreflang et images
-- `/robots.txt` : autorise moteurs et assistants IA, bloque `/admin`, `/api`, panier, checkout
-- `/llms.txt` : catalogue lisible par les IA (ChatGPT, Claude, Perplexity…)
-- Données structurées `OnlineStore`, `Product`, `BreadcrumbList`, `FAQPage` ; `AggregateRating` uniquement à partir de vrais avis
+Une seule source de vérité : `server/src/seo.js` calcule les métadonnées de chaque page. Elles sont injectées dans le HTML envoyé aux robots
+et renvoyées par `/api/seo` lors de la navigation dans le site (composant `ServerSeo`), pour que Google voie toujours les mêmes données.
+
+- **Pages** : titres à intention locale (« … – 250 DH au Maroc »), descriptions de 160 caractères, canonical, hreflang fr/en/ar + x-default, Open Graph
+- **Images** : balises `<img>` avec texte alternatif dans le HTML des robots, noms de fichiers descriptifs (`produit-1.webp`), sitemap avec toutes les images, préchargement de l'image principale
+- **Données structurées** : `OnlineStore` (contact, livraison `hasShippingService`, retours si activés), `Product` (prix, stock, livraison, délais, note issue uniquement des vrais avis), `BreadcrumbList`, `CollectionPage`, `FAQPage`
+- **Fichiers** : `/sitemap.xml`, `/robots.txt`, `/llms.txt`, `/llms-full.txt`, `/feeds/google-merchant.xml`, clé IndexNow
+- **IndexNow** : chaque modification dans l'admin est envoyée immédiatement à Bing (ChatGPT search, Copilot), Yandex, Seznam et Naver
+- **Contenu** : descriptions produits et introductions de catégories en anglais et en arabe (`npm run db:translate`, ne remplit que les champs vides)
+
+### Après la mise en ligne
+
+1. **Google Search Console** : ajouter le domaine, copier le code de vérification dans `GOOGLE_SITE_VERIFICATION`, soumettre `/sitemap.xml`.
+2. **Bing Webmaster Tools** : importer depuis Search Console (ou `BING_SITE_VERIFICATION`), puis Admin → Paramètres → SEO → « Notifier les moteurs ».
+3. **Google Merchant Center** : ajouter le flux `https://votre-domaine/feeds/google-merchant.xml` (pays Maroc, langue français).
+4. **Google Business Profile** : fiche « So Pure Skin » à Casablanca (même nom, téléphone et site que sur le site).
+5. **Domaine des images** : remplacer l'adresse `r2.dev` par un sous-domaine personnalisé (ex. `cdn.sopureskin.com`) dans Cloudflare R2.
+
+### Scripts SEO
+
+| Commande | Rôle |
+|---|---|
+| `npm run db:translate -w server` | Traduit les produits et rédige les introductions de catégories (EN/AR) via Groq |
+| `npm run db:rename-images -w server` | Renomme les images produits avec des noms descriptifs et améliore leurs textes alternatifs |
 
 ## Structure
 

@@ -76,6 +76,8 @@ export const DEFAULT_SETTINGS = {
       focus: '30% center',
     },
   ],
+  // Return policy published to Google only once enabled by the shop (never invented)
+  returns: { enabled: false, days: 7, fees: 'customer' },
   // WhatsApp screenshots from customers: [{ url, thumbUrl }]
   testimonials: [],
   contact: {

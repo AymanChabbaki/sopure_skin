@@ -4,7 +4,6 @@ import { AnimatePresence } from 'motion/react';
 import { ShoppingBag, ArrowRight } from 'lucide-react';
 import { CartLine, FreeShippingProgress } from '../components/layout/CartDrawer.jsx';
 import { PageHeader } from '../components/ui/Primitives.jsx';
-import { Seo } from '../components/ui/Seo.jsx';
 import { useCart, useCartCount, useCartSubtotal } from '../store/cart.js';
 import { useSettings } from '../hooks/useStore.js';
 import { useLocalePath } from '../hooks/useLocalePath.js';
@@ -21,7 +20,6 @@ export default function Cart() {
 
   return (
     <>
-      <Seo title={t('cart.title')} noindex />
       <PageHeader title={t('cart.title')} />
       <div className="container-x pb-24">
         {items.length === 0 ? (

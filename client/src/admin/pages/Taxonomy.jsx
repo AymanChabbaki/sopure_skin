@@ -78,6 +78,7 @@ function EditModal({ kind, item, onClose }) {
         <Field label={kind === 'brands' ? 'Logo' : 'Image'} hint={kind === 'categories' ? "Sans image, la photo d'un produit de la catégorie est utilisée." : undefined}>
           <ImageUploader
             folder={CONFIG[kind].folder}
+            nameHint={typeof form.name === 'string' ? form.name : form.name?.fr}
             multiple={false}
             images={form[imageKey] ? [{ url: form[imageKey], thumbUrl: form[imageKey] }] : []}
             onChange={(imgs) => set(imageKey)(imgs[0]?.thumbUrl || imgs[0]?.url || '')}

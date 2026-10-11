@@ -22,7 +22,13 @@ export function tr(field, locale) {
 export const stripHtml = (html = '') =>
   String(html).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
-export const truncate = (text, max = 160) => (text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text);
+/** Shortens on a word boundary (never mid-word) and adds an ellipsis. */
+export function truncate(text, max = 160) {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max - 1);
+  const lastSpace = cut.lastIndexOf(' ');
+  return `${(lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:–-]+$/, '')}…`;
+}
 
 export const escapeHtml = (s = '') =>
   String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);

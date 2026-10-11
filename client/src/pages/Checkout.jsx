@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Banknote, Loader2, ShieldCheck, User, MapPin, Lock } from 'lucide-react';
 import { toast } from 'sonner';
-import { Seo } from '../components/ui/Seo.jsx';
 import { useCart, useCartCount, useCartSubtotal } from '../store/cart.js';
 import { computeShipping, useSettings } from '../hooks/useStore.js';
 import { useLocalePath } from '../hooks/useLocalePath.js';
@@ -111,7 +110,6 @@ export default function Checkout() {
 
   return (
     <>
-      <Seo title={t('checkout.title')} noindex />
       <div className="container-x py-10 lg:py-14">
         <h1 className="font-display text-4xl sm:text-5xl">{t('checkout.title')}</h1>
 
