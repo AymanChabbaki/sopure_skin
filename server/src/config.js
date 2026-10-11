@@ -6,11 +6,29 @@ const required = (name, fallback) => {
 
 const isProd = process.env.NODE_ENV === 'production';
 
+/**
+ * Public URL used in canonical tags, hreflang, sitemap, Open Graph and JSON-LD.
+ * SITE_URL should always be set in production (e.g. https://www.sopureskin.com). Without it, fall back to
+ * the production domain Vercel exposes, never to localhost: a localhost canonical blocks indexing.
+ */
+function resolveSiteUrl() {
+  const explicit = process.env.SITE_URL;
+  if (explicit) return explicit.replace(/\/$/, '');
+  const vercelDomain = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+  if (vercelDomain) {
+    console.warn(`SITE_URL is not set: using https://${vercelDomain}. Set SITE_URL to your final domain in Vercel.`);
+    return `https://${vercelDomain}`;
+  }
+  return 'http://localhost:5173';
+}
+
+const siteUrl = resolveSiteUrl();
+
 export const config = {
   isProd,
   port: Number(process.env.PORT || 4000),
-  siteUrl: (process.env.SITE_URL || 'http://localhost:5173').replace(/\/$/, ''),
-  corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:5173').split(',').map((s) => s.trim()),
+  siteUrl,
+  corsOrigins: (process.env.CORS_ORIGINS || siteUrl).split(',').map((s) => s.trim()),
   databaseUrl: required('DATABASE_URL', 'postgres://postgres:postgres@localhost:5432/sopure_skin'),
   databaseSsl: process.env.DATABASE_SSL === 'true',
   jwtSecret: required('JWT_SECRET', isProd ? undefined : 'dev-only-secret-change-me'),
