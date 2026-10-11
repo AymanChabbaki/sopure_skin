@@ -20,6 +20,7 @@ const ShippingInfo = info('ShippingInfo');
 const NotFound = info('NotFound');
 const AdminApp = lazy(() => import('./admin/AdminApp.jsx'));
 
+
 function PageFallback() {
   return (
     <div className="grid min-h-[60vh] place-items-center">
