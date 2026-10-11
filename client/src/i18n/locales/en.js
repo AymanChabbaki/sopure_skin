@@ -3,6 +3,7 @@ export default {
     tagline: 'Authentic Korean skincare',
   },
   nav: {
+    routineBuilder: 'Build my routine',
     home: 'Home',
     shop: 'Shop',
     categories: 'Categories',
@@ -300,6 +301,17 @@ export default {
     disclaimer: 'Soso is an AI: her advice doesn’t replace medical advice.',
     addedToCart: 'Added to cart',
     view: 'View',
+  },
+  routinePage: {
+    eyebrow: 'Free skin diagnosis',
+    title: 'Build my routine',
+    subtitle: 'Answer 2 questions about your skin: we suggest the right Korean skincare, step by step.',
+    orChoose: 'Or pick your routine directly',
+    orChooseText: 'Complete routines designed for every skin type and concern.',
+    general: 'Routines by skin type',
+    targeted: 'Targeted routines',
+    faqTitle: 'Not sure which products to choose?',
+    faqText: 'Take the diagnosis: in 2 clicks we suggest a routine suited to your skin.',
   },
   notFound: {
     title: 'Page not found',

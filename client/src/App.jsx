@@ -10,6 +10,7 @@ const Product = lazy(() => import('./pages/Product.jsx'));
 const Cart = lazy(() => import('./pages/Cart.jsx'));
 const Checkout = lazy(() => import('./pages/Checkout.jsx'));
 const OrderSuccess = lazy(() => import('./pages/OrderSuccess.jsx'));
+const RoutineBuilder = lazy(() => import('./pages/RoutineBuilder.jsx'));
 const info = (name) => lazy(() => import('./pages/InfoPages.jsx').then((m) => ({ default: m[name] })));
 const Wishlist = info('Wishlist');
 const Brands = info('Brands');
@@ -48,6 +49,7 @@ const storeRoutes = [
   { path: 'order/success', element: page(OrderSuccess) },
   { path: 'wishlist', element: page(Wishlist) },
   { path: 'brands', element: page(Brands) },
+  { path: 'routine', element: page(RoutineBuilder) },
   { path: 'about', element: page(About) },
   { path: 'faq', element: page(Faq) },
   { path: 'contact', element: page(Contact) },

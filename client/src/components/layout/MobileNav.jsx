@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'motion/react';
-import { Home, Store, Search, Heart, ShoppingBag, ChevronDown, Phone } from 'lucide-react';
+import { Home, Store, Search, Heart, ShoppingBag, ChevronDown, ChevronRight, Phone, Sparkles } from 'lucide-react';
 import { FaWhatsapp, FaInstagram } from 'react-icons/fa6';
 import { Drawer } from '../ui/Drawer.jsx';
 import { LanguageSwitcher } from './LanguageSwitcher.jsx';
@@ -58,13 +58,12 @@ export function MobileMenu() {
             </Link>
           ))}
         </Accordion>
-        <Accordion title={t('nav.routines')}>
-          {categories.filter((c) => c.kind === 'routine').map((c) => (
-            <Link key={c.id} to={lp(`/category/${c.slug}`)} onClick={close} className={linkCls}>
-              {c.name}
-            </Link>
-          ))}
-        </Accordion>
+        <Link to={lp('/routine')} onClick={close} className="flex items-center justify-between border-b border-line py-4 text-base font-medium text-brand-700">
+          <span className="flex items-center gap-2">
+            <Sparkles className="size-4" /> {t('nav.routineBuilder')}
+          </span>
+          <ChevronRight className="size-4 rtl:-scale-x-100" />
+        </Link>
         <Accordion title={t('nav.brands')}>
           <div className="grid grid-cols-2">
             {brands.map((b) => (

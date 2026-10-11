@@ -24,7 +24,7 @@ import { cn } from '../../lib/format.js';
 
 /* -------------------------------- Slogan -------------------------------- */
 
-/** "Filter Snap kimshi, walakin skin care kib9a": words rise in one by one, the punchline is highlighted. */
+/** "Filter Insta kimshi, walakin skin care kib9a": words rise in one by one, the punchline is highlighted. */
 export function SloganBand() {
   const lead = SLOGAN.lead.split(' ');
   const punch = SLOGAN.punch.split(' ');

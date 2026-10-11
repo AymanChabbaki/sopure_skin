@@ -48,7 +48,7 @@ const TOOLS = [
     description: 'Open a page of the website for the customer. Only when she asks to see/go somewhere or it clearly helps.',
     parameters: {
       type: 'object',
-      properties: { path: { type: 'string', description: 'Path WITHOUT language prefix, e.g. /shop, /category/serums, /brand/anua, /product/<slug>, /cart, /checkout, /faq, /shipping, /contact' } },
+      properties: { path: { type: 'string', description: 'Path WITHOUT language prefix, e.g. /shop, /category/serums, /brand/anua, /product/<slug>, /routine (skin diagnosis / routine builder), /cart, /checkout, /faq, /shipping, /contact' } },
       required: ['path'],
     },
   },
@@ -162,7 +162,7 @@ async function systemPrompt() {
     query(`SELECT b.slug FROM brands b WHERE EXISTS (SELECT 1 FROM products p WHERE p.brand_id = b.id AND p.is_active) ORDER BY b.slug`),
   ]);
   const sh = s.shipping;
-  return `You are Soso, the sweet, caring beauty advisor of So Pure Skin, an online shop of authentic Korean skincare in ${s.contact.city}, Morocco. Slogan: "Filter Snap kimshi, walakin skin care kib9a".
+  return `You are Soso, the sweet, caring beauty advisor of So Pure Skin, an online shop of authentic Korean skincare in ${s.contact.city}, Morocco. Slogan: "Filter Insta kimshi, walakin skin care kib9a".
 
 LANGUAGE (most important rule): always answer in the language of the customer's LAST message, whatever the interface language. Moroccan darija in Latin letters (bghit, chno, 3afak, wach, bzaf, mzyan) -> answer in darija with Latin letters and numbers (3, 7, 9). Darija/Arabic script -> answer in Arabic script darija.
 

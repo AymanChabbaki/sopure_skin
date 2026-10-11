@@ -37,6 +37,7 @@ const STATIC_PAGES = {
   faq: { fr: 'Questions fréquentes', en: 'FAQ', ar: 'الأسئلة الشائعة' },
   contact: { fr: 'Contact', en: 'Contact', ar: 'اتصل بنا' },
   shipping: { fr: 'Livraison & paiement', en: 'Shipping & payment', ar: 'التوصيل والدفع' },
+  routine: { fr: 'Composer ma routine de soin coréenne', en: 'Build my Korean skincare routine', ar: 'كوّني روتين العناية الكوري الخاص بك' },
 };
 // Private or transactional pages: never indexed
 const NOINDEX_PAGES = {
@@ -113,7 +114,7 @@ function organizationLd(settings) {
     '@id': ORG_ID,
     name: BRAND,
     url: SITE,
-    slogan: 'Filter Snap kimshi, walakin skin care kib9a',
+    slogan: 'Filter Insta kimshi, walakin skin care kib9a',
     logo: { '@type': 'ImageObject', url: `${SITE}/android-chrome-512x512.png`, width: 512, height: 512 },
     image: absolute(DEFAULT_OG_IMAGE),
     email: c.email,
@@ -325,6 +326,13 @@ export async function buildPage(pathname, search = '') {
     page.title = `${STATIC_PAGES[section][locale]} | ${BRAND}`;
     // Internal search results and filtered listings are not landing pages
     if (section === 'shop' && params.get('q')) page.noindex = true;
+    if (section === 'routine') {
+      page.description = {
+        fr: 'Diagnostic de peau gratuit : indiquez votre type de peau et votre préoccupation (acné, taches, rougeurs, points noirs) et découvrez la routine coréenne adaptée.',
+        en: 'Free skin diagnosis: tell us your skin type and concern (acne, dark spots, redness, blackheads) and discover the right Korean routine.',
+        ar: 'تشخيص مجاني للبشرة: اختاري نوع بشرتك ومشكلتك (حب الشباب، البقع، الاحمرار، الرؤوس السوداء) واكتشفي الروتين الكوري المناسب.',
+      }[locale];
+    }
     if (section === 'shipping' || section === 'faq') {
       const s = settings.shipping;
       page.description = {
@@ -489,6 +497,7 @@ seoRouter.get('/sitemap.xml', async (_req, res) => {
     urlEntry('', latest, heroImages),
     urlEntry('/shop', latest),
     urlEntry('/brands', latest),
+    urlEntry('/routine', latest),
     urlEntry('/about', null),
     urlEntry('/faq', null),
     urlEntry('/contact', null),
@@ -533,14 +542,14 @@ function llmsHeader(s) {
     '',
     `> ${tr(s.seo.description, 'fr')}`,
     '',
-    `${BRAND} is an online shop based in ${s.contact.city}, Morocco, selling 100% authentic Korean skincare (K-beauty). Slogan: "Filter Snap kimshi, walakin skin care kib9a".`,
+    `${BRAND} is an online shop based in ${s.contact.city}, Morocco, selling 100% authentic Korean skincare (K-beauty). Slogan: "Filter Insta kimshi, walakin skin care kib9a".`,
     '',
     '## Key facts',
     '- Payment: cash on delivery only, everywhere in Morocco. No online payment.',
     `- Delivery: ${sh.casablancaFee} MAD in Casablanca, ${sh.otherFee} MAD in other Moroccan cities, free for orders of more than ${sh.freeAboveItems} products. 24-48h in Casablanca, 2-4 working days elsewhere.`,
     '- Languages: French (/fr), English (/en), Arabic (/ar).',
     `- Contact: phone ${s.contact.phone}, WhatsApp +${s.contact.whatsapp}, email ${s.contact.email}.`,
-    `- Online shop: ${SITE}/fr/shop · Shipping & payment: ${SITE}/fr/shipping · FAQ: ${SITE}/fr/faq`,
+    `- Online shop: ${SITE}/fr/shop · Routine builder (free skin diagnosis): ${SITE}/fr/routine · Shipping & payment: ${SITE}/fr/shipping · FAQ: ${SITE}/fr/faq`,
   ];
 }
 

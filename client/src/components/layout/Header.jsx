@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'motion/react';
-import { Search, Heart, ShoppingBag, Menu, ChevronDown, ArrowRight } from 'lucide-react';
+import { Search, Heart, ShoppingBag, Menu, ChevronDown, ArrowRight, Sparkles } from 'lucide-react';
 import { Logo } from '../ui/Logo.jsx';
 import { LanguageSwitcher } from './LanguageSwitcher.jsx';
 import { useCart, useCartCount } from '../../store/cart.js';
@@ -87,6 +87,11 @@ function MegaMenu({ id, onNavigate }) {
                     </Link>
                   </motion.li>
                 ))}
+                <motion.li variants={itemVariants} className="pt-1">
+                  <Link onClick={onNavigate} to={lp('/routine')} className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700 transition hover:bg-brand-100">
+                    <Sparkles className="size-3.5" /> {t('nav.routineBuilder')}
+                  </Link>
+                </motion.li>
                 <motion.li variants={itemVariants}>
                   <Link onClick={onNavigate} to={lp('/shop')} className="group inline-flex items-center gap-1 text-sm font-medium text-brand-700">
                     {t('nav.allProducts')} <ArrowRight className="size-3.5 transition group-hover:translate-x-1 rtl:-scale-x-100 rtl:group-hover:-translate-x-1" />

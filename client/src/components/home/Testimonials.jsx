@@ -121,7 +121,7 @@ export function Testimonials() {
   const preview = items.slice(0, 8);
 
   return (
-    <section className="overflow-hidden bg-gradient-to-b from-white via-brand-50/50 to-white py-16 sm:py-24">
+    <section id="temoignages" className="scroll-mt-24 overflow-hidden bg-gradient-to-b from-white via-brand-50/50 to-white py-16 sm:py-24">
       <div className="container-x">
         <SectionHeading eyebrow={t('testimonials.eyebrow')} title={t('testimonials.title')} subtitle={t('testimonials.subtitle')} align="center" />
       </div>

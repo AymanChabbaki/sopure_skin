@@ -12,6 +12,7 @@ import {
   Users,
   Mail,
   Star,
+  MessageCircleHeart,
   LogOut,
   Menu,
   X,
@@ -33,6 +34,7 @@ const ProductForm = lazy(() => import('./pages/ProductForm.jsx'));
 const Taxonomy = lazy(() => import('./pages/Taxonomy.jsx'));
 const SettingsPage = lazy(() => import('./pages/Settings.jsx'));
 const ReviewsPage = lazy(() => import('./pages/Reviews.jsx'));
+const TestimonialsPage = lazy(() => import('./pages/Testimonials.jsx'));
 const Team = lazy(() => import('./pages/Team.jsx'));
 const Subscribers = lazy(() => import('./pages/Subscribers.jsx'));
 
@@ -95,6 +97,7 @@ const NAV = [
   { to: '/admin/categories', label: 'Catégories', icon: FolderTree },
   { to: '/admin/brands', label: 'Marques', icon: Award },
   { to: '/admin/reviews', label: 'Avis clients', icon: Star },
+  { to: '/admin/testimonials', label: 'Témoignages', icon: MessageCircleHeart },
   { to: '/admin/subscribers', label: 'Newsletter', icon: Mail },
   { to: '/admin/settings', label: 'Paramètres', icon: Settings },
   { to: '/admin/team', label: 'Équipe', icon: Users },
@@ -264,6 +267,7 @@ export default function AdminApp() {
                       <Route path="categories" element={<Taxonomy kind="categories" />} />
                       <Route path="brands" element={<Taxonomy kind="brands" />} />
                       <Route path="reviews" element={<ReviewsPage />} />
+                      <Route path="testimonials" element={<TestimonialsPage />} />
                       <Route path="settings" element={<SettingsPage />} />
                       <Route path="team" element={<Team me={me} />} />
                       <Route path="subscribers" element={<Subscribers />} />

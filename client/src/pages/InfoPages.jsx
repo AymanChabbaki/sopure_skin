@@ -138,6 +138,7 @@ export function About() {
 
 export function Faq() {
   const { t } = useTranslation();
+  const lp = useLocalePath();
   const { data } = useSettings();
   const s = data?.shipping;
   const items = t('faq.items', { returnObjects: true, casa: s?.casablancaFee ?? 20, other: s?.otherFee ?? 35, count: s?.freeAboveItems ?? 5 });
@@ -172,6 +173,21 @@ export function Faq() {
             </AnimatePresence>
           </div>
         ))}
+
+        {/* Not sure what to buy? Send them to the routine builder */}
+        <Reveal className="relative mt-12 overflow-hidden rounded-[2rem] bg-brand-900 p-8 text-white sm:p-10">
+          <div aria-hidden className="pointer-events-none absolute -end-16 -top-16 size-64 rounded-full bg-brand-500/40 blur-3xl" />
+          <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="font-display text-3xl leading-tight">{t('routinePage.faqTitle')}</h2>
+              <p className="mt-2 max-w-md text-white/75">{t('routinePage.faqText')}</p>
+            </div>
+            <Link to={lp('/routine')} className="btn group shrink-0 bg-white px-7 py-3.5 text-brand-900 hover:bg-brand-50">
+              <Sparkles className="size-4" /> {t('nav.routineBuilder')}
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-1 rtl:-scale-x-100 rtl:group-hover:-translate-x-1" />
+            </Link>
+          </div>
+        </Reveal>
       </div>
     </>
   );

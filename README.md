@@ -1,6 +1,6 @@
 # So Pure Skin
 
-> Filter Snap kimshi, walakin skin care kib9a
+> Filter Insta kimshi, walakin skin care kib9a
 
 Boutique e-commerce de cosmétiques coréens (FR / EN / AR), paiement à la livraison.
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, Reorder } from 'motion/react';
-import { MessageCircleHeart, Truck, Megaphone, Image as ImageIcon, Phone, Search, Plus, Trash2, GripVertical, Loader2, Save, Cloud, HardDrive, Send, Copy } from 'lucide-react';
+import { Truck, Megaphone, Image as ImageIcon, Phone, Search, Plus, Trash2, GripVertical, Loader2, Save, Cloud, HardDrive, Send, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, EDITING, Field, I18nInput, ImageUploader, PageTitle, Switch, adminApi, useAdminMutation, useAdminQuery } from '../ui.jsx';
 import { Skeleton } from '../../components/ui/Primitives.jsx';
@@ -10,7 +10,6 @@ const TABS = [
   ['shipping', 'Livraison', Truck],
   ['announcements', 'Barre d’annonces', Megaphone],
   ['hero', 'Bannière d’accueil', ImageIcon],
-  ['testimonials', 'Témoignages', MessageCircleHeart],
   ['contact', 'Contact & réseaux', Phone],
   ['seo', 'SEO', Search],
 ];
@@ -192,19 +191,6 @@ function HeroTab({ value, save }) {
   );
 }
 
-function TestimonialsTab({ value, save }) {
-  const [items, setItems] = useState(value || []);
-  return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted">Captures WhatsApp de vos clientes affichées sur la page d'accueil. Glissez pour réordonner, les 8 premières sont visibles directement.</p>
-      <ImageUploader folder="testimonials" images={items} onChange={setItems} />
-      <div className="flex justify-end">
-        <SaveButton mutation={save} onClick={() => save.mutate(['testimonials', items.map(({ url, thumbUrl, key, source }) => ({ url, thumbUrl, key, source }))])} />
-      </div>
-    </div>
-  );
-}
-
 function ContactTab({ value, save }) {
   const [c, setC] = useState(value);
   const field = (k, label, hint) => (
@@ -326,7 +312,7 @@ export default function Settings() {
   const [mounted, setMounted] = useState(0);
   useEffect(() => setMounted((m) => m + 1), [data]);
 
-  const panels = { shipping: ShippingTab, announcements: AnnouncementsTab, hero: HeroTab, testimonials: TestimonialsTab, contact: ContactTab, seo: SeoTab };
+  const panels = { shipping: ShippingTab, announcements: AnnouncementsTab, hero: HeroTab, contact: ContactTab, seo: SeoTab };
   const Panel = panels[tab];
 
   return (

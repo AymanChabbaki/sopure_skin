@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { query } from '../../db/pool.js';
 import { DEFAULT_SETTINGS, getSettings, saveSetting } from '../../lib/settings.js';
-import { storeImage } from '../../lib/images.js';
+import { removeImage, storeImage } from '../../lib/images.js';
 import { storageDriver } from '../../lib/storage.js';
 import { localizedUrls, submitUrls } from '../../lib/indexnow.js';
 import { HttpError } from '../../lib/utils.js';
@@ -35,7 +35,7 @@ settingsRouter.post('/indexnow', async (_req, res) => {
     query('SELECT slug FROM categories WHERE is_visible'),
     query('SELECT slug FROM brands'),
   ]);
-  const paths = ['/', '/shop', '/brands', '/faq', '/shipping', '/about', '/contact',
+  const paths = ['/', '/shop', '/brands', '/routine', '/faq', '/shipping', '/about', '/contact',
     ...categories.map((c) => `/category/${c.slug}`), ...brands.map((b) => `/brand/${b.slug}`), ...products.map((p) => `/product/${p.slug}`)];
   res.json(await submitUrls(paths.flatMap(localizedUrls)));
 });
@@ -44,7 +44,13 @@ settingsRouter.put('/:key', async (req, res) => {
   const { key } = req.params;
   if (!(key in DEFAULT_SETTINGS)) throw new HttpError(400, `Unknown setting "${key}"`);
   const value = key === 'shipping' ? shippingSchema.parse(req.body) : key === 'returns' ? returnsSchema.parse(req.body) : req.body;
+  // Testimonial screenshots removed from the list are deleted from storage too (no orphan files)
+  const previous = key === 'testimonials' ? (await getSettings()).testimonials || [] : [];
   await saveSetting(key, value);
+  if (key === 'testimonials') {
+    const kept = new Set((value || []).map((t) => t.key).filter(Boolean));
+    await Promise.all(previous.filter((t) => t.key && !kept.has(t.key)).map((t) => removeImage(t.key)));
+  }
   res.json({ ok: true });
 });
 

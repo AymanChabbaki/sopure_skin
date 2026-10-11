@@ -69,7 +69,7 @@ export const DEFAULT_SETTINGS = {
         ar: 'كوّني روتينك الكامل وادفعي عند الاستلام في أي مكان بالمغرب.',
       },
       cta: { fr: 'Composer ma routine', en: 'Build my routine', ar: 'كوّني روتينك' },
-      link: '/shop',
+      link: '/routine',
       image: '/hero/hero-3.webp',
       imageSm: '/hero/hero-3-sm.webp',
       side: 'right',

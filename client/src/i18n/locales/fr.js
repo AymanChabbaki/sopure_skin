@@ -3,6 +3,7 @@ export default {
     tagline: 'Cosmétiques coréens authentiques',
   },
   nav: {
+    routineBuilder: 'Composer ma routine',
     home: 'Accueil',
     shop: 'Boutique',
     categories: 'Catégories',
@@ -300,6 +301,17 @@ export default {
     disclaimer: 'Soso est une IA : ses conseils ne remplacent pas un avis médical.',
     addedToCart: 'Ajouté au panier',
     view: 'Voir',
+  },
+  routinePage: {
+    eyebrow: 'Diagnostic de peau gratuit',
+    title: 'Composer ma routine',
+    subtitle: 'Répondez à 2 questions sur votre peau : nous vous proposons les soins coréens adaptés, étape par étape.',
+    orChoose: 'Ou choisissez directement votre routine',
+    orChooseText: 'Des routines complètes pensées pour chaque type de peau et chaque préoccupation.',
+    general: 'Routines par type de peau',
+    targeted: 'Routines ciblées',
+    faqTitle: 'Vous ne savez pas quels soins choisir ?',
+    faqText: 'Faites le diagnostic : en 2 clics, nous vous proposons une routine adaptée à votre peau.',
   },
   notFound: {
     title: 'Page introuvable',
