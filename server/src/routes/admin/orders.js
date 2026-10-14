@@ -106,7 +106,7 @@ ordersRouter.patch(
             [order.id],
           );
           const next = new Map();
-          for (const r of sized) next.set(r.product_id, adjustSize(next.get(r.product_id) || r.sizes, r.size, -sign * r.quantity));
+          for (const r of sized) next.set(r.product_id, adjustSize(next.get(r.product_id) || r.sizes, r.size, sign * r.quantity));
           for (const [id, sizes] of next) {
             await db.query('UPDATE products SET sizes = $1, stock = $2 WHERE id = $3', [JSON.stringify(sizes), sizesStock(sizes), id]);
           }
