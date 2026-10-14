@@ -248,7 +248,7 @@ function ProductsTable({ products, from, to }) {
                   )}
                 </td>
                 <td className="px-3 py-2.5 font-medium tabular-nums">{p.units || <span className="text-muted">0</span>}</td>
-                <td className="px-3 py-2.5 tabular-nums">{p.revenue ? money(p.revenue) : <span className="text-muted">—</span>}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap tabular-nums">{p.revenue ? money(p.revenue) : <span className="text-muted">—</span>}</td>
                 <td className="px-3 py-2.5 tabular-nums">{p.orders || <span className="text-muted">0</span>}</td>
                 <td className="px-3 py-2.5 tabular-nums text-muted">{p.lifetimeUnits}</td>
                 <td className="px-3 py-2.5">

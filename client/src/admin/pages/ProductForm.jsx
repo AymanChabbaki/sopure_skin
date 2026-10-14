@@ -195,31 +195,33 @@ export default function ProductForm() {
             />
             {form.hasSizes && (
               <div className="space-y-2">
-                <div className="grid grid-cols-[1fr_76px_64px_auto] gap-2 px-1 text-[11px] font-medium text-muted">
-                  <span>Taille</span>
-                  <span>Prix (DH)</span>
-                  <span>Stock</span>
-                  <span className="w-[68px]" />
-                </div>
                 {form.sizes.map((z, i) => (
-                  <div key={i} className={cn('grid grid-cols-[1fr_76px_64px_auto] items-center gap-2', !z.enabled && 'opacity-50')}>
-                    <input value={z.label} onChange={(e) => setSize(i, { label: e.target.value })} placeholder="ex : 50 ml" className="input px-3 py-2" required />
-                    <input type="number" min="0" step="0.01" value={z.price ?? ''} onChange={(e) => setSize(i, { price: e.target.value })} placeholder={String(form.price || '')} className="input px-2 py-2" title="Vide = prix du produit" />
-                    <input type="number" min="0" value={z.stock} onChange={(e) => setSize(i, { stock: e.target.value })} className="input px-2 py-2" />
-                    <div className="flex items-center">
+                  <div key={i} className={cn('space-y-2 rounded-2xl border border-line p-3 transition', !z.enabled && 'bg-zinc-50 opacity-60')}>
+                    <div className="flex items-center gap-2">
+                      <input value={z.label} onChange={(e) => setSize(i, { label: e.target.value })} placeholder="Taille, ex : 50 ml" className="input min-w-0 flex-1 px-3 py-2" required aria-label="Taille" />
                       <button
                         type="button"
                         role="switch"
                         aria-checked={z.enabled}
                         onClick={() => setSize(i, { enabled: !z.enabled })}
                         title={z.enabled ? 'Disponible (cliquer pour masquer)' : 'Masquée (cliquer pour activer)'}
-                        className={cn('relative h-5 w-9 rounded-full transition', z.enabled ? 'bg-brand-500' : 'bg-zinc-300')}
+                        className={cn('relative h-5 w-9 shrink-0 rounded-full transition', z.enabled ? 'bg-brand-500' : 'bg-zinc-300')}
                       >
                         <span className={cn('absolute top-0.5 size-4 rounded-full bg-white shadow transition-all', z.enabled ? 'start-[18px]' : 'start-0.5')} />
                       </button>
-                      <button type="button" onClick={() => set('sizes')(form.sizes.filter((_, j) => j !== i))} className="icon-btn size-8 text-muted hover:text-rose-600" aria-label="Supprimer la taille">
+                      <button type="button" onClick={() => set('sizes')(form.sizes.filter((_, j) => j !== i))} className="icon-btn size-8 shrink-0 text-muted hover:text-rose-600" aria-label="Supprimer la taille">
                         <X className="size-4" />
                       </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="text-[11px] text-muted">
+                        Prix (DH)
+                        <input type="number" min="0" step="0.01" value={z.price ?? ''} onChange={(e) => setSize(i, { price: e.target.value })} placeholder={String(form.price || '')} className="input mt-1 px-3 py-2 text-sm text-ink" />
+                      </label>
+                      <label className="text-[11px] text-muted">
+                        Stock
+                        <input type="number" min="0" value={z.stock} onChange={(e) => setSize(i, { stock: e.target.value })} className="input mt-1 px-3 py-2 text-sm text-ink" />
+                      </label>
                     </div>
                   </div>
                 ))}
