@@ -13,6 +13,15 @@ function StockCell({ product }) {
     optimistic: (qc, stock) =>
       patchCache(qc, ['admin', 'products'], (data) => ({ ...data, rows: data.rows.map((r) => (r.id === product.id ? { ...r, stock } : r)) })),
   });
+  // Sized products: stock is the sum of the sizes, edited in the product form
+  if (product.hasSizes) {
+    return (
+      <span className={cn('inline-flex items-center gap-1.5 text-sm tabular-nums', product.stock === 0 && 'text-rose-700')} title="Stock réglé par taille dans la fiche produit">
+        {product.stock}
+        <span className="rounded-full bg-brand-50 px-1.5 py-0.5 text-[10px] font-medium text-brand-700">tailles</span>
+      </span>
+    );
+  }
   return (
     <input
       type="number"

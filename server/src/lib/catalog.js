@@ -1,5 +1,6 @@
 import { query } from '../db/pool.js';
 import { tr } from './utils.js';
+import { publicSizes } from './sizes.js';
 
 const SORTS = {
   newest: 'p.created_at DESC, p.id DESC',
@@ -12,7 +13,7 @@ const SORTS = {
 
 const PRODUCT_COLUMNS = `
   p.id, p.slug, p.sku, p.name, p.short_description, p.price, p.compare_at_price, p.stock,
-  p.is_active, p.is_featured, p.is_new, p.sales_count, p.created_at, p.rating_avg, p.rating_count,
+  p.is_active, p.is_featured, p.is_new, p.sales_count, p.has_sizes, p.created_at, p.rating_avg, p.rating_count,
   b.id AS brand_id, b.name AS brand_name, b.slug AS brand_slug,
   (SELECT json_agg(json_build_object('url', i.url, 'thumbUrl', i.thumb_url, 'alt', i.alt) ORDER BY i.position)
      FROM (SELECT * FROM product_images WHERE product_id = p.id ORDER BY position LIMIT 2) i) AS images
@@ -28,6 +29,7 @@ export function toCard(row, locale) {
     price: row.price,
     compareAtPrice: row.compare_at_price,
     inStock: row.stock > 0,
+    hasSizes: Boolean(row.has_sizes),
     isNew: row.is_new,
     isFeatured: row.is_featured,
     rating: row.rating_avg,
@@ -124,6 +126,7 @@ export function toDetail(row, locale) {
     howToUse: tr(row.how_to_use, locale),
     ingredients: tr(row.ingredients, locale),
     stock: row.stock,
+    sizes: publicSizes(row),
     metaTitle: tr(row.meta_title, locale),
     metaDescription: tr(row.meta_description, locale),
     categories: row.categories.map((c) => ({ id: c.id, slug: c.slug, kind: c.kind, name: tr(c.name, locale) })),

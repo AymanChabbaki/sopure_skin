@@ -4,6 +4,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   LayoutDashboard,
+  BarChart3,
   ShoppingCart,
   Package,
   FolderTree,
@@ -27,6 +28,7 @@ import { adminApi, LIVE_INTERVAL, money } from './ui.jsx';
 import { cn } from '../lib/format.js';
 
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
+const Statistics = lazy(() => import('./pages/Statistics.jsx'));
 const Orders = lazy(() => import('./pages/Orders.jsx'));
 const OrderDetail = lazy(() => import('./pages/OrderDetail.jsx'));
 const Products = lazy(() => import('./pages/Products.jsx'));
@@ -92,6 +94,7 @@ function Login() {
 
 const NAV = [
   { to: '/admin', label: 'Tableau de bord', icon: LayoutDashboard, end: true },
+  { to: '/admin/statistics', label: 'Statistiques', icon: BarChart3 },
   { to: '/admin/orders', label: 'Commandes', icon: ShoppingCart, badge: 'pending' },
   { to: '/admin/products', label: 'Produits', icon: Package },
   { to: '/admin/categories', label: 'Catégories', icon: FolderTree },
@@ -259,6 +262,7 @@ export default function AdminApp() {
                   <Suspense fallback={<Loading />}>
                     <Routes>
                       <Route index element={<Dashboard />} />
+                      <Route path="statistics" element={<Statistics />} />
                       <Route path="orders" element={<Orders />} />
                       <Route path="orders/:id" element={<OrderDetail />} />
                       <Route path="products" element={<Products />} />

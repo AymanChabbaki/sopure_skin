@@ -139,6 +139,8 @@ export default {
     ingredients: 'Ingrédients',
     quantity: 'Quantité',
     buyNow: 'Commander maintenant',
+    size: 'Taille',
+    chooseSize: 'Choisir la taille',
     related: 'Vous aimerez aussi',
     save: 'Économisez {{amount}} DH',
     deliveryInfo: 'Livraison Casablanca {{casa}} DH · Autres villes {{other}} DH',

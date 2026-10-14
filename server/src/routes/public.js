@@ -6,6 +6,7 @@ import { listProducts, getProductBySlug, toCard, toDetail, relatedProducts } fro
 import { getSettings, computeShipping, isCasablanca } from '../lib/settings.js';
 import { pickLocale, tr, HttpError } from '../lib/utils.js';
 import { validate } from '../middleware/errors.js';
+import { adjustSize, sizesStock } from '../lib/sizes.js';
 
 export const publicRouter = Router();
 
@@ -178,7 +179,7 @@ const orderSchema = z.object({
   notes: z.string().trim().max(500).optional(),
   locale: z.enum(['fr', 'en', 'ar']).default('fr'),
   items: z
-    .array(z.object({ productId: z.number().int().positive(), quantity: z.number().int().min(1).max(50) }))
+    .array(z.object({ productId: z.number().int().positive(), quantity: z.number().int().min(1).max(50), size: z.string().trim().max(40).nullish() }))
     .min(1)
     .max(60),
 });
@@ -191,7 +192,7 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
     const ids = data.items.map((i) => i.productId);
     // Lock rows so concurrent orders cannot oversell
     const { rows: products } = await db.query(
-      `SELECT p.id, p.name, p.price, p.stock, p.is_active,
+      `SELECT p.id, p.name, p.price, p.stock, p.is_active, p.has_sizes, p.sizes,
               (SELECT thumb_url FROM product_images WHERE product_id = p.id ORDER BY position LIMIT 1) AS image
          FROM products p WHERE p.id = ANY($1) FOR UPDATE`,
       [ids],
@@ -201,8 +202,18 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
     const lines = data.items.map((item) => {
       const p = byId.get(item.productId);
       if (!p || !p.is_active) throw new HttpError(400, 'A product in your cart is no longer available', { productId: item.productId });
-      if (p.stock < item.quantity) throw new HttpError(409, 'Insufficient stock', { productId: item.productId, available: p.stock });
-      return { ...item, name: tr(p.name, 'fr'), unitPrice: p.price, image: p.image, lineTotal: p.price * item.quantity };
+      if (!p.has_sizes) {
+        if (p.stock < item.quantity) throw new HttpError(409, 'Insufficient stock', { productId: item.productId, available: p.stock });
+        p.stock -= item.quantity; // the same product can appear on several lines
+        return { ...item, size: null, name: tr(p.name, 'fr'), unitPrice: p.price, image: p.image, lineTotal: p.price * item.quantity };
+      }
+      // Sized product: the size must exist, be enabled and have enough stock; its own price wins
+      const size = p.sizes.find((s) => s.enabled && s.label === item.size);
+      if (!size) throw new HttpError(400, 'Please choose a size', { productId: item.productId });
+      if (size.stock < item.quantity) throw new HttpError(409, 'Insufficient stock', { productId: item.productId, size: size.label, available: size.stock });
+      p.sizes = adjustSize(p.sizes, size.label, -item.quantity);
+      const unitPrice = size.price ?? p.price;
+      return { ...item, size: size.label, name: `${tr(p.name, 'fr')} – ${size.label}`, unitPrice, image: p.image, lineTotal: unitPrice * item.quantity };
     });
 
     const itemsCount = lines.reduce((s, l) => s + l.quantity, 0);
@@ -226,11 +237,15 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
 
     for (const l of lines) {
       await db.query(
-        `INSERT INTO order_items (order_id, product_id, name, image_url, unit_price, quantity, line_total)
-         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-        [created.id, l.productId, l.name, l.image, l.unitPrice, l.quantity, l.lineTotal],
+        `INSERT INTO order_items (order_id, product_id, name, image_url, unit_price, quantity, line_total, size)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [created.id, l.productId, l.name, l.image, l.unitPrice, l.quantity, l.lineTotal, l.size],
       );
-      await db.query('UPDATE products SET stock = stock - $1, sales_count = sales_count + $1 WHERE id = $2', [l.quantity, l.productId]);
+      await db.query('UPDATE products SET stock = GREATEST(stock - $1, 0), sales_count = sales_count + $1 WHERE id = $2', [l.quantity, l.productId]);
+    }
+    // Sized products: write back the per-size stock computed above
+    for (const p of products.filter((x) => x.has_sizes)) {
+      await db.query('UPDATE products SET sizes = $1, stock = $2 WHERE id = $3', [JSON.stringify(p.sizes), sizesStock(p.sizes), p.id]);
     }
     return created;
   });

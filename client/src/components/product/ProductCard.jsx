@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { Heart, ShoppingBag, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +15,7 @@ function ProductCardBase({ product, priority = false }) {
   const { t } = useTranslation();
   const lp = useLocalePath();
   const add = useCart((s) => s.add);
+  const navigate = useNavigate();
   const liked = useWishlist((s) => s.ids.includes(product.id));
   const toggleWish = useWishlist((s) => s.toggle);
   const [first, second] = product.images;
@@ -23,6 +24,8 @@ function ProductCardBase({ product, priority = false }) {
 
   const onAdd = (e) => {
     e.preventDefault();
+    // Products with sizes: the size is chosen on the product page
+    if (product.hasSizes) return navigate(href);
     add(product);
     toast.success(t('common.added'), { description: product.name });
   };
@@ -86,7 +89,7 @@ function ProductCardBase({ product, priority = false }) {
             className="absolute inset-x-3 bottom-3 hidden translate-y-3 items-center justify-center gap-2 rounded-full bg-white/95 py-3 text-sm font-medium text-ink opacity-0 shadow-soft backdrop-blur transition duration-300 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-brand-500 hover:text-white md:flex"
           >
             <ShoppingBag className="size-4" />
-            {t('common.addToCart')}
+            {product.hasSizes ? t('product.chooseSize') : t('common.addToCart')}
           </button>
         )}
       </Link>

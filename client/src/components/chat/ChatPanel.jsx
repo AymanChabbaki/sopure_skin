@@ -13,6 +13,20 @@ import { api } from '../../lib/api.js';
 import { cn, formatPrice } from '../../lib/format.js';
 
 const STORAGE_KEY = 'sps-chat';
+const LANG_KEY = 'sps-chat-lang';
+const CHAT_LANGS = [
+  { code: 'fr', label: 'Français', hint: 'FR' },
+  { code: 'en', label: 'English', hint: 'EN' },
+  { code: 'ar', label: 'العربية', hint: 'ع' },
+];
+
+function loadLang() {
+  try {
+    return sessionStorage.getItem(LANG_KEY);
+  } catch {
+    return null;
+  }
+}
 
 function load() {
   try {
@@ -59,6 +73,7 @@ function RichText({ text }) {
 function ProductStrip({ products, onNavigate }) {
   const { t } = useTranslation();
   const lp = useLocalePath();
+  const navigate = useNavigate();
   const add = useCart((s) => s.add);
   const [added, setAdded] = useState({});
   return (
@@ -79,6 +94,12 @@ function ProductStrip({ products, onNavigate }) {
                 <button
                   type="button"
                   onClick={() => {
+                    // Sized products: open the product page to pick the size
+                    if (p.hasSizes) {
+                      navigate(lp(`/product/${p.slug}`));
+                      onNavigate();
+                      return;
+                    }
                     add(p);
                     useCart.setState({ isOpen: false });
                     setAdded((a) => ({ ...a, [p.id]: true }));
@@ -107,6 +128,9 @@ export default function ChatPanel({ onClose }) {
   const add = useCart((s) => s.add);
   const openCart = useCart((s) => s.open);
   const [messages, setMessages] = useState(load);
+  // The conversation starts by choosing a language; Soso then answers in it whatever the site language
+  const [chatLang, setChatLang] = useState(loadLang);
+  const ct = i18n.getFixedT(chatLang || i18n.language);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const listRef = useRef(null);
@@ -120,7 +144,26 @@ export default function ChatPanel({ onClose }) {
       /* storage unavailable */
     }
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages, busy]);
+  }, [messages, busy, chatLang]);
+
+  const chooseLang = (code) => {
+    setChatLang(code);
+    try {
+      sessionStorage.setItem(LANG_KEY, code);
+    } catch {
+      /* storage unavailable */
+    }
+    if (!isMobile) setTimeout(() => inputRef.current?.focus(), 50);
+  };
+  const reset = () => {
+    setMessages([]);
+    setChatLang(null);
+    try {
+      sessionStorage.removeItem(LANG_KEY);
+    } catch {
+      /* storage unavailable */
+    }
+  };
 
   useEffect(() => {
     if (!isMobile) inputRef.current?.focus();
@@ -132,9 +175,9 @@ export default function ChatPanel({ onClose }) {
   const runActions = (actions = []) => {
     for (const a of actions) {
       if (a.type === 'add_to_cart') {
-        add(a.product, a.quantity);
+        add(a.product, a.quantity, a.size);
         useCart.setState({ isOpen: false });
-        toast.success(t('assistant.addedToCart'), { description: a.product.name });
+        toast.success(ct('assistant.addedToCart'), { description: a.size ? `${a.product.name} · ${a.size.label}` : a.product.name });
       } else if (a.type === 'navigate') {
         navigate(lp(a.path));
         if (isMobile) onClose();
@@ -147,7 +190,7 @@ export default function ChatPanel({ onClose }) {
 
   const send = async (text) => {
     const content = text.trim();
-    if (!content || busy) return;
+    if (!content || busy || !chatLang) return;
     const next = [...messages, { role: 'user', content }];
     setMessages(next);
     setInput('');
@@ -157,6 +200,7 @@ export default function ChatPanel({ onClose }) {
         method: 'POST',
         body: {
           locale: i18n.language,
+          chatLang,
           path: pathname.replace(/^\/(fr|en|ar)/, '') || '/',
           messages: next.map(({ role, content: c }) => ({ role, content: c })).filter((m) => m.content),
         },
@@ -164,14 +208,14 @@ export default function ChatPanel({ onClose }) {
       setMessages((m) => [...m, { role: 'assistant', content: res.reply || '…', products: res.products }]);
       runActions(res.actions);
     } catch {
-      setMessages((m) => [...m, { role: 'assistant', content: t('assistant.error'), error: true }]);
+      setMessages((m) => [...m, { role: 'assistant', content: ct('assistant.error'), error: true }]);
     } finally {
       setBusy(false);
     }
   };
 
   const wa = settings?.contact?.whatsapp;
-  const suggestions = t('assistant.suggestions', { returnObjects: true });
+  const suggestions = ct('assistant.suggestions', { returnObjects: true });
 
   return (
     <motion.div
@@ -198,8 +242,8 @@ export default function ChatPanel({ onClose }) {
               {busy ? t('assistant.thinking') : `${t('assistant.role')} · ${t('assistant.online')}`}
             </p>
           </div>
-          {messages.length > 0 && (
-            <button type="button" onClick={() => setMessages([])} className="grid size-9 place-items-center rounded-full hover:bg-white/15" aria-label={t('assistant.reset')} title={t('assistant.reset')}>
+          {(messages.length > 0 || chatLang) && (
+            <button type="button" onClick={reset} className="grid size-9 place-items-center rounded-full hover:bg-white/15" aria-label={t('assistant.reset')} title={t('assistant.reset')}>
               <RotateCcw className="size-4" />
             </button>
           )}
@@ -211,13 +255,54 @@ export default function ChatPanel({ onClose }) {
 
       {/* Messages */}
       <div ref={listRef} className="flex-1 space-y-4 overflow-y-auto bg-gradient-to-b from-brand-50/60 to-white px-4 py-5" aria-live="polite">
+        {/* Step 1: language choice (asked in the three languages) */}
         <div className="flex items-end gap-2">
           <SosoAvatar size={30} animated={false} className="shrink-0" />
-          <div className="max-w-[85%] rounded-2xl rounded-es-md bg-white px-4 py-3 text-sm leading-relaxed text-ink shadow-sm">{t('assistant.greeting')}</div>
+          <div className="max-w-[85%] space-y-1 rounded-2xl rounded-es-md bg-white px-4 py-3 text-sm leading-relaxed text-ink shadow-sm">
+            <p>Salam ! Choisissez votre langue préférée</p>
+            <p className="text-muted">Choose your preferred language</p>
+            <p className="text-muted" dir="rtl">
+              اختاري اللغة اللي بغيتي
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 ps-9" role="group" aria-label="Language">
+          {CHAT_LANGS.map((l, i) => (
+            <motion.button
+              key={l.code}
+              type="button"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 + i * 0.07 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => chooseLang(l.code)}
+              disabled={Boolean(chatLang)}
+              aria-pressed={chatLang === l.code}
+              className={cn(
+                'flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition',
+                chatLang === l.code
+                  ? 'border-brand-500 bg-brand-500 text-white'
+                  : chatLang
+                    ? 'border-line bg-white text-muted opacity-50'
+                    : 'border-brand-200 bg-white text-brand-800 hover:border-brand-400 hover:bg-brand-50',
+              )}
+            >
+              <span className={cn('grid size-5 place-items-center rounded-full text-[10px] font-semibold', chatLang === l.code ? 'bg-white/20' : 'bg-brand-50 text-brand-700')}>{l.hint}</span>
+              {l.label}
+            </motion.button>
+          ))}
         </div>
 
-        {messages.length === 0 && (
-          <div className="flex flex-wrap gap-2 ps-9">
+        {/* Step 2: greeting and suggestions in the chosen language */}
+        {chatLang && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex items-end gap-2" dir={chatLang === 'ar' ? 'rtl' : 'ltr'}>
+            <SosoAvatar size={30} animated={false} className="shrink-0" />
+            <div className="max-w-[85%] rounded-2xl rounded-es-md bg-white px-4 py-3 text-sm leading-relaxed text-ink shadow-sm">{ct('assistant.greeting')}</div>
+          </motion.div>
+        )}
+
+        {chatLang && messages.length === 0 && (
+          <div className="flex flex-wrap gap-2 ps-9" dir={chatLang === 'ar' ? 'rtl' : 'ltr'}>
             {suggestions.map((s, i) => (
               <motion.button
                 key={s}
@@ -294,14 +379,15 @@ export default function ChatPanel({ onClose }) {
             }}
             rows={1}
             maxLength={1500}
-            placeholder={t('assistant.placeholder')}
+            placeholder={chatLang ? ct('assistant.placeholder') : 'Français · English · العربية'}
+            disabled={!chatLang}
             className="max-h-28 flex-1 resize-none bg-transparent py-2 text-sm outline-none placeholder:text-muted/70"
             dir="auto"
           />
           <motion.button
             whileTap={{ scale: 0.9 }}
             type="submit"
-            disabled={!input.trim() || busy}
+            disabled={!input.trim() || busy || !chatLang}
             className="grid size-10 shrink-0 place-items-center rounded-full bg-brand-500 text-white transition hover:bg-brand-600 disabled:bg-zinc-200 disabled:text-zinc-400"
             aria-label={t('assistant.send')}
           >

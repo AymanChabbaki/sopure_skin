@@ -144,11 +144,15 @@ export default function Product() {
   const add = useCart((s) => s.add);
   const close = useCart((s) => s.close);
   const [qty, setQty] = useState(1);
+  const [sizeLabel, setSizeLabel] = useState(null);
   const product = data?.product;
   const liked = useWishlist((s) => (product ? s.ids.includes(product.id) : false));
   const toggleWish = useWishlist((s) => s.toggle);
 
-  useEffect(() => setQty(1), [slug]);
+  useEffect(() => {
+    setQty(1);
+    setSizeLabel(null);
+  }, [slug]);
 
   if (isLoading) {
     return (
@@ -178,16 +182,23 @@ export default function Product() {
     );
   }
 
-  const discount = discountPercent(product.price, product.compareAtPrice);
+  // Sizes: first available one is pre-selected; price and stock follow the selected size
+  const sizes = product.sizes || [];
+  const size = sizes.length ? sizes.find((z) => z.label === sizeLabel) || sizes.find((z) => z.inStock) || sizes[0] : null;
+  const price = size ? size.price : product.price;
+  const compareAt = size ? size.compareAtPrice : product.compareAtPrice;
+  const inStock = size ? size.inStock : product.inStock;
+  const maxQty = Math.max(1, Math.min(size ? size.stock : product.stock, 50));
+  const discount = discountPercent(price, compareAt);
   const s = settings?.shipping;
   const typeCategory = product.categories.find((c) => c.kind === 'type');
 
   const addToCart = () => {
-    add(product, qty);
-    toast.success(t('common.added'), { description: product.name });
+    add(product, Math.min(qty, maxQty), size);
+    toast.success(t('common.added'), { description: size ? `${product.name} · ${size.label}` : product.name });
   };
   const buyNow = () => {
-    add(product, qty);
+    add(product, Math.min(qty, maxQty), size);
     close();
     navigate(lp('/checkout'));
   };
@@ -249,25 +260,55 @@ export default function Product() {
             )}
 
             <div className="mt-5 flex flex-wrap items-center gap-3">
-              <Price price={product.price} compareAt={product.compareAtPrice} size="lg" />
+              <Price price={price} compareAt={compareAt} size="lg" />
               {discount > 0 && (
                 <span className="rounded-full bg-brand-500 px-3 py-1 text-xs font-semibold text-white">
-                  {t('product.save', { amount: product.compareAtPrice - product.price })}
+                  {t('product.save', { amount: compareAt - price })}
                 </span>
               )}
             </div>
 
-            <p className={cn('mt-3 flex items-center gap-2 text-sm', product.inStock ? 'text-emerald-700' : 'text-red-600')}>
-              <span className={cn('size-2 rounded-full', product.inStock ? 'animate-pulse bg-emerald-500' : 'bg-red-500')} />
-              {!product.inStock ? t('common.outOfStock') : product.stock <= 5 ? t('common.lowStock', { count: product.stock }) : t('common.inStock')}
+            <p className={cn('mt-3 flex items-center gap-2 text-sm', inStock ? 'text-emerald-700' : 'text-red-600')}>
+              <span className={cn('size-2 rounded-full', inStock ? 'animate-pulse bg-emerald-500' : 'bg-red-500')} />
+              {inStock ? t('common.inStock') : t('common.outOfStock')}
             </p>
 
             {product.shortDescription && <p className="mt-6 leading-relaxed text-ink/75">{product.shortDescription}</p>}
 
-            {product.inStock && (
+            {sizes.length > 0 && (
+              <fieldset className="mt-7">
+                <legend className="mb-3 text-sm font-medium">
+                  {t('product.size')} : <span className="text-brand-700">{size?.label}</span>
+                </legend>
+                <div className="flex flex-wrap gap-2">
+                  {sizes.map((z) => (
+                    <button
+                      key={z.label}
+                      type="button"
+                      disabled={!z.inStock}
+                      onClick={() => {
+                        setSizeLabel(z.label);
+                        setQty(1);
+                      }}
+                      aria-pressed={z.label === size?.label}
+                      className={cn(
+                        'relative min-w-16 rounded-2xl border px-4 py-2.5 text-sm transition',
+                        z.label === size?.label ? 'border-brand-500 bg-brand-50 font-medium text-brand-800 ring-1 ring-brand-500' : 'border-line hover:border-brand-300',
+                        !z.inStock && 'cursor-not-allowed text-muted line-through opacity-50',
+                      )}
+                    >
+                      {z.label}
+                      {z.price !== product.price && <span className="block text-[11px] text-muted no-underline">{formatPrice(z.price)}</span>}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            )}
+
+            {inStock && (
               <div className="mt-8 space-y-3">
                 <div className="flex gap-3">
-                  <QuantityInput value={qty} onChange={setQty} max={Math.min(product.stock, 50)} />
+                  <QuantityInput value={Math.min(qty, maxQty)} onChange={setQty} max={maxQty} />
                   <motion.button whileTap={{ scale: 0.97 }} type="button" onClick={addToCart} className="btn-primary flex-1 py-4">
                     <ShoppingBag className="size-4" /> {t('common.addToCart')}
                   </motion.button>
@@ -283,7 +324,7 @@ export default function Product() {
                   </motion.button>
                 </div>
                 <motion.button whileTap={{ scale: 0.98 }} type="button" onClick={buyNow} className="btn-dark w-full py-4">
-                  <Zap className="size-4" /> {t('product.buyNow')} · {formatPrice(product.price * qty)}
+                  <Zap className="size-4" /> {t('product.buyNow')} · {formatPrice(price * Math.min(qty, maxQty))}
                 </motion.button>
               </div>
             )}
@@ -321,11 +362,11 @@ export default function Product() {
       </div>
 
       {/* Sticky mobile purchase bar */}
-      {product.inStock && (
+      {inStock && (
         <div className="fixed inset-x-0 bottom-[calc(56px+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 border-t border-line bg-white/95 px-4 py-3 backdrop-blur-xl md:hidden">
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs text-muted">{product.name}</p>
-            <Price price={product.price} compareAt={product.compareAtPrice} size="sm" />
+            <p className="truncate text-xs text-muted">{size ? `${product.name} · ${size.label}` : product.name}</p>
+            <Price price={price} compareAt={compareAt} size="sm" />
           </div>
           <button type="button" onClick={addToCart} className="btn-primary px-5 py-3">
             <ShoppingBag className="size-4" /> {t('common.addToCart')}

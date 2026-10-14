@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { ArrowLeft, Loader2, Save, Trash2, ExternalLink, Search as SearchIcon } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Trash2, ExternalLink, Search as SearchIcon, Plus, Ruler, CalendarClock, X } from 'lucide-react';
 import { Card, ConfirmDialog, EDITING, Field, I18nInput, ImageUploader, Switch, adminApi, useAdminMutation, useAdminQuery } from '../ui.jsx';
 import { Skeleton } from '../../components/ui/Primitives.jsx';
 import { cn } from '../../lib/format.js';
@@ -22,6 +22,9 @@ const EMPTY = {
   isActive: true,
   isFeatured: false,
   isNew: true,
+  hasSizes: false,
+  sizes: [],
+  expiresAt: '',
   categoryIds: [],
   images: [],
 };
@@ -59,9 +62,17 @@ export default function ProductForm() {
       price: Number(form.price) || 0,
       compareAtPrice: form.compareAtPrice === '' ? null : Number(form.compareAtPrice),
       stock: Number(form.stock) || 0,
+      sizes: form.sizes
+        .filter((z) => z.label.trim())
+        .map((z) => ({ label: z.label.trim(), price: z.price === '' || z.price === null ? null : Number(z.price), stock: Number(z.stock) || 0, enabled: z.enabled })),
+      expiresAt: form.expiresAt || null,
       images: form.images.map(({ url, thumbUrl, key, alt }) => ({ url, thumbUrl, key, alt })),
     });
   };
+
+  const setSize = (i, patch) => set('sizes')(form.sizes.map((z, j) => (j === i ? { ...z, ...patch } : z)));
+  const sizesTotal = form.sizes.filter((z) => z.enabled).reduce((sum, z) => sum + (Number(z.stock) || 0), 0);
+  const daysLeft = form.expiresAt ? Math.ceil((new Date(form.expiresAt) - new Date(new Date().toDateString())) / 86400000) : null;
 
   if (!isNew && isLoading) return <Skeleton className="h-[600px] rounded-3xl" />;
 
@@ -153,13 +164,90 @@ export default function ProductForm() {
             </div>
             {discount > 0 && <p className="rounded-xl bg-brand-50 px-3 py-2 text-xs text-brand-800">Réduction affichée : -{discount}%</p>}
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Stock">
-                <input type="number" min="0" value={form.stock} onChange={(e) => set('stock')(e.target.value)} className="input" />
+              <Field label="Stock" hint={form.hasSizes ? 'Somme des tailles' : undefined}>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.hasSizes ? sizesTotal : form.stock}
+                  onChange={(e) => set('stock')(e.target.value)}
+                  disabled={form.hasSizes}
+                  className="input disabled:bg-zinc-50 disabled:text-muted"
+                />
               </Field>
               <Field label="SKU">
                 <input value={form.sku} onChange={(e) => set('sku')(e.target.value)} className="input" />
               </Field>
             </div>
+          </Card>
+
+          <Card className="space-y-4 p-5 sm:p-6">
+            <h2 className="flex items-center gap-2 font-semibold">
+              <Ruler className="size-4 text-muted" /> Tailles
+            </h2>
+            <Switch
+              checked={form.hasSizes}
+              onChange={(on) => {
+                set('hasSizes')(on);
+                if (on && !form.sizes.length) set('sizes')([{ label: '', price: '', stock: Number(form.stock) || 0, enabled: true }]);
+              }}
+              label="Ce produit a plusieurs tailles"
+              description="La cliente choisit la taille avant d'ajouter au panier"
+            />
+            {form.hasSizes && (
+              <div className="space-y-2">
+                <div className="grid grid-cols-[1fr_76px_64px_auto] gap-2 px-1 text-[11px] font-medium text-muted">
+                  <span>Taille</span>
+                  <span>Prix (DH)</span>
+                  <span>Stock</span>
+                  <span className="w-[68px]" />
+                </div>
+                {form.sizes.map((z, i) => (
+                  <div key={i} className={cn('grid grid-cols-[1fr_76px_64px_auto] items-center gap-2', !z.enabled && 'opacity-50')}>
+                    <input value={z.label} onChange={(e) => setSize(i, { label: e.target.value })} placeholder="ex : 50 ml" className="input px-3 py-2" required />
+                    <input type="number" min="0" step="0.01" value={z.price ?? ''} onChange={(e) => setSize(i, { price: e.target.value })} placeholder={String(form.price || '')} className="input px-2 py-2" title="Vide = prix du produit" />
+                    <input type="number" min="0" value={z.stock} onChange={(e) => setSize(i, { stock: e.target.value })} className="input px-2 py-2" />
+                    <div className="flex items-center">
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={z.enabled}
+                        onClick={() => setSize(i, { enabled: !z.enabled })}
+                        title={z.enabled ? 'Disponible (cliquer pour masquer)' : 'Masquée (cliquer pour activer)'}
+                        className={cn('relative h-5 w-9 rounded-full transition', z.enabled ? 'bg-brand-500' : 'bg-zinc-300')}
+                      >
+                        <span className={cn('absolute top-0.5 size-4 rounded-full bg-white shadow transition-all', z.enabled ? 'start-[18px]' : 'start-0.5')} />
+                      </button>
+                      <button type="button" onClick={() => set('sizes')(form.sizes.filter((_, j) => j !== i))} className="icon-btn size-8 text-muted hover:text-rose-600" aria-label="Supprimer la taille">
+                        <X className="size-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <button type="button" onClick={() => set('sizes')([...form.sizes, { label: '', price: '', stock: 0, enabled: true }])} className="btn-outline w-full py-2 text-sm">
+                  <Plus className="size-4" /> Ajouter une taille
+                </button>
+                <p className="text-xs text-muted">Prix vide = prix du produit. Une taille désactivée est masquée sur le site ; à 0 en stock elle s'affiche barrée.</p>
+              </div>
+            )}
+          </Card>
+
+          <Card className="space-y-4 p-5 sm:p-6">
+            <h2 className="flex items-center gap-2 font-semibold">
+              <CalendarClock className="size-4 text-muted" /> Date d'expiration
+            </h2>
+            <Field label="Expire le" hint="Lot actuellement en stock. Suivi dans Statistiques.">
+              <input type="date" value={form.expiresAt || ''} onChange={(e) => set('expiresAt')(e.target.value)} className="input" />
+            </Field>
+            {daysLeft !== null && (
+              <p
+                className={cn(
+                  'rounded-xl px-3 py-2 text-xs',
+                  daysLeft < 0 ? 'bg-rose-50 text-rose-700' : daysLeft <= 90 ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-800',
+                )}
+              >
+                {daysLeft < 0 ? `Expiré depuis ${-daysLeft} jour(s)` : daysLeft === 0 ? "Expire aujourd'hui" : `Expire dans ${daysLeft} jour(s)`}
+              </p>
+            )}
           </Card>
 
           <Card className="space-y-4 p-5 sm:p-6">

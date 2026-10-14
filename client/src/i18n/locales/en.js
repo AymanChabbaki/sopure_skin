@@ -139,6 +139,8 @@ export default {
     ingredients: 'Ingredients',
     quantity: 'Quantity',
     buyNow: 'Order now',
+    size: 'Size',
+    chooseSize: 'Choose size',
     related: 'You may also like',
     save: 'Save {{amount}} MAD',
     deliveryInfo: 'Delivery Casablanca {{casa}} MAD · Other cities {{other}} MAD',

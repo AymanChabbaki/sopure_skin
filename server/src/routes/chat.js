@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { query } from '../db/pool.js';
 import { listProducts, getProductBySlug, toCard } from '../lib/catalog.js';
+import { publicSizes } from '../lib/sizes.js';
 import { getSettings } from '../lib/settings.js';
 import { HttpError, stripHtml, tr, truncate } from '../lib/utils.js';
 import { validate } from '../middleware/errors.js';
@@ -54,8 +55,12 @@ const TOOLS = [
   },
   {
     name: 'add_to_cart',
-    description: 'Add a product to the cart. Only when the customer explicitly asks to add/buy it.',
-    parameters: { type: 'object', properties: { product_id: { type: 'integer' }, quantity: { type: 'integer', minimum: 1, maximum: 10 } }, required: ['product_id'] },
+    description: 'Add a product to the cart. Only when the customer explicitly asks to add/buy it. Products with sizes need the size she chose (ask her if unknown).',
+    parameters: {
+      type: 'object',
+      properties: { product_id: { type: 'integer' }, quantity: { type: 'integer', minimum: 1, maximum: 10 }, size: { type: 'string', description: 'Size label, e.g. "50 ml" (only for products with sizes)' } },
+      required: ['product_id'],
+    },
   },
   { name: 'open_cart', description: 'Open the cart drawer.', parameters: { type: 'object', properties: {} } },
   {
@@ -76,6 +81,7 @@ const compact = (row, locale) => {
     old_price_mad: card.compareAtPrice || undefined,
     rating: card.ratingCount ? `${card.rating}/5 (${card.ratingCount})` : undefined,
     in_stock: card.inStock,
+    has_sizes: card.hasSizes || undefined,
     summary: truncate(stripHtml(card.shortDescription || ''), 90),
   };
 };
@@ -112,6 +118,7 @@ async function runTool(name, args, ctx) {
         ingredients: truncate(stripHtml(tr(p.ingredients, ctx.locale)), 400) || undefined,
         categories: p.categories.map((c) => tr(c.name, ctx.locale)),
         stock: p.stock,
+        sizes: p.has_sizes ? publicSizes(p).map((z) => ({ size: z.label, price_mad: z.price, in_stock: z.inStock })) : undefined,
       };
     }
     case 'show_products': {
@@ -132,8 +139,16 @@ async function runTool(name, args, ctx) {
       const { rows } = await listProducts({ ids: [Number(args.product_id)], limit: 1 });
       if (!rows[0]) return { error: 'Product not found' };
       if (rows[0].stock <= 0) return { error: 'Out of stock' };
-      ctx.actions.push({ type: 'add_to_cart', product: toCard(rows[0], ctx.locale), quantity: Math.min(Number(args.quantity) || 1, 10) });
-      return { ok: true, added: rows[0].id };
+      const product = toCard(rows[0], ctx.locale);
+      let size;
+      if (rows[0].has_sizes) {
+        const sizes = publicSizes(await getProductBySlug(String(rows[0].id)));
+        size = sizes.find((z) => z.label.toLowerCase() === String(args.size || '').trim().toLowerCase());
+        if (!size) return { error: 'Size required: ask the customer which size she wants', sizes: sizes.map((z) => ({ size: z.label, price_mad: z.price, in_stock: z.inStock })) };
+        if (!size.inStock) return { error: `Size ${size.label} is out of stock` };
+      }
+      ctx.actions.push({ type: 'add_to_cart', product, size: size ? { label: size.label, price: size.price } : undefined, quantity: Math.min(Number(args.quantity) || 1, 10) });
+      return { ok: true, added: rows[0].id, size: size?.label };
     }
     case 'open_cart':
       ctx.actions.push({ type: 'open_cart' });
@@ -272,8 +287,16 @@ const chatSchema = z.object({
     .min(1)
     .max(30),
   locale: z.enum(['fr', 'en', 'ar']).default('fr'),
+  // Language the customer picked at the start of the chat
+  chatLang: z.enum(['fr', 'en', 'ar']).optional(),
   path: z.string().max(200).optional(),
 });
+
+const CHOSEN_LANG = {
+  fr: 'French',
+  en: 'English',
+  ar: 'Arabic script. If she writes Moroccan darija, answer in darija written in Arabic script; otherwise simple, warm Modern Standard Arabic',
+};
 
 chatRouter.post(
   '/',
@@ -281,11 +304,17 @@ chatRouter.post(
   validate(chatSchema),
   async (req, res) => {
     if (!process.env.GROQ_API_KEY) throw new HttpError(503, 'Assistant not configured');
-    const { messages, locale, path } = req.valid;
-    const ctx = { locale, actions: [], products: [], seen: new Map() };
+    const { messages, locale, chatLang, path } = req.valid;
+    // Product names on the cards follow the chat language
+    const ctx = { locale: chatLang || locale, actions: [], products: [], seen: new Map() };
     const convo = [
       { role: 'system', content: await systemPrompt() },
-      { role: 'system', content: `Interface language: ${LANG_NAMES[locale]}. Customer is on page: ${path || '/'}.` },
+      {
+        role: 'system',
+        content: chatLang
+          ? `The customer chose to chat in ${LANG_NAMES[chatLang]}. This overrides the LANGUAGE rule: ALWAYS answer in ${CHOSEN_LANG[chatLang]}, even if she writes in another language. Customer is on page: ${path || '/'}.`
+          : `Interface language: ${LANG_NAMES[locale]}. Customer is on page: ${path || '/'}.`,
+      },
       ...messages.slice(-12),
     ];
 

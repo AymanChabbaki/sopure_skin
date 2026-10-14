@@ -8,6 +8,7 @@ import { productsRouter } from './products.js';
 import { categoriesRouter, brandsRouter } from './taxonomy.js';
 import { ordersRouter } from './orders.js';
 import { reviewsRouter } from './reviews.js';
+import { statsRouter } from './stats.js';
 import { settingsRouter, uploadsRouter, teamRouter, subscribersRouter } from './system.js';
 
 export const adminRouter = Router();
@@ -53,6 +54,7 @@ adminRouter.use((req, res, next) => {
   next();
 });
 adminRouter.use('/dashboard', dashboardRouter);
+adminRouter.use('/stats', statsRouter);
 adminRouter.use('/products', productsRouter);
 adminRouter.use('/categories', categoriesRouter);
 adminRouter.use('/brands', brandsRouter);

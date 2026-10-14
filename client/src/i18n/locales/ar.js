@@ -147,6 +147,8 @@ export default {
     ingredients: 'المكونات',
     quantity: 'الكمية',
     buyNow: 'اطلبي الآن',
+    size: 'الحجم',
+    chooseSize: 'اختاري الحجم',
     related: 'قد يعجبك أيضاً',
     save: 'وفري {{amount}} درهم',
     deliveryInfo: 'التوصيل: الدار البيضاء {{casa}} درهم · باقي المدن {{other}} درهم',

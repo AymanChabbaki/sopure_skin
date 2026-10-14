@@ -5,6 +5,7 @@ import { listProducts, getProductBySlug } from '../../lib/catalog.js';
 import { removeImage } from '../../lib/images.js';
 import { HttpError, slugify } from '../../lib/utils.js';
 import { validate } from '../../middleware/errors.js';
+import { normalizeSizes, sizesStock } from '../../lib/sizes.js';
 
 export const productsRouter = Router();
 
@@ -27,6 +28,12 @@ const productSchema = z.object({
   isActive: z.boolean().default(true),
   isFeatured: z.boolean().default(false),
   isNew: z.boolean().default(false),
+  hasSizes: z.boolean().default(false),
+  sizes: z
+    .array(z.object({ label: z.string().max(40), price: z.number().min(0).nullish(), stock: z.number().int().min(0), enabled: z.boolean().default(true) }))
+    .max(20)
+    .default([]),
+  expiresAt: z.union([z.iso.date(), z.literal(''), z.null()]).optional(),
   categoryIds: z.array(z.number().int().positive()).default([]),
   images: z
     .array(z.object({ url: z.string(), thumbUrl: z.string(), key: z.string().nullish(), alt: z.string().nullish() }))
@@ -51,6 +58,7 @@ productsRouter.get('/', async (req, res) => {
       isFeatured: r.is_featured,
       isNew: r.is_new,
       salesCount: r.sales_count,
+      hasSizes: r.has_sizes,
       image: r.images?.[0]?.thumbUrl,
     })),
   });
@@ -77,6 +85,9 @@ productsRouter.get('/:id', async (req, res) => {
     isActive: row.is_active,
     isFeatured: row.is_featured,
     isNew: row.is_new,
+    hasSizes: row.has_sizes,
+    sizes: row.sizes || [],
+    expiresAt: row.expires_at ? toDateString(row.expires_at) : '',
     categoryIds: row.categories.map((c) => c.id),
     images: row.images,
   });
@@ -112,10 +123,20 @@ async function saveRelations(db, productId, data) {
   return previous.map((p) => p.storage_key).filter((k) => k && !kept.has(k));
 }
 
-const productValues = (d) => [
-  d.sku || null, d.brandId || null, d.name, d.shortDescription, d.description, d.howToUse, d.ingredients,
-  d.metaTitle, d.metaDescription, d.price, d.compareAtPrice || null, d.stock, d.isActive, d.isFeatured, d.isNew,
-];
+// DATE columns come back as local-midnight Date objects: format without a UTC shift
+const toDateString = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+const productValues = (d) => {
+  const sizes = normalizeSizes(d.sizes);
+  const hasSizes = d.hasSizes && sizes.length > 0;
+  // With sizes on, the product stock is the sum of the sizes that can be bought
+  const stock = hasSizes ? sizesStock(sizes) : d.stock;
+  return [
+    d.sku || null, d.brandId || null, d.name, d.shortDescription, d.description, d.howToUse, d.ingredients,
+    d.metaTitle, d.metaDescription, d.price, d.compareAtPrice || null, stock, d.isActive, d.isFeatured, d.isNew,
+    hasSizes, JSON.stringify(sizes), d.expiresAt || null,
+  ];
+};
 
 productsRouter.post('/', validate(productSchema), async (req, res) => {
   const d = req.valid;
@@ -123,8 +144,9 @@ productsRouter.post('/', validate(productSchema), async (req, res) => {
     const slug = await uniqueSlug(db, d.slug || d.name.fr);
     const { rows: [row] } = await db.query(
       `INSERT INTO products (sku, brand_id, name, short_description, description, how_to_use, ingredients,
-                             meta_title, meta_description, price, compare_at_price, stock, is_active, is_featured, is_new, slug)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING id`,
+                             meta_title, meta_description, price, compare_at_price, stock, is_active, is_featured, is_new,
+                             has_sizes, sizes, expires_at, slug)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING id`,
       [...productValues(d), slug],
     );
     await saveRelations(db, row.id, d);
@@ -141,8 +163,8 @@ productsRouter.put('/:id', validate(productSchema), async (req, res) => {
     const { rowCount } = await db.query(
       `UPDATE products SET sku=$1, brand_id=$2, name=$3, short_description=$4, description=$5, how_to_use=$6,
               ingredients=$7, meta_title=$8, meta_description=$9, price=$10, compare_at_price=$11, stock=$12,
-              is_active=$13, is_featured=$14, is_new=$15, slug=$16, updated_at=now()
-        WHERE id=$17`,
+              is_active=$13, is_featured=$14, is_new=$15, has_sizes=$16, sizes=$17, expires_at=$18, slug=$19, updated_at=now()
+        WHERE id=$20`,
       [...productValues(d), slug, id],
     );
     if (!rowCount) throw new HttpError(404, 'Product not found');
@@ -180,7 +202,9 @@ productsRouter.patch(
 );
 
 productsRouter.patch('/:id/stock', validate(z.object({ stock: z.number().int().min(0) })), async (req, res) => {
-  await query('UPDATE products SET stock = $1, updated_at = now() WHERE id = $2', [req.valid.stock, req.params.id]);
+  // Sized products get their stock from the sizes, edited in the product form
+  const { rowCount } = await query('UPDATE products SET stock = $1, updated_at = now() WHERE id = $2 AND NOT has_sizes', [req.valid.stock, req.params.id]);
+  if (!rowCount) throw new HttpError(400, 'Le stock de ce produit se règle par taille');
   res.json({ ok: true });
 });
 

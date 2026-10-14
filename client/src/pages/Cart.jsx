@@ -40,7 +40,7 @@ export default function Cart() {
               <ul className="mt-2 divide-y divide-line">
                 <AnimatePresence initial={false}>
                   {items.map((item) => (
-                    <CartLine key={item.id} item={item} />
+                    <CartLine key={item.key} item={item} />
                   ))}
                 </AnimatePresence>
               </ul>

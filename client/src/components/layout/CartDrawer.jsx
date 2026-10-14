@@ -58,12 +58,13 @@ export function CartLine({ item, compact = false }) {
         <Link to={lp(`/product/${item.slug}`)} onClick={close} className="line-clamp-2 text-sm text-ink hover:text-brand-700">
           {item.name}
         </Link>
+        {item.size && <p className="mt-1 w-fit rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-medium text-brand-700">{t('product.size')} : {item.size}</p>}
         <div className="mt-auto flex items-center justify-between gap-2 pt-2">
-          <QuantityInput size="sm" value={item.quantity} onChange={(q) => setQuantity(item.id, q)} />
+          <QuantityInput size="sm" value={item.quantity} onChange={(q) => setQuantity(item.key, q)} />
           <div className="flex items-center gap-1">
             <span className="text-sm font-semibold">{formatPrice(item.price * item.quantity)}</span>
             {!compact && (
-              <button type="button" onClick={() => remove(item.id)} className="icon-btn size-8 text-muted" aria-label={t('cart.remove')}>
+              <button type="button" onClick={() => remove(item.key)} className="icon-btn size-8 text-muted" aria-label={t('cart.remove')}>
                 <Trash2 className="size-4" />
               </button>
             )}
@@ -128,7 +129,7 @@ export function CartDrawer() {
           <ul className="divide-y divide-line">
             <AnimatePresence initial={false}>
               {items.map((item) => (
-                <CartLine key={item.id} item={item} />
+                <CartLine key={item.key} item={item} />
               ))}
             </AnimatePresence>
           </ul>

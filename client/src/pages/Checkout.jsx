@@ -94,7 +94,7 @@ export default function Checkout() {
           address: values.address,
           notes: values.notes,
           locale: i18n.language,
-          items: items.map((i) => ({ productId: i.id, quantity: i.quantity })),
+          items: items.map((i) => ({ productId: i.id, quantity: i.quantity, size: i.size || undefined })),
         },
       }),
     onSuccess: (result) => {
@@ -191,12 +191,15 @@ export default function Checkout() {
               <h2 className="font-display text-2xl">{t('checkout.summary')}</h2>
               <ul className="mt-5 max-h-72 space-y-4 overflow-y-auto pe-1">
                 {items.map((item) => (
-                  <li key={item.id} className="flex items-center gap-3">
+                  <li key={item.key} className="flex items-center gap-3">
                     <span className="relative size-16 shrink-0 rounded-xl bg-sand">
                       {item.image && <img src={item.image} alt="" className="size-full rounded-xl object-contain p-1 mix-blend-multiply" />}
                       <span className="absolute -end-2 -top-2 grid size-5 place-items-center rounded-full bg-ink text-[10px] text-white">{item.quantity}</span>
                     </span>
-                    <span className="line-clamp-2 flex-1 text-sm">{item.name}</span>
+                    <span className="flex-1 text-sm">
+                      <span className="line-clamp-2">{item.name}</span>
+                      {item.size && <span className="text-xs text-muted">{item.size}</span>}
+                    </span>
                     <span className="text-sm font-medium">{formatPrice(item.price * item.quantity)}</span>
                   </li>
                 ))}

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { query, withTransaction } from '../../db/pool.js';
 import { HttpError } from '../../lib/utils.js';
 import { validate } from '../../middleware/errors.js';
+import { adjustSize, sizesStock } from '../../lib/sizes.js';
 
 export const ordersRouter = Router();
 
@@ -97,6 +98,18 @@ ordersRouter.patch(
                FROM order_items oi WHERE oi.order_id = $2 AND oi.product_id = p.id`,
             [sign, order.id],
           );
+          // Per-size stock follows the same movement
+          const { rows: sized } = await db.query(
+            `SELECT oi.product_id, oi.size, oi.quantity, p.sizes FROM order_items oi
+               JOIN products p ON p.id = oi.product_id
+              WHERE oi.order_id = $1 AND oi.size IS NOT NULL AND p.has_sizes FOR UPDATE OF p`,
+            [order.id],
+          );
+          const next = new Map();
+          for (const r of sized) next.set(r.product_id, adjustSize(next.get(r.product_id) || r.sizes, r.size, -sign * r.quantity));
+          for (const [id, sizes] of next) {
+            await db.query('UPDATE products SET sizes = $1, stock = $2 WHERE id = $3', [JSON.stringify(sizes), sizesStock(sizes), id]);
+          }
         }
       }
       await db.query(
