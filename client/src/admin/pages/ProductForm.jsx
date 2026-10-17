@@ -23,6 +23,7 @@ const EMPTY = {
   isFeatured: false,
   isNew: true,
   hasSizes: false,
+  inGoogleFeed: true,
   sizes: [],
   expiresAt: '',
   categoryIds: [],
@@ -150,6 +151,12 @@ export default function ProductForm() {
             <Switch checked={form.isActive} onChange={set('isActive')} label="En ligne" description="Visible sur la boutique" />
             <Switch checked={form.isFeatured} onChange={set('isFeatured')} label="Mis en avant" description="Affiché dans la page d'accueil" />
             <Switch checked={form.isNew} onChange={set('isNew')} label="Nouveauté" description="Badge « Nouveau »" />
+            <Switch
+              checked={form.inGoogleFeed}
+              onChange={set('inGoogleFeed')}
+              label="Google Shopping"
+              description="Envoyé à Google Merchant Center. Désactivez pour un médicament sur ordonnance."
+            />
           </Card>
 
           <Card className="space-y-4 p-5 sm:p-6">

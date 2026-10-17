@@ -669,7 +669,7 @@ seoRouter.get('/feeds/google-merchant.xml', async (_req, res) => {
             (SELECT c.name->>'fr' FROM product_categories pc JOIN categories c ON c.id = pc.category_id
               WHERE pc.product_id = p.id AND c.kind = 'type' LIMIT 1) AS type
        FROM products p LEFT JOIN brands b ON b.id = p.brand_id
-      WHERE p.is_active AND EXISTS (SELECT 1 FROM product_images WHERE product_id = p.id)
+      WHERE p.is_active AND p.in_google_feed AND EXISTS (SELECT 1 FROM product_images WHERE product_id = p.id)
       ORDER BY p.id`,
   );
   const s = settings.shipping;
@@ -679,7 +679,7 @@ seoRouter.get('/feeds/google-merchant.xml', async (_req, res) => {
     return [
       '<item>',
       `<g:id>${p.id}</g:id>`,
-      `<g:title>${esc(truncate(p.name, 150))}</g:title>`,
+      `<g:title>${esc(truncate(p.name.replace(/\s+/g, ' ').trim(), 150))}</g:title>`,
       `<g:description>${esc(truncate(stripHtml(p.description || p.short || p.name), 4900))}</g:description>`,
       `<g:link>${SITE}/fr/product/${p.slug}</g:link>`,
       `<g:image_link>${esc(main)}</g:image_link>`,

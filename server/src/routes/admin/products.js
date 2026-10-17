@@ -29,6 +29,7 @@ const productSchema = z.object({
   isFeatured: z.boolean().default(false),
   isNew: z.boolean().default(false),
   hasSizes: z.boolean().default(false),
+  inGoogleFeed: z.boolean().default(true),
   sizes: z
     .array(z.object({ label: z.string().max(40), price: z.number().min(0).nullish(), stock: z.number().int().min(0), enabled: z.boolean().default(true) }))
     .max(20)
@@ -86,6 +87,7 @@ productsRouter.get('/:id', async (req, res) => {
     isFeatured: row.is_featured,
     isNew: row.is_new,
     hasSizes: row.has_sizes,
+    inGoogleFeed: row.in_google_feed,
     sizes: row.sizes || [],
     expiresAt: row.expires_at ? toDateString(row.expires_at) : '',
     categoryIds: row.categories.map((c) => c.id),
@@ -134,7 +136,7 @@ const productValues = (d) => {
   return [
     d.sku || null, d.brandId || null, d.name, d.shortDescription, d.description, d.howToUse, d.ingredients,
     d.metaTitle, d.metaDescription, d.price, d.compareAtPrice || null, stock, d.isActive, d.isFeatured, d.isNew,
-    hasSizes, JSON.stringify(sizes), d.expiresAt || null,
+    hasSizes, JSON.stringify(sizes), d.expiresAt || null, d.inGoogleFeed,
   ];
 };
 
@@ -145,8 +147,8 @@ productsRouter.post('/', validate(productSchema), async (req, res) => {
     const { rows: [row] } = await db.query(
       `INSERT INTO products (sku, brand_id, name, short_description, description, how_to_use, ingredients,
                              meta_title, meta_description, price, compare_at_price, stock, is_active, is_featured, is_new,
-                             has_sizes, sizes, expires_at, slug)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING id`,
+                             has_sizes, sizes, expires_at, in_google_feed, slug)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20) RETURNING id`,
       [...productValues(d), slug],
     );
     await saveRelations(db, row.id, d);
@@ -163,8 +165,8 @@ productsRouter.put('/:id', validate(productSchema), async (req, res) => {
     const { rowCount } = await db.query(
       `UPDATE products SET sku=$1, brand_id=$2, name=$3, short_description=$4, description=$5, how_to_use=$6,
               ingredients=$7, meta_title=$8, meta_description=$9, price=$10, compare_at_price=$11, stock=$12,
-              is_active=$13, is_featured=$14, is_new=$15, has_sizes=$16, sizes=$17, expires_at=$18, slug=$19, updated_at=now()
-        WHERE id=$20`,
+              is_active=$13, is_featured=$14, is_new=$15, has_sizes=$16, sizes=$17, expires_at=$18, in_google_feed=$19, slug=$20, updated_at=now()
+        WHERE id=$21`,
       [...productValues(d), slug, id],
     );
     if (!rowCount) throw new HttpError(404, 'Product not found');
