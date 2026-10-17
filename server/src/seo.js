@@ -37,6 +37,7 @@ const STATIC_PAGES = {
   faq: { fr: 'Questions fréquentes', en: 'FAQ', ar: 'الأسئلة الشائعة' },
   contact: { fr: 'Contact', en: 'Contact', ar: 'اتصل بنا' },
   shipping: { fr: 'Livraison & paiement', en: 'Shipping & payment', ar: 'التوصيل والدفع' },
+  policies: { fr: 'Conditions de vente, retours & confidentialité', en: 'Terms of sale, returns & privacy', ar: 'شروط البيع والإرجاع والخصوصية' },
   routine: { fr: 'Composer ma routine de soin coréenne', en: 'Build my Korean skincare routine', ar: 'كوّني روتين العناية الكوري الخاص بك' },
 };
 // Private or transactional pages: never indexed
@@ -376,6 +377,13 @@ export async function buildPage(pathname, search = '') {
     }
     // Internal search results and filtered listings are not landing pages
     if (section === 'shop' && params.get('q')) page.noindex = true;
+    if (section === 'policies') {
+      page.description = {
+        fr: `Conditions générales de vente, droit de retour de ${settings.returns?.days ?? 7} jours et politique de confidentialité de So Pure Skin. Paiement à la livraison partout au Maroc.`,
+        en: `So Pure Skin terms of sale, ${settings.returns?.days ?? 7}-day right of return and privacy policy. Cash on delivery across Morocco.`,
+        ar: `الشروط العامة للبيع، حق الإرجاع خلال ${settings.returns?.days ?? 7} أيام وسياسة الخصوصية لدى So Pure Skin. الدفع عند الاستلام في جميع أنحاء المغرب.`,
+      }[locale];
+    }
     if (section === 'routine') {
       page.description = {
         fr: 'Diagnostic de peau gratuit : indiquez votre type de peau et votre préoccupation (acné, taches, rougeurs, points noirs) et découvrez la routine coréenne adaptée.',
@@ -549,6 +557,7 @@ seoRouter.get('/sitemap.xml', async (_req, res) => {
     urlEntry('/shop', latest),
     urlEntry('/brands', latest),
     urlEntry('/routine', latest),
+    urlEntry('/policies', null),
     urlEntry('/about', null),
     urlEntry('/faq', null),
     urlEntry('/contact', null),

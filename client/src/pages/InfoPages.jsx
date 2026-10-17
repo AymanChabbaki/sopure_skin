@@ -292,7 +292,7 @@ export function Policies() {
     days: data?.returns?.days ?? 7,
     email: c?.email || 'so.pure.skin1@gmail.com',
     phone: c?.phone || '+212 6 25 37 08 41',
-    city: c?.city || 'Casablanca',
+    city: lang === 'ar' && /casa/i.test(c?.city || 'Casablanca') ? 'الدار البيضاء' : c?.city || 'Casablanca',
   });
   const updated = new Date(POLICIES_UPDATED).toLocaleDateString(`${lang}-MA`, { day: 'numeric', month: 'long', year: 'numeric' });
 

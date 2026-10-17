@@ -36,7 +36,7 @@ settingsRouter.post('/indexnow', async (_req, res) => {
     query('SELECT slug FROM categories WHERE is_visible'),
     query('SELECT slug FROM brands'),
   ]);
-  const paths = ['/', '/shop', '/brands', '/routine', '/faq', '/shipping', '/about', '/contact',
+  const paths = ['/', '/shop', '/brands', '/routine', '/faq', '/shipping', '/policies', '/about', '/contact',
     ...categories.map((c) => `/category/${c.slug}`), ...brands.map((b) => `/brand/${b.slug}`), ...products.map((p) => `/product/${p.slug}`)];
   res.json(await submitUrls(paths.flatMap(localizedUrls)));
 });
