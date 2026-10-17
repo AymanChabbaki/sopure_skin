@@ -7,6 +7,7 @@ import { DEFAULT_SETTINGS, getSettings, saveSetting } from '../../lib/settings.j
 import { removeImage, storeImage } from '../../lib/images.js';
 import { storageDriver } from '../../lib/storage.js';
 import { localizedUrls, submitUrls } from '../../lib/indexnow.js';
+import { mailEnabled, sendMail } from '../../lib/mailer.js';
 import { HttpError } from '../../lib/utils.js';
 import { validate } from '../../middleware/errors.js';
 import { requireOwner } from '../../middleware/auth.js';
@@ -38,6 +39,25 @@ settingsRouter.post('/indexnow', async (_req, res) => {
   const paths = ['/', '/shop', '/brands', '/routine', '/faq', '/shipping', '/about', '/contact',
     ...categories.map((c) => `/category/${c.slug}`), ...brands.map((b) => `/brand/${b.slug}`), ...products.map((p) => `/product/${p.slug}`)];
   res.json(await submitUrls(paths.flatMap(localizedUrls)));
+});
+
+/** Order email alerts: status and a test message. */
+settingsRouter.get('/email', (_req, res) => {
+  res.json({ enabled: mailEnabled(), to: process.env.ORDER_NOTIFY_EMAIL || null, from: process.env.SMTP_FROM || process.env.SMTP_USER || null });
+});
+
+settingsRouter.post('/email/test', async (_req, res) => {
+  if (!mailEnabled()) throw new HttpError(400, 'SMTP non configuré (variables SMTP_HOST, SMTP_USER, SMTP_PASS)');
+  try {
+    await sendMail({
+      subject: 'Test · alertes commandes So Pure Skin',
+      text: 'Les emails de nouvelles commandes fonctionnent.',
+      html: '<p style="font-family:Arial,sans-serif">Les emails de <strong>nouvelles commandes</strong> fonctionnent.</p>',
+    });
+  } catch (err) {
+    throw new HttpError(502, `Envoi impossible : ${err.message}`);
+  }
+  res.json({ ok: true });
 });
 
 settingsRouter.put('/:key', async (req, res) => {

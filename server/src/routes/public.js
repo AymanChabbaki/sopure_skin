@@ -7,6 +7,7 @@ import { getSettings, computeShipping, isCasablanca } from '../lib/settings.js';
 import { pickLocale, tr, HttpError } from '../lib/utils.js';
 import { validate } from '../middleware/errors.js';
 import { adjustSize, sizesStock } from '../lib/sizes.js';
+import { notifyNewOrder } from '../lib/mailer.js';
 
 export const publicRouter = Router();
 
@@ -249,6 +250,9 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
     }
     return created;
   });
+
+  // Email alert to the shop (awaited so serverless hosts don't cut it off; it never fails the order)
+  await notifyNewOrder(order.id);
 
   res.status(201).json({
     number: order.number,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, Reorder } from 'motion/react';
-import { Truck, Megaphone, Image as ImageIcon, Phone, Search, Plus, Trash2, GripVertical, Loader2, Save, Cloud, HardDrive, Send, Copy } from 'lucide-react';
+import { Truck, Megaphone, Image as ImageIcon, Phone, Search, Plus, Trash2, GripVertical, Loader2, Save, Cloud, HardDrive, Send, Copy, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, EDITING, Field, I18nInput, ImageUploader, PageTitle, Switch, adminApi, useAdminMutation, useAdminQuery } from '../ui.jsx';
 import { Skeleton } from '../../components/ui/Primitives.jsx';
@@ -211,6 +211,41 @@ function ContactTab({ value, save }) {
       </div>
       <div className="flex justify-end">
         <SaveButton mutation={save} onClick={() => save.mutate(['contact', c])} />
+      </div>
+      <OrderEmailCard contactEmail={c.email} />
+    </div>
+  );
+}
+
+/** Status of the "new order" email alerts (configured with SMTP_* env vars) and a test button. */
+function OrderEmailCard({ contactEmail }) {
+  const { data } = useAdminQuery(['email-status'], '/settings/email', undefined, EDITING);
+  const test = useAdminMutation(() => adminApi('/settings/email/test', { method: 'POST' }), { success: 'Email de test envoyé', invalidate: [] });
+  const to = data?.to || contactEmail;
+  return (
+    <div className="rounded-2xl border border-line p-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h3 className="flex items-center gap-2 font-semibold">
+            <Mail className="size-4 text-brand-600" /> Alertes email des commandes
+            <span className={cn('rounded-full px-2 py-0.5 text-[11px] font-medium', data?.enabled ? 'bg-emerald-50 text-emerald-700' : 'bg-zinc-100 text-muted')}>
+              {data?.enabled ? 'Actives' : 'Non configurées'}
+            </span>
+          </h3>
+          <p className="mt-1 text-sm text-muted">
+            {data?.enabled ? (
+              <>
+                Chaque nouvelle commande est envoyée à <strong className="text-ink">{to}</strong>
+                {data.from && <> depuis {data.from}</>}.
+              </>
+            ) : (
+              'Ajoutez SMTP_HOST, SMTP_USER et SMTP_PASS dans les variables d’environnement (Vercel) pour recevoir un email à chaque commande.'
+            )}
+          </p>
+        </div>
+        <button type="button" onClick={() => test.mutate()} disabled={!data?.enabled || test.isPending} className="btn-outline py-2.5 disabled:opacity-50">
+          {test.isPending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Envoyer un test
+        </button>
       </div>
     </div>
   );
