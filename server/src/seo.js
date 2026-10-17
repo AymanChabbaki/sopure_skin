@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { query } from './db/pool.js';
 import { config, LOCALES, DEFAULT_LOCALE, r2Enabled } from './config.js';
 import { getSettings } from './lib/settings.js';
-import { getProductBySlug } from './lib/catalog.js';
+import { getProductBySlug, relatedProducts } from './lib/catalog.js';
 import { indexNowKey } from './lib/indexnow.js';
 import { escapeHtml as esc, stripHtml, tr, truncate } from './lib/utils.js';
 
@@ -157,6 +157,57 @@ async function realRating(productId) {
 
 /* ------------------------------- Page builder ------------------------------- */
 
+/* ------------------------------ Crawler links ------------------------------ */
+
+const NAV_LABELS = {
+  categories: { fr: 'Catégories', en: 'Categories', ar: 'الفئات' },
+  routines: { fr: 'Routines', en: 'Routines', ar: 'الروتينات' },
+  brands: { fr: 'Marques', en: 'Brands', ar: 'العلامات' },
+  related: { fr: 'Vous aimerez aussi', en: 'You may also like', ar: 'قد يعجبك أيضاً' },
+};
+let navCache = { at: 0, data: null };
+
+/** Every hub page (categories, routines, brands, info pages), cached 5 minutes. */
+async function hubs() {
+  if (navCache.data && Date.now() - navCache.at < 300_000) return navCache.data;
+  const [{ rows: categories }, { rows: brands }] = await Promise.all([
+    query('SELECT slug, kind, name FROM categories WHERE is_visible ORDER BY kind, position'),
+    query('SELECT b.slug, b.name FROM brands b WHERE EXISTS (SELECT 1 FROM products p WHERE p.brand_id = b.id AND p.is_active) ORDER BY b.name'),
+  ]);
+  navCache = { at: Date.now(), data: { categories, brands } };
+  return navCache.data;
+}
+
+const productLinks = (items, locale) =>
+  items
+    .map((p) => {
+      const name = tr(p.name, locale);
+      return `<li><a href="/${locale}/product/${p.slug}"><img src="${esc(absolute(p.image))}" alt="${esc(`${name}${p.brand ? ` – ${p.brand}` : ''}`)}" width="480" height="600" loading="lazy">${esc(name)}</a> – ${p.price} MAD</li>`;
+    })
+    .join('');
+
+/**
+ * Plain links to every hub page, appended to each crawler body: Google discovers and revisits pages
+ * by following links, so every product is at most two clicks from any page (React replaces this on load).
+ */
+async function crawlerNav(locale) {
+  const { categories, brands } = await hubs();
+  const link = (path, label) => `<li><a href="/${locale}${path}">${esc(label)}</a></li>`;
+  const list = (title, items) => `<h2>${esc(title)}</h2><ul>${items.join('')}</ul>`;
+  return (
+    '<nav>' +
+    `<ul>${link('', T.home[locale])}${link('/shop', T.shop[locale])}${Object.keys(STATIC_PAGES).filter((k) => k !== 'shop').map((k) => link(`/${k}`, STATIC_PAGES[k][locale])).join('')}</ul>` +
+    list(NAV_LABELS.categories[locale], categories.filter((c) => c.kind === 'type').map((c) => link(`/category/${c.slug}`, tr(c.name, locale)))) +
+    list(NAV_LABELS.routines[locale], categories.filter((c) => c.kind === 'routine').map((c) => link(`/category/${c.slug}`, tr(c.name, locale)))) +
+    list(NAV_LABELS.brands[locale], brands.map((b) => link(`/brand/${b.slug}`, b.name))) +
+    '</nav>'
+  );
+}
+
+const PRODUCT_CARD_SQL = `SELECT p.slug, p.name, p.price, b.name AS brand,
+       (SELECT url FROM product_images WHERE product_id = p.id ORDER BY position LIMIT 1) AS image
+  FROM products p LEFT JOIN brands b ON b.id = p.brand_id`;
+
 /**
  * Everything search engines need for a storefront URL: title, description, canonical data,
  * JSON-LD and a crawler-readable HTML body (with real <img> tags for Google Images).
@@ -193,17 +244,9 @@ export async function buildPage(pathname, search = '') {
       `SELECT p.slug, p.name, p.price, b.name AS brand,
               (SELECT url FROM product_images WHERE product_id = p.id ORDER BY position LIMIT 1) AS image
          FROM products p LEFT JOIN brands b ON b.id = p.brand_id
-        WHERE p.is_active ORDER BY p.sales_count DESC LIMIT 12`,
+        WHERE p.is_active ORDER BY p.sales_count DESC LIMIT 48`,
     );
-    page.body =
-      `<h1>${esc(page.title)}</h1><p>${esc(page.description)}</p><ul>` +
-      top
-        .map((p) => {
-          const name = tr(p.name, locale);
-          return `<li><a href="/${locale}/product/${p.slug}"><img src="${esc(absolute(p.image))}" alt="${esc(`${name}${p.brand ? ` – ${p.brand}` : ''}`)}" width="480" height="600" loading="lazy">${esc(name)}</a> – ${p.price} MAD</li>`;
-        })
-        .join('') +
-      '</ul>';
+    page.body = `<h1>${esc(page.title)}</h1><p>${esc(page.description)}</p><ul>${productLinks(top, locale)}</ul>`;
   } else if (section === 'product' && slug) {
     const p = await getProductBySlug(decodeURIComponent(slug));
     if (!p?.is_active) {
@@ -262,7 +305,17 @@ export async function buildPage(pathname, search = '') {
             `<img src="${esc(absolute(img.url))}" alt="${esc(i === 0 ? page.imageAlt : `${name} – ${T.photo[locale]} ${i + 1}`)}" width="1200" height="1200"${i ? ' loading="lazy"' : ''}>`,
         )
         .join('') +
-      `<p>${p.price} MAD</p><p>${esc(stripHtml(tr(p.description, locale)))}</p></article>`;
+      `<p>${p.price} MAD</p><p>${esc(stripHtml(tr(p.description, locale)))}</p>` +
+      // Breadcrumb, brand and related products as real links
+      `<p><a href="/${locale}">${esc(T.home[locale])}</a> › ` +
+      (typeCategory ? `<a href="/${locale}/category/${typeCategory.slug}">${esc(tr(typeCategory.name, locale))}</a>` : `<a href="/${locale}/shop">${esc(T.shop[locale])}</a>`) +
+      (p.brand_slug ? ` · <a href="/${locale}/brand/${p.brand_slug}">${esc(p.brand_name)}</a>` : '') +
+      '</p></article>';
+    const related = await relatedProducts(p, 8);
+    if (related.length) {
+      const items = related.map((r) => ({ slug: r.slug, name: r.name, price: r.price, brand: r.brand_name, image: r.images?.[0]?.url }));
+      page.body += `<h2>${esc(NAV_LABELS.related[locale])}</h2><ul>${productLinks(items, locale)}</ul>`;
+    }
   } else if ((section === 'category' || section === 'brand') && slug) {
     const isCategory = section === 'category';
     const { rows: [row] } = await query(`SELECT * FROM ${isCategory ? 'categories' : 'brands'} WHERE slug = $1`, [slug]);
@@ -278,7 +331,7 @@ export async function buildPage(pathname, search = '') {
         WHERE p.is_active AND ${isCategory
           ? 'EXISTS (SELECT 1 FROM product_categories pc WHERE pc.product_id = p.id AND pc.category_id = $1)'
           : 'p.brand_id = $1'}
-        ORDER BY p.sales_count DESC LIMIT 60`,
+        ORDER BY p.sales_count DESC LIMIT 200`,
       [row.id],
     );
     const intro = stripHtml(tr(row.description, locale));
@@ -313,17 +366,14 @@ export async function buildPage(pathname, search = '') {
         { name, path: `/${section}/${slug}` },
       ]),
     );
-    page.body =
-      `<h1>${esc(name)}</h1>${intro ? `<p>${esc(intro)}</p>` : ''}<ul>` +
-      items
-        .map((p) => {
-          const pName = tr(p.name, locale);
-          return `<li><a href="/${locale}/product/${p.slug}"><img src="${esc(absolute(p.image))}" alt="${esc(`${pName}${p.brand ? ` – ${p.brand}` : ''}`)}" width="480" height="600" loading="lazy">${esc(pName)}</a> – ${p.price} MAD</li>`;
-        })
-        .join('') +
-      '</ul>';
+    page.body = `<h1>${esc(name)}</h1>${intro ? `<p>${esc(intro)}</p>` : ''}<ul>${productLinks(items, locale)}</ul>`;
   } else if (STATIC_PAGES[section]) {
     page.title = `${STATIC_PAGES[section][locale]} | ${BRAND}`;
+    if (section === 'shop') {
+      // The shop lists the whole catalog for crawlers
+      const { rows: all } = await query(`${PRODUCT_CARD_SQL} WHERE p.is_active ORDER BY p.sales_count DESC`);
+      page.body = `<h1>${esc(STATIC_PAGES.shop[locale])}</h1><ul>${productLinks(all, locale)}</ul>`;
+    }
     // Internal search results and filtered listings are not landing pages
     if (section === 'shop' && params.get('q')) page.noindex = true;
     if (section === 'routine') {
@@ -347,6 +397,7 @@ export async function buildPage(pathname, search = '') {
   } else {
     page.noindex = true;
   }
+  if (!page.noindex) page.body += await crawlerNav(locale);
   return page;
 }
 
