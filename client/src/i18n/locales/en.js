@@ -21,6 +21,8 @@ export default {
     faq: 'FAQ',
     contact: 'Contact',
     shipping: 'Shipping & payment',
+    returns: 'Returns & refunds',
+    policies: 'Terms & privacy',
     wishlist: 'Wishlist',
     cart: 'Cart',
     search: 'Search',
@@ -247,6 +249,14 @@ export default {
     email: 'Email',
     address: 'Address',
     hours: 'Monday to Saturday, 9am - 8pm',
+  },
+  policiesPage: {
+    eyebrow: 'Legal information',
+    title: 'Terms & policies',
+    subtitle: 'Terms of sale, returns and how we protect your data.',
+    toc: 'Contents',
+    updated: 'Last updated: {{date}}',
+    questions: 'A question about an order or your data? Our team is here to help.',
   },
   shippingPage: {
     title: 'Shipping & payment',

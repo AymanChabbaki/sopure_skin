@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'motion/react';
-import { Heart, Plus, Phone, Mail, MapPin, Clock, Truck, HandCoins, Gift, Timer, BadgeCheck, MessagesSquare, Sparkles, ArrowRight } from 'lucide-react';
+import { Heart, Plus, Phone, Mail, MapPin, Clock, Truck, HandCoins, Gift, Timer, BadgeCheck, MessagesSquare, Sparkles, ArrowRight, ScrollText, RotateCcw, ShieldCheck } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa6';
 import { ProductGrid } from '../components/product/ProductGrid.jsx';
 import { PageHeader } from '../components/ui/Primitives.jsx';
@@ -14,6 +14,7 @@ import { useBrands, useProducts, useSettings } from '../hooks/useStore.js';
 import { useLocalePath } from '../hooks/useLocalePath.js';
 import { useWishlist } from '../store/wishlist.js';
 import { cn } from '../lib/format.js';
+import { POLICIES_UPDATED, POLICY_SECTIONS } from '../lib/policies.js';
 
 export function Wishlist() {
   const { t } = useTranslation();
@@ -270,6 +271,86 @@ export function ShippingInfo() {
               </div>
             </Reveal>
           ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+const POLICY_ICONS = { conditions: ScrollText, retours: RotateCcw, confidentialite: ShieldCheck };
+
+export function Policies() {
+  const { t, i18n } = useTranslation();
+  const lp = useLocalePath();
+  const { data } = useSettings();
+  const lang = POLICY_SECTIONS[i18n.language] ? i18n.language : 'fr';
+  const c = data?.contact;
+  const sections = POLICY_SECTIONS[lang]({
+    casa: data?.shipping?.casablancaFee ?? 20,
+    other: data?.shipping?.otherFee ?? 35,
+    free: data?.shipping?.freeAboveItems ?? 5,
+    days: data?.returns?.days ?? 7,
+    email: c?.email || 'so.pure.skin1@gmail.com',
+    phone: c?.phone || '+212 6 25 37 08 41',
+    city: c?.city || 'Casablanca',
+  });
+  const updated = new Date(POLICIES_UPDATED).toLocaleDateString(`${lang}-MA`, { day: 'numeric', month: 'long', year: 'numeric' });
+
+  return (
+    <>
+      <PageHeader eyebrow={t('policiesPage.eyebrow')} title={t('policiesPage.title')} subtitle={t('policiesPage.subtitle')} />
+      <div className="container-x grid gap-10 pb-24 lg:grid-cols-[260px_1fr]">
+        {/* Table of contents */}
+        <nav aria-label={t('policiesPage.toc')} className="h-fit lg:sticky lg:top-28">
+          <p className="eyebrow mb-3">{t('policiesPage.toc')}</p>
+          <ul className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
+            {sections.map((sec) => {
+              const Icon = POLICY_ICONS[sec.id];
+              return (
+                <li key={sec.id} className="shrink-0">
+                  <a href={`#${sec.id}`} className="flex items-center gap-2.5 rounded-2xl border border-line px-4 py-3 text-sm transition hover:border-brand-300 hover:bg-brand-50 lg:border-transparent">
+                    <Icon className="size-4 text-brand-500" /> {sec.title}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-5 hidden text-xs text-muted lg:block">{t('policiesPage.updated', { date: updated })}</p>
+        </nav>
+
+        <div className="min-w-0 space-y-8">
+          {sections.map((sec) => {
+            const Icon = POLICY_ICONS[sec.id];
+            return (
+              <Reveal key={sec.id}>
+                <section id={sec.id} className="card scroll-mt-28 p-6 sm:p-10">
+                  <h2 className="flex items-center gap-3 font-display text-3xl sm:text-4xl">
+                    <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-50 text-brand-600">
+                      <Icon className="size-5" />
+                    </span>
+                    {sec.title}
+                  </h2>
+                  <dl className="mt-8 space-y-6">
+                    {sec.blocks.map(([title, text]) => (
+                      <div key={title} className="grid gap-1.5 sm:grid-cols-[200px_1fr] sm:gap-6">
+                        <dt className="font-medium text-ink">{title}</dt>
+                        <dd className="leading-relaxed text-ink/75">{text}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              </Reveal>
+            );
+          })}
+          <div className="flex flex-col items-start gap-4 rounded-3xl bg-brand-50 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+            <div>
+              <p className="font-medium">{t('policiesPage.questions')}</p>
+              <p className="mt-1 text-sm text-muted lg:hidden">{t('policiesPage.updated', { date: updated })}</p>
+            </div>
+            <Link to={lp('/contact')} className="btn-primary shrink-0">
+              {t('nav.contact')} <ArrowRight className="size-4 rtl:-scale-x-100" />
+            </Link>
+          </div>
         </div>
       </div>
     </>

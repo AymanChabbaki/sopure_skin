@@ -18,6 +18,7 @@ const About = info('About');
 const Faq = info('Faq');
 const Contact = info('Contact');
 const ShippingInfo = info('ShippingInfo');
+const Policies = info('Policies');
 const NotFound = info('NotFound');
 const AdminApp = lazy(() => import('./admin/AdminApp.jsx'));
 
@@ -54,6 +55,7 @@ const storeRoutes = [
   { path: 'faq', element: page(Faq) },
   { path: 'contact', element: page(Contact) },
   { path: 'shipping', element: page(ShippingInfo) },
+  { path: 'policies', element: page(Policies) },
   { path: '*', element: page(NotFound) },
 ];
 

@@ -106,6 +106,8 @@ export function Footer() {
                 ['/faq', t('nav.faq')],
                 ['/contact', t('nav.contact')],
                 ['/about', t('nav.about')],
+                ['/policies', t('nav.policies')],
+                ['/policies#retours', t('nav.returns')],
                 ['/brands', t('nav.brands')],
               ].map(([to, label]) => (
                 <li key={to}>
