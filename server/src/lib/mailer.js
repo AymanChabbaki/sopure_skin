@@ -45,15 +45,15 @@ export async function sendMail({ to, subject, html, text }) {
   return { sent: true, id: info.messageId };
 }
 
-function orderEmail(order, items) {
+export function orderEmail(order, items) {
   const adminUrl = `${config.siteUrl}/admin/orders/${order.id}`;
   const rows = items
     .map(
       (i) => `<tr>
-        <td style="padding:10px 0;border-bottom:1px solid #eef2f3">
-          ${i.image_url ? `<img src="${esc(i.image_url)}" width="48" height="48" alt="" style="vertical-align:middle;border-radius:8px;background:#f5f1ec;object-fit:contain;margin-right:10px">` : ''}
-          <span style="vertical-align:middle">${esc(i.name)}</span>
+        <td style="padding:10px 10px 10px 0;border-bottom:1px solid #eef2f3;width:48px;vertical-align:middle">
+          ${i.image_url ? `<img src="${esc(i.image_url)}" width="48" height="48" alt="" style="display:block;border-radius:8px;background:#f5f1ec;object-fit:contain">` : ''}
         </td>
+        <td style="padding:10px 0;border-bottom:1px solid #eef2f3;vertical-align:middle">${esc(i.name)}</td>
         <td style="padding:10px 8px;border-bottom:1px solid #eef2f3;text-align:center;white-space:nowrap">× ${i.quantity}</td>
         <td style="padding:10px 0;border-bottom:1px solid #eef2f3;text-align:right;white-space:nowrap">${dh(i.line_total)}</td>
       </tr>`,
