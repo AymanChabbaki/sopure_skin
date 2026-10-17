@@ -2,6 +2,7 @@
  * Generates SAMPLE reviews in Moroccan darija so the review UI can be seen before real reviews exist.
  * Every row is flagged is_sample = true: remove them from Admin → Avis → "Supprimer les avis d'exemple"
  * (or `npm run db:sample-reviews -- --remove`) before launch. They are never sent to Google's structured data.
+ * `--missing` only adds reviews to active products that have none yet (e.g. newly added products).
  */
 import { pool, query } from './pool.js';
 import { migrate } from './migrate.js';
@@ -77,6 +78,16 @@ const BY_TYPE = {
   'soins-apaisants': ['Kay hda2 lbachra mn l7mora f l7in, wajib f routine', 'Bachra sensible w had soin n9adha bzaf'],
   brumes: ['Brume fresh bzaf f sif, kanrechha 3la maquillage tahowa'],
   patchs: ['Les patchs kay khdmo mzyan 3la les boutons, f lil kay n9so'],
+  'soins-cheveux': [
+    'Cheveux wlaw rtab w kayl3bo, ma b9atch kat ti7 bzaf',
+    'Cuir chevelu wla n9i w ma b9ach kayhekni, kanst3mlo 2 merrat f simana',
+    'Ri7to zwina w cheveux wlaw soft mn awel isti3mal',
+  ],
+  'soins-corps': [
+    'Les boutons f dhar n9so bzaf mn ba3d 3 semaines, top!',
+    'Lbachra dyal jesmi wlat lisse w n9iya, kanst3mlo f douche',
+    'Kay n9i mzyan bla ma ynechef, w l7bob f l katf bdaw ymchiw',
+  ],
 };
 
 const GENERIC = [
@@ -101,18 +112,22 @@ let seed = 1004;
 const rand = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
 const pick = (arr) => arr[Math.floor(rand() * arr.length)];
 
-async function generate() {
+async function generate({ missing = false } = {}) {
   await migrate();
   const { rows: existing } = await query('SELECT count(*) FROM reviews WHERE is_sample');
-  if (existing[0].count > 0) {
-    console.log(`${existing[0].count} sample reviews already exist. Run with --remove first to regenerate.`);
+  if (existing[0].count > 0 && !missing) {
+    console.log(`${existing[0].count} sample reviews already exist. Run with --remove first to regenerate, or --missing to fill new products.`);
     return;
   }
+  if (missing) seed = Date.now() % 2147483646 || 1; // different texts from the first run
+  // Most specific type first (body/hair before generic types like "nettoyants")
   const { rows: products } = await query(
-    `SELECT p.id, p.sales_count,
+    `SELECT p.id, p.sales_count, p.legacy_id IS NOT NULL AS imported, GREATEST(extract(day FROM now() - p.created_at)::int, 1) AS age_days,
             (SELECT c.slug FROM product_categories pc JOIN categories c ON c.id = pc.category_id
-              WHERE pc.product_id = p.id AND c.kind = 'type' LIMIT 1) AS type
-       FROM products p WHERE p.is_active ORDER BY p.id`,
+              WHERE pc.product_id = p.id AND c.kind = 'type' ORDER BY c.position DESC LIMIT 1) AS type
+       FROM products p
+      WHERE p.is_active ${missing ? 'AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.product_id = p.id)' : ''}
+      ORDER BY p.id`,
   );
 
   let total = 0;
@@ -127,10 +142,13 @@ async function generate() {
       let body = rating === 3 ? pick(MEH) : pick(pool);
       for (let tries = 0; used.has(body) && tries < 6; tries++) body = rating === 3 ? pick(MEH) : pick(pool);
       used.add(body);
-      const daysAgo = Math.floor(rand() * 200) + 1;
+      // Products added in the admin (not imported): never older than the product itself
+      const daysAgo = Math.floor(rand() * (p.imported ? 200 : Math.min(200, p.age_days))) + (p.imported ? 1 : 0);
       await query(
         `INSERT INTO reviews (product_id, author_name, city, rating, body, locale, is_approved, is_sample, created_at)
-         VALUES ($1, $2, $3, $4, $5, 'ar', true, true, now() - make_interval(days => $6, hours => $7))`,
+         VALUES ($1, $2, $3, $4, $5, 'ar', true, true,
+                 GREATEST(now() - make_interval(days => $6, hours => $7),
+                          (SELECT CASE WHEN legacy_id IS NULL THEN LEAST(created_at + interval '2 hours', now()) END FROM products WHERE id = $1)))`,
         [p.id, `${pick(NAMES)} ${String.fromCharCode(65 + Math.floor(rand() * 26))}.`, pick(CITIES), rating, body, daysAgo, Math.floor(rand() * 24)],
       );
       total += 1;
@@ -144,7 +162,7 @@ async function remove() {
   console.log(`Removed ${rowCount} sample reviews.`);
 }
 
-(process.argv.includes('--remove') ? remove() : generate())
+(process.argv.includes('--remove') ? remove() : generate({ missing: process.argv.includes('--missing') }))
   .catch((err) => {
     console.error(err);
     process.exitCode = 1;

@@ -5,6 +5,10 @@ export default {
   nav: {
     routineBuilder: 'Composer ma routine',
     myRoutine: 'Ma routine',
+    hair: 'Cheveux',
+    body: 'Corps',
+    hairCare: 'Soins cheveux',
+    bodyCare: 'Soins corps',
     home: 'Accueil',
     shop: 'Boutique',
     categories: 'Catégories',

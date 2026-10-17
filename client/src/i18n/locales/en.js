@@ -5,6 +5,10 @@ export default {
   nav: {
     routineBuilder: 'Build my routine',
     myRoutine: 'My routine',
+    hair: 'Hair',
+    body: 'Body',
+    hairCare: 'Hair care',
+    bodyCare: 'Body care',
     home: 'Home',
     shop: 'Shop',
     categories: 'Categories',

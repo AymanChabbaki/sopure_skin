@@ -274,6 +274,8 @@ export function Header() {
     { id: 'home', to: lp('/'), label: t('nav.home') },
     { id: 'shop', to: lp('/shop'), label: t('nav.shop'), mega: true },
     { id: 'brands', to: lp('/brands'), label: t('nav.brands'), mega: true },
+    { id: 'hair', to: lp('/category/soins-cheveux'), label: t('nav.hair') },
+    { id: 'body', to: lp('/category/soins-corps'), label: t('nav.body') },
     { id: 'best', to: lp('/shop?sort=popular'), label: t('nav.bestSellers'), query: 'sort=popular' },
     { id: 'new', to: lp('/shop?sort=newest'), label: t('nav.newArrivals'), query: 'sort=newest' },
     { id: 'offers', to: lp('/shop?onSale=true'), label: t('nav.offers'), accent: true, query: 'onSale=true' },
@@ -318,7 +320,7 @@ export function Header() {
                   // Several links share /shop: those with a filter are active only when it is applied
                   const active = l.query ? isActive && search.includes(l.query) : isActive && !(l.id === 'shop' && search);
                   return cn(
-                    'relative flex h-full items-center gap-1 px-2.5 text-[13px] font-medium tracking-wide whitespace-nowrap uppercase transition-colors xl:px-3.5 rtl:text-sm rtl:normal-case',
+                    'relative flex h-full items-center gap-1 px-2 text-[12px] font-medium tracking-normal whitespace-nowrap uppercase transition-colors rtl:text-sm rtl:normal-case',
                     l.accent ? 'text-brand-600 hover:text-brand-800' : 'text-ink/75 hover:text-ink',
                     (active || mega === l.id) && (l.accent ? 'text-brand-800' : 'text-ink'),
                   );
@@ -327,7 +329,7 @@ export function Header() {
                 {l.icon && <l.icon className="size-3.5" />}
                 {l.label}
                 {l.mega && <ChevronDown className={cn('size-3.5 transition-transform', mega === l.id && 'rotate-180')} />}
-                {mega === l.id && <motion.span layoutId="nav-underline" className="absolute inset-x-3.5 bottom-0 h-0.5 rounded-full bg-brand-500" />}
+                {mega === l.id && <motion.span layoutId="nav-underline" className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-brand-500" />}
               </NavLink>
             </div>
           ))}

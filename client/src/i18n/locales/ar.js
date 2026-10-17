@@ -5,6 +5,10 @@ export default {
   nav: {
     routineBuilder: 'كوّني روتينك',
     myRoutine: 'روتيني',
+    hair: 'الشعر',
+    body: 'الجسم',
+    hairCare: 'العناية بالشعر',
+    bodyCare: 'العناية بالجسم',
     home: 'الرئيسية',
     shop: 'المتجر',
     categories: 'الفئات',

@@ -58,6 +58,15 @@ export function MobileMenu() {
             </Link>
           ))}
         </Accordion>
+        {[
+          ['/category/soins-cheveux', t('nav.hairCare')],
+          ['/category/soins-corps', t('nav.bodyCare')],
+        ].map(([to, label]) => (
+          <Link key={to} to={lp(to)} onClick={close} className="flex items-center justify-between border-b border-line py-4 text-base font-medium">
+            {label}
+            <ChevronRight className="size-4 text-muted rtl:-scale-x-100" />
+          </Link>
+        ))}
         <Link to={lp('/routine')} onClick={close} className="flex items-center justify-between border-b border-line py-4 text-base font-medium text-brand-700">
           <span className="flex items-center gap-2">
             <Sparkles className="size-4" /> {t('nav.routineBuilder')}
