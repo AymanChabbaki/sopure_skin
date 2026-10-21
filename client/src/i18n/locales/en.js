@@ -42,6 +42,7 @@ export default {
     inStock: 'In stock',
     lowStock: 'Only {{count}} left',
     new: 'New',
+    bestSeller: 'Best seller',
     sale: 'Sale',
     loading: 'Loading…',
     seeMore: 'See more',

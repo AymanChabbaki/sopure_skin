@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
-import { Plus, Star, Eye, EyeOff, Trash2, Pencil, ExternalLink } from 'lucide-react';
+import { Plus, Star, Flame, Eye, EyeOff, Trash2, Pencil, ExternalLink } from 'lucide-react';
 import { Card, ConfirmDialog, PageTitle, Pagination, SearchInput, adminApi, patchCache, useAdminMutation, useAdminQuery, money } from '../ui.jsx';
 import { Skeleton } from '../../components/ui/Primitives.jsx';
 import { cn } from '../../lib/format.js';
@@ -68,7 +68,14 @@ export default function Products() {
     },
   });
   // Toggles flip on screen instantly, the server confirms in the background (rolled back on error)
-  const TOGGLE_FIELDS = { activate: ['isActive', true], deactivate: ['isActive', false], feature: ['isFeatured', true], unfeature: ['isFeatured', false] };
+  const TOGGLE_FIELDS = {
+    activate: ['isActive', true],
+    deactivate: ['isActive', false],
+    feature: ['isFeatured', true],
+    unfeature: ['isFeatured', false],
+    bestseller: ['isBestSeller', true],
+    unbestseller: ['isBestSeller', false],
+  };
   const toggle = useAdminMutation(({ id, action }) => adminApi('/products/bulk', { method: 'PATCH', body: { ids: [id], action } }), {
     success: null,
     optimistic: (qc, { id, action }) => {
@@ -124,6 +131,9 @@ export default function Products() {
                 </button>
                 <button type="button" className="btn-ghost bg-white py-1.5" onClick={() => bulk.mutate('feature')}>
                   <Star className="size-4" /> Mettre en avant
+                </button>
+                <button type="button" className="btn-ghost bg-white py-1.5" onClick={() => bulk.mutate('bestseller')}>
+                  <Flame className="size-4" /> Best-seller
                 </button>
                 <button type="button" className="btn-ghost bg-white py-1.5 text-rose-600" onClick={() => setConfirm(true)}>
                   <Trash2 className="size-4" /> Supprimer
@@ -198,9 +208,19 @@ export default function Products() {
                             type="button"
                             onClick={() => toggle.mutate({ id: p.id, action: p.isFeatured ? 'unfeature' : 'feature' })}
                             aria-label="Mettre en avant"
+                            title="Mis en avant (accueil)"
                             className="icon-btn size-8"
                           >
                             <Star className={cn('size-4', p.isFeatured ? 'fill-amber-400 text-amber-400' : 'text-zinc-300')} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggle.mutate({ id: p.id, action: p.isBestSeller ? 'unbestseller' : 'bestseller' })}
+                            aria-label="Best-seller"
+                            title="Best-seller"
+                            className="icon-btn size-8"
+                          >
+                            <Flame className={cn('size-4', p.isBestSeller ? 'fill-orange-500 text-orange-500' : 'text-zinc-300')} />
                           </button>
                         </div>
                       </td>

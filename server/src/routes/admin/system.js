@@ -29,6 +29,11 @@ const shippingSchema = z.object({
 
 const returnsSchema = z.object({ enabled: z.boolean(), days: z.number().int().min(1).max(365), fees: z.enum(['free', 'customer']) });
 
+// Navbar item visibility: a map of the known nav ids to booleans.
+const navbarSchema = z.object(
+  Object.fromEntries(['home', 'shop', 'brands', 'hair', 'body', 'best', 'new', 'offers', 'routine'].map((id) => [id, z.boolean()])),
+).partial();
+
 /** Sends every public URL (from the sitemap) to IndexNow: Bing, Yandex, Seznam, Naver. */
 settingsRouter.post('/indexnow', async (_req, res) => {
   const [{ rows: products }, { rows: categories }, { rows: brands }] = await Promise.all([
@@ -63,7 +68,11 @@ settingsRouter.post('/email/test', async (_req, res) => {
 settingsRouter.put('/:key', async (req, res) => {
   const { key } = req.params;
   if (!(key in DEFAULT_SETTINGS)) throw new HttpError(400, `Unknown setting "${key}"`);
-  const value = key === 'shipping' ? shippingSchema.parse(req.body) : key === 'returns' ? returnsSchema.parse(req.body) : req.body;
+  const value =
+    key === 'shipping' ? shippingSchema.parse(req.body)
+    : key === 'returns' ? returnsSchema.parse(req.body)
+    : key === 'navbar' ? navbarSchema.parse(req.body)
+    : req.body;
   // Testimonial screenshots removed from the list are deleted from storage too (no orphan files)
   const previous = key === 'testimonials' ? (await getSettings()).testimonials || [] : [];
   await saveSetting(key, value);

@@ -41,6 +41,7 @@ publicRouter.get('/settings', async (req, res) => {
     })),
     contact: s.contact,
     testimonials: s.testimonials,
+    navbar: s.navbar,
     seo: { title: tr(s.seo.title, l), description: tr(s.seo.description, l) },
   });
 });
@@ -89,7 +90,7 @@ publicRouter.get('/brands', async (req, res) => {
 });
 
 publicRouter.get('/products', async (req, res) => {
-  const { q, category, brand, minPrice, maxPrice, onSale, featured, sort, page, limit, ids } = req.query;
+  const { q, category, brand, minPrice, maxPrice, onSale, featured, bestSeller, sort, page, limit, ids } = req.query;
   const result = await listProducts({
     q,
     category,
@@ -98,6 +99,7 @@ publicRouter.get('/products', async (req, res) => {
     maxPrice,
     onSale: onSale === 'true',
     featured: featured === 'true',
+    bestSeller: bestSeller === 'true',
     sort,
     page,
     limit,

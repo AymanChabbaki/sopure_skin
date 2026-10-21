@@ -42,6 +42,7 @@ export default {
     inStock: 'متوفر',
     lowStock: 'بقي {{count}} فقط',
     new: 'جديد',
+    bestSeller: 'الأكثر مبيعاً',
     sale: 'تخفيض',
     loading: 'جارٍ التحميل…',
     seeMore: 'المزيد',

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, Reorder } from 'motion/react';
-import { Truck, Megaphone, Image as ImageIcon, Phone, Search, Plus, Trash2, GripVertical, Loader2, Save, Cloud, HardDrive, Send, Copy, Mail } from 'lucide-react';
+import { Truck, Megaphone, Image as ImageIcon, Phone, Search, Plus, Trash2, GripVertical, Loader2, Save, Cloud, HardDrive, Send, Copy, Mail, Menu } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, EDITING, Field, I18nInput, ImageUploader, PageTitle, Switch, adminApi, useAdminMutation, useAdminQuery } from '../ui.jsx';
 import { Skeleton } from '../../components/ui/Primitives.jsx';
@@ -10,9 +10,47 @@ const TABS = [
   ['shipping', 'Livraison', Truck],
   ['announcements', 'Barre d’annonces', Megaphone],
   ['hero', 'Bannière d’accueil', ImageIcon],
+  ['navbar', 'Navigation', Menu],
   ['contact', 'Contact & réseaux', Phone],
   ['seo', 'SEO', Search],
 ];
+
+// Order matches the links shown in the store header. Ids map to the nav items in Header.jsx / MobileNav.jsx.
+const NAV_ITEMS = [
+  ['home', 'Accueil'],
+  ['shop', 'Boutique', 'Lien vers toute la boutique'],
+  ['brands', 'Marques'],
+  ['hair', 'Cheveux'],
+  ['body', 'Corps'],
+  ['best', 'Best-sellers', 'Produits marqués « Best-seller »'],
+  ['new', 'Nouveautés'],
+  ['offers', 'Promotions'],
+  ['routine', 'Ma routine'],
+];
+
+function NavbarTab({ value, save }) {
+  const [v, setV] = useState(() => ({ ...Object.fromEntries(NAV_ITEMS.map(([id]) => [id, true])), ...value }));
+  const toggle = (id) => (on) => setV({ ...v, [id]: on });
+  const visibleCount = NAV_ITEMS.filter(([id]) => v[id] !== false).length;
+  return (
+    <div className="space-y-5">
+      <p className="text-sm text-muted">
+        Choisissez les liens affichés dans le menu de navigation (en-tête du site et menu mobile). Les liens masqués restent accessibles par leur adresse directe.
+      </p>
+      <div className="divide-y divide-line rounded-2xl border border-line">
+        {NAV_ITEMS.map(([id, label, description]) => (
+          <div key={id} className="px-4 py-3.5">
+            <Switch checked={v[id] !== false} onChange={toggle(id)} label={label} description={description} />
+          </div>
+        ))}
+      </div>
+      <p className="text-xs text-muted">{visibleCount} lien(s) affiché(s) sur {NAV_ITEMS.length}.</p>
+      <div className="flex justify-end">
+        <SaveButton mutation={save} onClick={() => save.mutate(['navbar', v])} />
+      </div>
+    </div>
+  );
+}
 
 function SaveButton({ mutation, onClick }) {
   return (
@@ -347,7 +385,7 @@ export default function Settings() {
   const [mounted, setMounted] = useState(0);
   useEffect(() => setMounted((m) => m + 1), [data]);
 
-  const panels = { shipping: ShippingTab, announcements: AnnouncementsTab, hero: HeroTab, contact: ContactTab, seo: SeoTab };
+  const panels = { shipping: ShippingTab, announcements: AnnouncementsTab, hero: HeroTab, navbar: NavbarTab, contact: ContactTab, seo: SeoTab };
   const Panel = panels[tab];
 
   return (

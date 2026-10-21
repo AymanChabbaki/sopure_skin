@@ -22,6 +22,7 @@ const EMPTY = {
   isActive: true,
   isFeatured: false,
   isNew: true,
+  isBestSeller: false,
   hasSizes: false,
   inGoogleFeed: true,
   sizes: [],
@@ -151,6 +152,7 @@ export default function ProductForm() {
             <Switch checked={form.isActive} onChange={set('isActive')} label="En ligne" description="Visible sur la boutique" />
             <Switch checked={form.isFeatured} onChange={set('isFeatured')} label="Mis en avant" description="Affiché dans la page d'accueil" />
             <Switch checked={form.isNew} onChange={set('isNew')} label="Nouveauté" description="Badge « Nouveau »" />
+            <Switch checked={form.isBestSeller} onChange={set('isBestSeller')} label="Best-seller" description="Badge « Best-seller » et lien « Best-sellers » du menu" />
             <Switch
               checked={form.inGoogleFeed}
               onChange={set('inGoogleFeed')}

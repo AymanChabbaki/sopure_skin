@@ -99,8 +99,9 @@ function Filters({ params, setParam, toggleList, fixed }) {
           </button>
         </form>
       </FilterGroup>
-      <div className="py-5">
+      <div className="space-y-1 py-5">
         <CheckRow label={t('shop.onSale')} checked={params.get('onSale') === 'true'} onChange={() => setParam({ onSale: params.get('onSale') === 'true' ? '' : 'true' })} />
+        <CheckRow label={t('nav.bestSellers')} checked={params.get('bestSeller') === 'true'} onChange={() => setParam({ bestSeller: params.get('bestSeller') === 'true' ? '' : 'true' })} />
       </div>
     </div>
   );
@@ -130,6 +131,7 @@ export default function Shop() {
       minPrice: params.get('minPrice') || '',
       maxPrice: params.get('maxPrice') || '',
       onSale: params.get('onSale') === 'true',
+      bestSeller: params.get('bestSeller') === 'true',
       sort,
       page,
       limit: 24,
@@ -153,11 +155,13 @@ export default function Shop() {
     ...(params.get('category') || '').split(',').filter(Boolean).map((s) => ({ key: 'category', value: s, label: categories.find((c) => c.slug === s)?.name || s })),
     ...(params.get('brand') || '').split(',').filter(Boolean).map((s) => ({ key: 'brand', value: s, label: brands.find((b) => b.slug === s)?.name || s })),
     params.get('onSale') === 'true' && { key: 'onSale', label: t('shop.onSale') },
+    params.get('bestSeller') === 'true' && { key: 'bestSeller', label: t('nav.bestSellers') },
     (params.get('minPrice') || params.get('maxPrice')) && { key: 'price', label: `${params.get('minPrice') || 0} - ${params.get('maxPrice') || '∞'} ${t('common.currency')}` },
   ].filter(Boolean);
 
   const removeChip = (chip) => {
     if (chip.key === 'onSale') setParam({ onSale: '' });
+    else if (chip.key === 'bestSeller') setParam({ bestSeller: '' });
     else if (chip.key === 'price') setParam({ minPrice: '', maxPrice: '' });
     else toggleList(chip.key, chip.value);
   };

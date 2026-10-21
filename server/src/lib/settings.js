@@ -76,6 +76,19 @@ export const DEFAULT_SETTINGS = {
       focus: '30% center',
     },
   ],
+  // Which links show in the main navigation bar (desktop header + mobile menu).
+  // Keys are the fixed nav item ids; false hides the link. Missing keys default to visible.
+  navbar: {
+    home: true,
+    shop: true,
+    brands: true,
+    hair: true,
+    body: true,
+    best: true,
+    new: true,
+    offers: true,
+    routine: true,
+  },
   // Return policy published to Google only once enabled by the shop (never invented)
   returns: { enabled: false, days: 7, fees: 'customer' },
   // WhatsApp screenshots from customers: [{ url, thumbUrl }]

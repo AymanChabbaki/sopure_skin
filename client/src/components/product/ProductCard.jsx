@@ -74,6 +74,9 @@ function ProductCardBase({ product, priority = false }) {
           {discount > 0 && (
             <span className="rounded-full bg-brand-500 px-2.5 py-1 text-[11px] font-semibold text-white">-{discount}%</span>
           )}
+          {product.isBestSeller && (
+            <span className="rounded-full bg-ink/90 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur">{t('common.bestSeller')}</span>
+          )}
           {product.isNew && (
             <span className="rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium text-ink backdrop-blur">{t('common.new')}</span>
           )}

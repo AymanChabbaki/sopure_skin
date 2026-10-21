@@ -28,6 +28,7 @@ const productSchema = z.object({
   isActive: z.boolean().default(true),
   isFeatured: z.boolean().default(false),
   isNew: z.boolean().default(false),
+  isBestSeller: z.boolean().default(false),
   hasSizes: z.boolean().default(false),
   inGoogleFeed: z.boolean().default(true),
   sizes: z
@@ -58,6 +59,7 @@ productsRouter.get('/', async (req, res) => {
       isActive: r.is_active,
       isFeatured: r.is_featured,
       isNew: r.is_new,
+      isBestSeller: r.is_best_seller,
       salesCount: r.sales_count,
       hasSizes: r.has_sizes,
       image: r.images?.[0]?.thumbUrl,
@@ -86,6 +88,7 @@ productsRouter.get('/:id', async (req, res) => {
     isActive: row.is_active,
     isFeatured: row.is_featured,
     isNew: row.is_new,
+    isBestSeller: row.is_best_seller,
     hasSizes: row.has_sizes,
     inGoogleFeed: row.in_google_feed,
     sizes: row.sizes || [],
@@ -136,7 +139,7 @@ const productValues = (d) => {
   return [
     d.sku || null, d.brandId || null, d.name, d.shortDescription, d.description, d.howToUse, d.ingredients,
     d.metaTitle, d.metaDescription, d.price, d.compareAtPrice || null, stock, d.isActive, d.isFeatured, d.isNew,
-    hasSizes, JSON.stringify(sizes), d.expiresAt || null, d.inGoogleFeed,
+    hasSizes, JSON.stringify(sizes), d.expiresAt || null, d.inGoogleFeed, d.isBestSeller,
   ];
 };
 
@@ -147,8 +150,8 @@ productsRouter.post('/', validate(productSchema), async (req, res) => {
     const { rows: [row] } = await db.query(
       `INSERT INTO products (sku, brand_id, name, short_description, description, how_to_use, ingredients,
                              meta_title, meta_description, price, compare_at_price, stock, is_active, is_featured, is_new,
-                             has_sizes, sizes, expires_at, in_google_feed, slug)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20) RETURNING id`,
+                             has_sizes, sizes, expires_at, in_google_feed, is_best_seller, slug)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21) RETURNING id`,
       [...productValues(d), slug],
     );
     await saveRelations(db, row.id, d);
@@ -165,8 +168,9 @@ productsRouter.put('/:id', validate(productSchema), async (req, res) => {
     const { rowCount } = await db.query(
       `UPDATE products SET sku=$1, brand_id=$2, name=$3, short_description=$4, description=$5, how_to_use=$6,
               ingredients=$7, meta_title=$8, meta_description=$9, price=$10, compare_at_price=$11, stock=$12,
-              is_active=$13, is_featured=$14, is_new=$15, has_sizes=$16, sizes=$17, expires_at=$18, in_google_feed=$19, slug=$20, updated_at=now()
-        WHERE id=$21`,
+              is_active=$13, is_featured=$14, is_new=$15, has_sizes=$16, sizes=$17, expires_at=$18, in_google_feed=$19,
+              is_best_seller=$20, slug=$21, updated_at=now()
+        WHERE id=$22`,
       [...productValues(d), slug, id],
     );
     if (!rowCount) throw new HttpError(404, 'Product not found');
@@ -181,7 +185,7 @@ productsRouter.patch(
   validate(
     z.object({
       ids: z.array(z.number().int()).min(1),
-      action: z.enum(['activate', 'deactivate', 'feature', 'unfeature', 'delete']),
+      action: z.enum(['activate', 'deactivate', 'feature', 'unfeature', 'bestseller', 'unbestseller', 'delete']),
     }),
   ),
   async (req, res) => {
@@ -191,6 +195,8 @@ productsRouter.patch(
       deactivate: 'UPDATE products SET is_active = false, updated_at = now() WHERE id = ANY($1)',
       feature: 'UPDATE products SET is_featured = true, updated_at = now() WHERE id = ANY($1)',
       unfeature: 'UPDATE products SET is_featured = false, updated_at = now() WHERE id = ANY($1)',
+      bestseller: 'UPDATE products SET is_best_seller = true, updated_at = now() WHERE id = ANY($1)',
+      unbestseller: 'UPDATE products SET is_best_seller = false, updated_at = now() WHERE id = ANY($1)',
     }[action];
     if (sql) {
       await query(sql, [ids]);

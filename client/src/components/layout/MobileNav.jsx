@@ -39,18 +39,24 @@ export function MobileMenu() {
   const { data: categories = [] } = useCategories();
   const { data: brands = [] } = useBrands();
   const { data: settings } = useSettings();
+  const navbar = settings?.navbar || {};
+  const shown = (id) => navbar[id] !== false;
   const close = () => setOpen(false);
   const linkCls = 'block py-2 text-sm text-ink/75 hover:text-brand-600';
 
   return (
     <Drawer open={open} onClose={close} title={t('nav.menu')} side="start">
       <nav className="px-5" aria-label="Mobile">
-        <Link to={lp('/')} onClick={close} className="block border-b border-line py-4 text-base font-medium">
-          {t('nav.home')}
-        </Link>
-        <Link to={lp('/shop')} onClick={close} className="block border-b border-line py-4 text-base font-medium">
-          {t('nav.allProducts')}
-        </Link>
+        {shown('home') && (
+          <Link to={lp('/')} onClick={close} className="block border-b border-line py-4 text-base font-medium">
+            {t('nav.home')}
+          </Link>
+        )}
+        {shown('shop') && (
+          <Link to={lp('/shop')} onClick={close} className="block border-b border-line py-4 text-base font-medium">
+            {t('nav.allProducts')}
+          </Link>
+        )}
         <Accordion title={t('nav.categories')}>
           {categories.filter((c) => c.kind === 'type').map((c) => (
             <Link key={c.id} to={lp(`/category/${c.slug}`)} onClick={close} className={linkCls}>
@@ -59,37 +65,41 @@ export function MobileMenu() {
           ))}
         </Accordion>
         {[
-          ['/category/soins-cheveux', t('nav.hairCare')],
-          ['/category/soins-corps', t('nav.bodyCare')],
-        ].map(([to, label]) => (
+          ['hair', '/category/soins-cheveux', t('nav.hairCare')],
+          ['body', '/category/soins-corps', t('nav.bodyCare')],
+        ].filter(([id]) => shown(id)).map(([, to, label]) => (
           <Link key={to} to={lp(to)} onClick={close} className="flex items-center justify-between border-b border-line py-4 text-base font-medium">
             {label}
             <ChevronRight className="size-4 text-muted rtl:-scale-x-100" />
           </Link>
         ))}
-        <Link to={lp('/routine')} onClick={close} className="flex items-center justify-between border-b border-line py-4 text-base font-medium text-brand-700">
-          <span className="flex items-center gap-2">
-            <Sparkles className="size-4" /> {t('nav.routineBuilder')}
-          </span>
-          <ChevronRight className="size-4 rtl:-scale-x-100" />
-        </Link>
-        <Accordion title={t('nav.brands')}>
-          <div className="grid grid-cols-2">
-            {brands.map((b) => (
-              <Link key={b.id} to={lp(`/brand/${b.slug}`)} onClick={close} className={linkCls}>
-                {b.name}
-              </Link>
-            ))}
-          </div>
-        </Accordion>
+        {shown('routine') && (
+          <Link to={lp('/routine')} onClick={close} className="flex items-center justify-between border-b border-line py-4 text-base font-medium text-brand-700">
+            <span className="flex items-center gap-2">
+              <Sparkles className="size-4" /> {t('nav.routineBuilder')}
+            </span>
+            <ChevronRight className="size-4 rtl:-scale-x-100" />
+          </Link>
+        )}
+        {shown('brands') && (
+          <Accordion title={t('nav.brands')}>
+            <div className="grid grid-cols-2">
+              {brands.map((b) => (
+                <Link key={b.id} to={lp(`/brand/${b.slug}`)} onClick={close} className={linkCls}>
+                  {b.name}
+                </Link>
+              ))}
+            </div>
+          </Accordion>
+        )}
         {[
-          ['/shop?sort=popular', t('nav.bestSellers')],
-          ['/shop?sort=newest', t('nav.newArrivals')],
-          ['/shop?onSale=true', t('nav.offers')],
-          ['/about', t('nav.about')],
-          ['/faq', t('nav.faq')],
-          ['/contact', t('nav.contact')],
-        ].map(([to, label]) => (
+          ['best', '/shop?bestSeller=true', t('nav.bestSellers')],
+          ['new', '/shop?sort=newest', t('nav.newArrivals')],
+          ['offers', '/shop?onSale=true', t('nav.offers')],
+          [null, '/about', t('nav.about')],
+          [null, '/faq', t('nav.faq')],
+          [null, '/contact', t('nav.contact')],
+        ].filter(([id]) => id === null || shown(id)).map(([, to, label]) => (
           <Link key={to} to={lp(to)} onClick={close} className="block border-b border-line py-4 text-base font-medium">
             {label}
           </Link>
