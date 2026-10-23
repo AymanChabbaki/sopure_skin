@@ -33,7 +33,9 @@ export function GoogleMerchantWidget() {
     script.onload = () => window.merchantwidget?.start({
       merchant_id: MERCHANT_ID,
       position: 'LEFT_BOTTOM',
-      mobileBottomMargin: 90,
+      // Leave room for Soso, including its raised position on product pages.
+      bottomMargin: 120,
+      mobileBottomMargin: 250,
     });
     script.onerror = () => script.remove();
     document.head.appendChild(script);
