@@ -29,10 +29,12 @@ const shippingSchema = z.object({
 
 const returnsSchema = z.object({ enabled: z.boolean(), days: z.number().int().min(1).max(365), fees: z.enum(['free', 'customer']) });
 
-// Navbar item visibility: a map of the known nav ids to booleans.
-const navbarSchema = z.object(
-  Object.fromEntries(['home', 'shop', 'brands', 'hair', 'body', 'best', 'new', 'offers', 'routine'].map((id) => [id, z.boolean()])),
-).partial();
+// Navbar: a map of the known nav ids to booleans (visibility) + their display order.
+const NAV_IDS = ['home', 'shop', 'brands', 'hair', 'body', 'best', 'new', 'offers', 'routine'];
+const navbarSchema = z.object({
+  ...Object.fromEntries(NAV_IDS.map((id) => [id, z.boolean()])),
+  order: z.array(z.enum(NAV_IDS)),
+}).partial();
 
 /** Sends every public URL (from the sitemap) to IndexNow: Bing, Yandex, Seznam, Naver. */
 settingsRouter.post('/indexnow', async (_req, res) => {

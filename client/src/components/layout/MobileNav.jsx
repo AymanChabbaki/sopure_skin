@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Link, NavLink } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'motion/react';
@@ -10,7 +10,9 @@ import { useUi } from '../../store/ui.js';
 import { useCart, useCartCount } from '../../store/cart.js';
 import { useCategories, useBrands, useSettings } from '../../hooks/useStore.js';
 import { useLocalePath } from '../../hooks/useLocalePath.js';
-import { cn } from '../../lib/format.js';
+import { cn, sortByNavOrder } from '../../lib/format.js';
+
+const NAV_IDS = ['home', 'shop', 'brands', 'hair', 'body', 'best', 'new', 'offers', 'routine'];
 
 function Accordion({ title, children }) {
   const [open, setOpen] = useState(false);
@@ -43,66 +45,72 @@ export function MobileMenu() {
   const shown = (id) => navbar[id] !== false;
   const close = () => setOpen(false);
   const linkCls = 'block py-2 text-sm text-ink/75 hover:text-brand-600';
+  const rowCls = 'block border-b border-line py-4 text-base font-medium';
+  const chevronRow = (to, label) => (
+    <Link to={lp(to)} onClick={close} className="flex items-center justify-between border-b border-line py-4 text-base font-medium">
+      {label}
+      <ChevronRight className="size-4 text-muted rtl:-scale-x-100" />
+    </Link>
+  );
+  const plainRow = (to, label) => (
+    <Link to={lp(to)} onClick={close} className={rowCls}>
+      {label}
+    </Link>
+  );
+  // One entry per configurable nav id, rendered in the order chosen in the admin settings
+  const items = {
+    home: plainRow('/', t('nav.home')),
+    shop: plainRow('/shop', t('nav.allProducts')),
+    hair: chevronRow('/category/soins-cheveux', t('nav.hairCare')),
+    body: chevronRow('/category/soins-corps', t('nav.bodyCare')),
+    routine: (
+      <Link to={lp('/routine')} onClick={close} className="flex items-center justify-between border-b border-line py-4 text-base font-medium text-brand-700">
+        <span className="flex items-center gap-2">
+          <Sparkles className="size-4" /> {t('nav.routineBuilder')}
+        </span>
+        <ChevronRight className="size-4 rtl:-scale-x-100" />
+      </Link>
+    ),
+    brands: (
+      <Accordion title={t('nav.brands')}>
+        <div className="grid grid-cols-2">
+          {brands.map((b) => (
+            <Link key={b.id} to={lp(`/brand/${b.slug}`)} onClick={close} className={linkCls}>
+              {b.name}
+            </Link>
+          ))}
+        </div>
+      </Accordion>
+    ),
+    best: plainRow('/shop?bestSeller=true', t('nav.bestSellers')),
+    new: plainRow('/shop?sort=newest', t('nav.newArrivals')),
+    offers: plainRow('/shop?onSale=true', t('nav.offers')),
+  };
 
   return (
     <Drawer open={open} onClose={close} title={t('nav.menu')} side="start">
       <nav className="px-5" aria-label="Mobile">
-        {shown('home') && (
-          <Link to={lp('/')} onClick={close} className="block border-b border-line py-4 text-base font-medium">
-            {t('nav.home')}
-          </Link>
-        )}
-        {shown('shop') && (
-          <Link to={lp('/shop')} onClick={close} className="block border-b border-line py-4 text-base font-medium">
-            {t('nav.allProducts')}
-          </Link>
-        )}
-        <Accordion title={t('nav.categories')}>
-          {categories.filter((c) => c.kind === 'type').map((c) => (
-            <Link key={c.id} to={lp(`/category/${c.slug}`)} onClick={close} className={linkCls}>
-              {c.name}
-            </Link>
-          ))}
-        </Accordion>
-        {[
-          ['hair', '/category/soins-cheveux', t('nav.hairCare')],
-          ['body', '/category/soins-corps', t('nav.bodyCare')],
-        ].filter(([id]) => shown(id)).map(([, to, label]) => (
-          <Link key={to} to={lp(to)} onClick={close} className="flex items-center justify-between border-b border-line py-4 text-base font-medium">
-            {label}
-            <ChevronRight className="size-4 text-muted rtl:-scale-x-100" />
-          </Link>
+        {sortByNavOrder(NAV_IDS, navbar.order, (id) => id).map((id) => (
+          <Fragment key={id}>
+            {shown(id) && items[id]}
+            {/* The categories accordion has no toggle of its own: it follows the shop link */}
+            {id === 'shop' && (
+              <Accordion title={t('nav.categories')}>
+                {categories.filter((c) => c.kind === 'type').map((c) => (
+                  <Link key={c.id} to={lp(`/category/${c.slug}`)} onClick={close} className={linkCls}>
+                    {c.name}
+                  </Link>
+                ))}
+              </Accordion>
+            )}
+          </Fragment>
         ))}
-        {shown('routine') && (
-          <Link to={lp('/routine')} onClick={close} className="flex items-center justify-between border-b border-line py-4 text-base font-medium text-brand-700">
-            <span className="flex items-center gap-2">
-              <Sparkles className="size-4" /> {t('nav.routineBuilder')}
-            </span>
-            <ChevronRight className="size-4 rtl:-scale-x-100" />
-          </Link>
-        )}
-        {shown('brands') && (
-          <Accordion title={t('nav.brands')}>
-            <div className="grid grid-cols-2">
-              {brands.map((b) => (
-                <Link key={b.id} to={lp(`/brand/${b.slug}`)} onClick={close} className={linkCls}>
-                  {b.name}
-                </Link>
-              ))}
-            </div>
-          </Accordion>
-        )}
         {[
-          ['best', '/shop?bestSeller=true', t('nav.bestSellers')],
-          ['new', '/shop?sort=newest', t('nav.newArrivals')],
-          ['offers', '/shop?onSale=true', t('nav.offers')],
-          [null, '/about', t('nav.about')],
-          [null, '/faq', t('nav.faq')],
-          [null, '/contact', t('nav.contact')],
-        ].filter(([id]) => id === null || shown(id)).map(([, to, label]) => (
-          <Link key={to} to={lp(to)} onClick={close} className="block border-b border-line py-4 text-base font-medium">
-            {label}
-          </Link>
+          ['/about', t('nav.about')],
+          ['/faq', t('nav.faq')],
+          ['/contact', t('nav.contact')],
+        ].map(([to, label]) => (
+          <Fragment key={to}>{plainRow(to, label)}</Fragment>
         ))}
         <div className="py-6">
           <p className="label">{t('common.language')}</p>

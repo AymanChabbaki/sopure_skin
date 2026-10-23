@@ -78,6 +78,7 @@ export const DEFAULT_SETTINGS = {
   ],
   // Which links show in the main navigation bar (desktop header + mobile menu).
   // Keys are the fixed nav item ids; false hides the link. Missing keys default to visible.
+  // `order` lists the ids in display order; ids missing from it keep their default position at the end.
   navbar: {
     home: true,
     shop: true,
@@ -88,6 +89,7 @@ export const DEFAULT_SETTINGS = {
     new: true,
     offers: true,
     routine: true,
+    order: ['home', 'shop', 'brands', 'hair', 'body', 'best', 'new', 'offers', 'routine'],
   },
   // Return policy published to Google only once enabled by the shop (never invented)
   returns: { enabled: false, days: 7, fees: 'customer' },

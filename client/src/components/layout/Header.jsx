@@ -11,7 +11,7 @@ import { useWishlist } from '../../store/wishlist.js';
 import { useUi } from '../../store/ui.js';
 import { useBrands, useCategories, useProducts, useSettings } from '../../hooks/useStore.js';
 import { useLocalePath } from '../../hooks/useLocalePath.js';
-import { cn } from '../../lib/format.js';
+import { cn, sortByNavOrder } from '../../lib/format.js';
 
 const ease = [0.22, 1, 0.36, 1];
 
@@ -272,7 +272,7 @@ export function Header() {
     closeTimer.current = setTimeout(() => setMega(null), 120);
   };
 
-  const links = [
+  const links = sortByNavOrder([
     { id: 'home', to: lp('/'), label: t('nav.home') },
     { id: 'shop', to: lp('/shop'), label: t('nav.shop'), mega: true },
     { id: 'brands', to: lp('/brands'), label: t('nav.brands'), mega: true },
@@ -282,7 +282,7 @@ export function Header() {
     { id: 'new', to: lp('/shop?sort=newest'), label: t('nav.newArrivals'), query: 'sort=newest' },
     { id: 'offers', to: lp('/shop?onSale=true'), label: t('nav.offers'), accent: true, query: 'onSale=true' },
     { id: 'routine', to: lp('/routine'), label: t('nav.myRoutine'), icon: Sparkles },
-  ].filter((l) => navbar[l.id] !== false);
+  ], navbar.order).filter((l) => navbar[l.id] !== false);
 
   return (
     <header

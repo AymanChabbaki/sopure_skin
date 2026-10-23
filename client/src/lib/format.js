@@ -14,3 +14,12 @@ export const discountPercent = (price, compareAt) =>
   compareAt && compareAt > price ? Math.round(((compareAt - price) / compareAt) * 100) : 0;
 
 export const cn = (...classes) => classes.filter(Boolean).join(' ');
+
+/** Sorts nav items by the admin-defined id order; ids missing from it keep their default position at the end. */
+export function sortByNavOrder(items, order = [], getId = (x) => x.id) {
+  const rank = (x) => {
+    const i = order.indexOf(getId(x));
+    return i === -1 ? order.length + items.indexOf(x) : i;
+  };
+  return [...items].sort((a, b) => rank(a) - rank(b));
+}
