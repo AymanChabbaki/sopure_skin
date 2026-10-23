@@ -8,6 +8,7 @@ import { pickLocale, tr, HttpError } from '../lib/utils.js';
 import { validate } from '../middleware/errors.js';
 import { adjustSize, sizesStock } from '../lib/sizes.js';
 import { notifyNewOrder } from '../lib/mailer.js';
+import { estimatedDeliveryDate } from '../lib/delivery.js';
 
 export const publicRouter = Router();
 
@@ -264,6 +265,10 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
     shippingFee: order.shipping_fee,
     total: order.total,
     createdAt: order.created_at,
+    googleReview: data.email ? {
+      email: data.email,
+      estimatedDeliveryDate: estimatedDeliveryDate(order.created_at, isCasablanca(data.city, settings.shipping)),
+    } : null,
   });
 });
 

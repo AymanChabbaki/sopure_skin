@@ -6,6 +6,7 @@ import { FaWhatsapp } from 'react-icons/fa6';
 import { useSettings } from '../hooks/useStore.js';
 import { useLocalePath } from '../hooks/useLocalePath.js';
 import { formatPrice } from '../lib/format.js';
+import { GoogleReviewOptIn } from '../components/GoogleCustomerReviews.jsx';
 
 export default function OrderSuccess() {
   const { t } = useTranslation();
@@ -18,6 +19,7 @@ export default function OrderSuccess() {
 
   return (
     <div className="container-x flex flex-col items-center py-20 text-center">
+      <GoogleReviewOptIn order={order} />
       <div className="relative">
         {Array.from({ length: 12 }, (_, i) => (
           <motion.span

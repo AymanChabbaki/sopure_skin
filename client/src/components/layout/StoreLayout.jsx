@@ -10,6 +10,7 @@ import { MobileMenu, MobileBottomNav } from './MobileNav.jsx';
 import { Assistant } from '../chat/Assistant.jsx';
 import { FloatingCart } from './FloatingCart.jsx';
 import { ServerSeo } from '../ui/ServerSeo.jsx';
+import { GoogleMerchantWidget } from '../GoogleCustomerReviews.jsx';
 
 export function StoreLayout({ lang }) {
   const { i18n } = useTranslation();
@@ -21,6 +22,7 @@ export function StoreLayout({ lang }) {
   return (
     <>
       <ServerSeo />
+      <GoogleMerchantWidget />
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-full focus:bg-white focus:px-4 focus:py-2">
         Skip to content
       </a>
