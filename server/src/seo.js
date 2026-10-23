@@ -240,7 +240,7 @@ export async function buildPage(pathname, search = '') {
     const hero = settings.hero?.find((h) => h.image);
     page.image = hero?.image || DEFAULT_OG_IMAGE;
     page.imageAlt = tr(hero?.title, locale) || BRAND;
-    page.preloadImage = hero ? { src: hero.image, srcSm: hero.imageSm || hero.image } : null;
+    page.preloadImage = hero ? { src: hero.image, srcSm: hero.imageSm || hero.image, mobileSrc: hero.mobileImage } : null;
     const { rows: top } = await query(
       `SELECT p.slug, p.name, p.price, b.name AS brand,
               (SELECT url FROM product_images WHERE product_id = p.id ORDER BY position LIMIT 1) AS image
@@ -464,7 +464,9 @@ function renderHead(page) {
   const perf = [
     r2Enabled && `<link rel="preconnect" href="${esc(config.r2.publicUrl)}" crossorigin>`,
     page.preloadImage &&
-      `<link rel="preload" as="image" href="${esc(absolute(page.preloadImage.src))}" imagesrcset="${esc(absolute(page.preloadImage.srcSm))} 960w, ${esc(absolute(page.preloadImage.src))} 1920w" imagesizes="100vw" fetchpriority="high">`,
+      (page.preloadImage.mobileSrc
+        ? `<link rel="preload" as="image" href="${esc(absolute(page.preloadImage.mobileSrc))}" media="(max-width: 767px)" fetchpriority="high"><link rel="preload" as="image" href="${esc(absolute(page.preloadImage.src))}" media="(min-width: 768px)" fetchpriority="high">`
+        : `<link rel="preload" as="image" href="${esc(absolute(page.preloadImage.src))}" imagesrcset="${esc(absolute(page.preloadImage.srcSm))} 960w, ${esc(absolute(page.preloadImage.src))} 1920w" imagesizes="100vw" fetchpriority="high">`),
   ].filter(Boolean);
   const tags = headDescriptors(page).map((d) => {
     if (d.tag === 'script') return `<script${attrString(d.attrs)}>${d.text.replace(/</g, '\\u003c')}</script>`;

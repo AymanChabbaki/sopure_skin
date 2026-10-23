@@ -150,7 +150,7 @@ function HeroSlide({ slide, index, onChange, onRemove }) {
           <Trash2 className="size-4" />
         </button>
       </div>
-      <Field label="Image" hint="Format large conseillé (1920 × 820). Laissez un espace vide du côté du texte.">
+      <Field label="Image ordinateur" hint="Format large conseillé (1920 × 820). Laissez un espace vide du côté du texte.">
         <ImageUploader
           folder="banners"
           multiple={false}
@@ -158,6 +158,22 @@ function HeroSlide({ slide, index, onChange, onRemove }) {
           onChange={(imgs) => onChange({ ...slide, image: imgs[0]?.url || '', imageSm: imgs[0]?.thumbUrl || '' })}
         />
       </Field>
+      <Field label="Image téléphone (facultative)" hint="Format portrait conseillé (960 × 1440). Gardez le bas dégagé pour le texte. Sans image, la version ordinateur est utilisée.">
+        <ImageUploader
+          folder="banners"
+          multiple={false}
+          images={slide.mobileImage ? [{ url: slide.mobileImage }] : []}
+          onChange={(imgs) => set('mobileImage')(imgs[0]?.url || '')}
+        />
+      </Field>
+      {slide.mobileImage && (
+        <div className="relative aspect-[2/3] max-w-64 overflow-hidden rounded-2xl">
+          <img src={slide.mobileImage} alt="Aperçu de la bannière téléphone" className="size-full object-cover" style={{ objectPosition: slide.focus || 'center' }} />
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white via-white/85 to-transparent px-4 pb-6 pt-16">
+            <p className="text-sm font-medium">{slide.title?.fr || 'Titre'}</p>
+          </div>
+        </div>
+      )}
       {slide.image && (
         <div className="relative aspect-[1916/821] overflow-hidden rounded-2xl">
           <img src={slide.image} alt="" className="size-full object-cover" />

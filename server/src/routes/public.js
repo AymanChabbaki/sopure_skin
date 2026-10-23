@@ -36,6 +36,7 @@ publicRouter.get('/settings', async (req, res) => {
       link: h.link,
       image: h.image,
       imageSm: h.imageSm || h.image,
+      mobileImage: h.mobileImage || '',
       side: h.side === 'right' ? 'right' : 'left',
       focus: h.focus || 'center',
     })),

@@ -103,7 +103,7 @@ export function Hero() {
             exit={{ opacity: 0 }}
             transition={{ duration: 1, ease: 'easeInOut' }}
           >
-            <source media="(max-width: 767px)" srcSet={slide.imageSm || slide.image} />
+            <source media="(max-width: 767px)" srcSet={slide.mobileImage || slide.imageSm || slide.image} />
             <motion.img
               src={slide.image}
               alt={slide.title}
