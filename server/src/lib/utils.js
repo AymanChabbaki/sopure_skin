@@ -41,3 +41,12 @@ export class HttpError extends Error {
     this.details = details;
   }
 }
+
+/** GTIN-8/12/13/14 (EAN, UPC) with a valid check digit. */
+export function isValidGtin(code) {
+  if (!/^(\d{8}|\d{12,14})$/.test(code)) return false;
+  const digits = [...code].map(Number);
+  const check = digits.pop();
+  const sum = digits.reverse().reduce((acc, d, i) => acc + d * (i % 2 ? 1 : 3), 0);
+  return (10 - (sum % 10)) % 10 === check;
+}

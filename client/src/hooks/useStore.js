@@ -41,6 +41,21 @@ export function useProduct(slug) {
   });
 }
 
+export function useArticles() {
+  const lang = useLang();
+  return useQuery({ queryKey: ['articles', lang], queryFn: () => api('/articles', { params: { lang } }), staleTime: 5 * 60_000 });
+}
+
+export function useArticle(slug) {
+  const lang = useLang();
+  return useQuery({
+    queryKey: ['article', lang, slug],
+    queryFn: () => api(`/articles/${encodeURIComponent(slug)}`, { params: { lang } }),
+    enabled: Boolean(slug),
+    retry: (count, err) => err.status !== 404 && count < 2,
+  });
+}
+
 /** Shipping fee preview, mirrors the server rule (the server stays the source of truth). */
 export function computeShipping(shipping, city, itemsCount) {
   if (!shipping) return null;

@@ -8,6 +8,7 @@ import { productsRouter } from './products.js';
 import { categoriesRouter, brandsRouter } from './taxonomy.js';
 import { ordersRouter } from './orders.js';
 import { reviewsRouter } from './reviews.js';
+import { articlesRouter } from './articles.js';
 import { statsRouter } from './stats.js';
 import { settingsRouter, uploadsRouter, teamRouter, subscribersRouter } from './system.js';
 
@@ -43,6 +44,12 @@ adminRouter.use((req, res, next) => {
           const { rows } = await query(`SELECT slug FROM ${resource} WHERE id = $1`, [id]);
           rows.forEach((r) => paths.push(`/${resource === 'brands' ? 'brand' : 'category'}/${r.slug}`));
         }
+      } else if (resource === 'articles') {
+        paths.push('/guides');
+        if (id && /^\d+$/.test(id)) {
+          const { rows } = await query('SELECT slug FROM articles WHERE id = $1 AND is_published', [id]);
+          rows.forEach((r) => paths.push(`/guides/${r.slug}`));
+        }
       } else if (resource !== 'settings' && resource !== 'reviews') {
         return; // orders, uploads, team…: nothing public changed
       }
@@ -60,6 +67,7 @@ adminRouter.use('/categories', categoriesRouter);
 adminRouter.use('/brands', brandsRouter);
 adminRouter.use('/orders', ordersRouter);
 adminRouter.use('/reviews', reviewsRouter);
+adminRouter.use('/articles', articlesRouter);
 adminRouter.use('/settings', settingsRouter);
 adminRouter.use('/uploads', uploadsRouter);
 adminRouter.use('/team', teamRouter);

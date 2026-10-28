@@ -19,6 +19,7 @@ export default {
     offers: 'Offers',
     about: 'About',
     faq: 'FAQ',
+    guides: 'Beauty tips',
     contact: 'Contact',
     shipping: 'Shipping & payment',
     returns: 'Returns & refunds',
@@ -268,6 +269,14 @@ export default {
     delaysText: '24 to 48h in Casablanca, 2 to 4 working days elsewhere.',
     payment: 'Payment',
     paymentText: 'Cash on delivery only. No bank details are ever requested.',
+  },
+  guides: {
+    title: 'Korean beauty tips',
+    subtitle: 'Routines, advice by skin type and product picks to take care of your skin.',
+    readMore: 'Read the guide',
+    products: 'Products in this guide',
+    back: 'All tips',
+    empty: 'Our first guides are coming soon.',
   },
   footer: {
     about: '100% authentic Korean skincare, delivered all over Morocco with cash on delivery.',

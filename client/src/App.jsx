@@ -20,6 +20,8 @@ const Contact = info('Contact');
 const ShippingInfo = info('ShippingInfo');
 const Policies = info('Policies');
 const NotFound = info('NotFound');
+const Guides = lazy(() => import('./pages/Guides.jsx').then((m) => ({ default: m.Guides })));
+const Guide = lazy(() => import('./pages/Guides.jsx').then((m) => ({ default: m.Guide })));
 const AdminApp = lazy(() => import('./admin/AdminApp.jsx'));
 
 
@@ -56,6 +58,8 @@ const storeRoutes = [
   { path: 'contact', element: page(Contact) },
   { path: 'shipping', element: page(ShippingInfo) },
   { path: 'policies', element: page(Policies) },
+  { path: 'guides', element: page(Guides) },
+  { path: 'guides/:slug', element: page(Guide) },
   { path: '*', element: page(NotFound) },
 ];
 

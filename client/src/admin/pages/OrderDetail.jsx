@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
-import { ArrowLeft, Phone, MapPin, Mail, Printer, Trash2, Check, StickyNote } from 'lucide-react';
+import { ArrowLeft, Phone, MapPin, Mail, Printer, Trash2, Check, StickyNote, Star } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa6';
 import { Card, ConfirmDialog, StatusBadge, ORDER_STATUSES, adminApi, patchCache, useAdminMutation, useAdminQuery, money, dateTime } from '../ui.jsx';
 import { Skeleton } from '../../components/ui/Primitives.jsx';
@@ -9,6 +9,24 @@ import { waNumber } from './Orders.jsx';
 import { cn } from '../../lib/format.js';
 
 const FLOW = ['pending', 'confirmed', 'shipped', 'delivered'];
+
+// After delivery: WhatsApp message in the customer's language with a direct link to each product's review form.
+// Real reviews give the store its star ratings in Google results.
+const REVIEW_MESSAGE = {
+  fr: (name, links) =>
+    `Bonjour ${name}, merci pour votre commande chez So Pure Skin ! Votre avis compte beaucoup pour nous : pourriez-vous laisser une note sur ${links.length > 1 ? 'vos produits' : 'votre produit'} ?\n\n${links.join('\n')}\n\nMerci ✨`,
+  en: (name, links) =>
+    `Hello ${name}, thank you for your So Pure Skin order! Your opinion means a lot to us: could you leave a quick review of ${links.length > 1 ? 'your products' : 'your product'}?\n\n${links.join('\n')}\n\nThank you ✨`,
+  ar: (name, links) =>
+    `مرحباً ${name}، شكراً على طلبك من So Pure Skin! رأيك يهمنا كثيراً: هل يمكنك ترك تقييم ${links.length > 1 ? 'للمنتجات' : 'للمنتج'}؟\n\n${links.join('\n')}\n\nشكراً ✨`,
+};
+
+function reviewRequestText(order) {
+  const locale = REVIEW_MESSAGE[order.locale] ? order.locale : 'fr';
+  const slugs = [...new Set(order.items.map((i) => i.slug).filter(Boolean))];
+  const links = slugs.map((slug) => `${window.location.origin}/${locale}/product/${slug}#reviews`);
+  return links.length ? encodeURIComponent(REVIEW_MESSAGE[locale](order.customer_name, links)) : null;
+}
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -38,6 +56,7 @@ export default function OrderDetail() {
 
   const stepIndex = FLOW.indexOf(order.status);
   const off = ['cancelled', 'returned'].includes(order.status);
+  const reviewText = order.status === 'delivered' ? reviewRequestText(order) : null;
   const waText = encodeURIComponent(
     `Bonjour ${order.customer_name}, nous vous contactons de la part de So Pure Skin pour confirmer votre commande ${order.number} d'un montant de ${money(order.total)}. Merci !`,
   );
@@ -175,6 +194,17 @@ export default function OrderDetail() {
               <a href={`https://wa.me/${waNumber(order.phone)}?text=${waText}`} target="_blank" rel="noreferrer" className="btn bg-[#25D366] py-2.5 text-sm text-white">
                 <FaWhatsapp className="size-4" /> WhatsApp
               </a>
+              {reviewText && (
+                <a
+                  href={`https://wa.me/${waNumber(order.phone)}?text=${reviewText}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-outline col-span-2 py-2.5 text-sm"
+                  title="Envoie au client un lien vers l'avis de chaque produit commandé"
+                >
+                  <Star className="size-4 text-amber-400" /> Demander un avis
+                </a>
+              )}
             </div>
             <p className="mt-3 text-xs text-muted">Langue du client : {order.locale.toUpperCase()}</p>
           </Card>

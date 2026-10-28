@@ -106,6 +106,7 @@ export function Footer() {
                 ['/faq', t('nav.faq')],
                 ['/contact', t('nav.contact')],
                 ['/about', t('nav.about')],
+                ['/guides', t('nav.guides')],
                 ['/policies', t('nav.policies')],
                 ['/policies#retours', t('nav.returns')],
                 ['/brands', t('nav.brands')],

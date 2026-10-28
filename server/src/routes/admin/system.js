@@ -97,7 +97,7 @@ const upload = multer({
 
 uploadsRouter.post('/', upload.array('files', 12), async (req, res) => {
   if (!req.files?.length) throw new HttpError(400, 'No valid image received');
-  const folder = ['products', 'categories', 'brands', 'banners', 'testimonials'].includes(req.query.folder) ? req.query.folder : 'products';
+  const folder = ['products', 'categories', 'brands', 'banners', 'testimonials', 'articles'].includes(req.query.folder) ? req.query.folder : 'products';
   // Optional ?name= (product / brand name) gives the files descriptive names for image SEO
   const name = String(req.query.name || '').slice(0, 120);
   const stored = await Promise.all(req.files.map((f) => storeImage(f.buffer, folder, name)));

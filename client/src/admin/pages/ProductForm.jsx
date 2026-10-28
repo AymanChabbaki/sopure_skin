@@ -15,6 +15,7 @@ const EMPTY = {
   metaDescription: {},
   slug: '',
   sku: '',
+  gtin: '',
   brandId: null,
   price: '',
   compareAtPrice: '',
@@ -42,7 +43,7 @@ export default function ProductForm() {
   const { data: brands = [] } = useAdminQuery(['brands'], '/brands');
 
   useEffect(() => {
-    if (data) setForm({ ...EMPTY, ...data, compareAtPrice: data.compareAtPrice ?? '', sku: data.sku ?? '' });
+    if (data) setForm({ ...EMPTY, ...data, compareAtPrice: data.compareAtPrice ?? '', sku: data.sku ?? '', gtin: data.gtin ?? '' });
   }, [data]);
 
   const set = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
@@ -185,6 +186,9 @@ export default function ProductForm() {
               </Field>
               <Field label="SKU">
                 <input value={form.sku} onChange={(e) => set('sku')(e.target.value)} className="input" />
+              </Field>
+              <Field className="col-span-2" label="Code-barres (EAN / GTIN)" hint="Les chiffres sous le code-barres de la boîte. Google s'en sert pour afficher le produit dans Shopping.">
+                <input value={form.gtin} onChange={(e) => set('gtin')(e.target.value)} inputMode="numeric" placeholder="8809…" className="input" />
               </Field>
             </div>
           </Card>

@@ -284,3 +284,27 @@ publicRouter.post(
     res.status(201).json({ ok: true });
   },
 );
+
+/* ---------------------------------- Guides --------------------------------- */
+
+publicRouter.get('/articles', async (req, res) => {
+  const { rows } = await query(
+    `SELECT slug, title, excerpt, cover_url, published_at FROM articles WHERE is_published ORDER BY published_at DESC`,
+  );
+  res.json(rows.map((a) => ({ slug: a.slug, title: tr(a.title, req.locale), excerpt: tr(a.excerpt, req.locale), coverUrl: a.cover_url, publishedAt: a.published_at })));
+});
+
+publicRouter.get('/articles/:slug', async (req, res) => {
+  const { rows: [a] } = await query('SELECT * FROM articles WHERE slug = $1 AND is_published', [req.params.slug]);
+  if (!a) throw new HttpError(404, 'Article not found');
+  res.json({
+    slug: a.slug,
+    title: tr(a.title, req.locale),
+    excerpt: tr(a.excerpt, req.locale),
+    body: tr(a.body, req.locale),
+    coverUrl: a.cover_url,
+    productIds: a.product_ids,
+    publishedAt: a.published_at,
+    updatedAt: a.updated_at,
+  });
+});

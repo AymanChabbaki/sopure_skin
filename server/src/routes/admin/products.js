@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { query, withTransaction } from '../../db/pool.js';
 import { listProducts, getProductBySlug } from '../../lib/catalog.js';
 import { removeImage } from '../../lib/images.js';
-import { HttpError, slugify } from '../../lib/utils.js';
+import { HttpError, isValidGtin, slugify } from '../../lib/utils.js';
 import { validate } from '../../middleware/errors.js';
 import { normalizeSizes, sizesStock } from '../../lib/sizes.js';
 
@@ -14,6 +14,11 @@ const i18n = z.object({ fr: z.string().default(''), en: z.string().default(''), 
 const productSchema = z.object({
   slug: z.string().trim().max(100).optional(),
   sku: z.string().trim().max(60).nullish(),
+  gtin: z
+    .string()
+    .transform((v) => v.replace(/[\s-]/g, ''))
+    .refine((v) => !v || isValidGtin(v), 'Code-barres (GTIN/EAN) invalide')
+    .nullish(),
   brandId: z.number().int().positive().nullish(),
   name: i18n.refine((v) => v.fr?.trim(), 'French name is required'),
   shortDescription: i18n.default({}),
@@ -74,6 +79,7 @@ productsRouter.get('/:id', async (req, res) => {
     id: row.id,
     slug: row.slug,
     sku: row.sku,
+    gtin: row.gtin,
     brandId: row.brand_id,
     name: row.name,
     shortDescription: row.short_description,
@@ -139,7 +145,7 @@ const productValues = (d) => {
   return [
     d.sku || null, d.brandId || null, d.name, d.shortDescription, d.description, d.howToUse, d.ingredients,
     d.metaTitle, d.metaDescription, d.price, d.compareAtPrice || null, stock, d.isActive, d.isFeatured, d.isNew,
-    hasSizes, JSON.stringify(sizes), d.expiresAt || null, d.inGoogleFeed, d.isBestSeller,
+    hasSizes, JSON.stringify(sizes), d.expiresAt || null, d.inGoogleFeed, d.isBestSeller, d.gtin || null,
   ];
 };
 
@@ -150,8 +156,8 @@ productsRouter.post('/', validate(productSchema), async (req, res) => {
     const { rows: [row] } = await db.query(
       `INSERT INTO products (sku, brand_id, name, short_description, description, how_to_use, ingredients,
                              meta_title, meta_description, price, compare_at_price, stock, is_active, is_featured, is_new,
-                             has_sizes, sizes, expires_at, in_google_feed, is_best_seller, slug)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21) RETURNING id`,
+                             has_sizes, sizes, expires_at, in_google_feed, is_best_seller, gtin, slug)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22) RETURNING id`,
       [...productValues(d), slug],
     );
     await saveRelations(db, row.id, d);
@@ -169,8 +175,8 @@ productsRouter.put('/:id', validate(productSchema), async (req, res) => {
       `UPDATE products SET sku=$1, brand_id=$2, name=$3, short_description=$4, description=$5, how_to_use=$6,
               ingredients=$7, meta_title=$8, meta_description=$9, price=$10, compare_at_price=$11, stock=$12,
               is_active=$13, is_featured=$14, is_new=$15, has_sizes=$16, sizes=$17, expires_at=$18, in_google_feed=$19,
-              is_best_seller=$20, slug=$21, updated_at=now()
-        WHERE id=$22`,
+              is_best_seller=$20, gtin=$21, slug=$22, updated_at=now()
+        WHERE id=$23`,
       [...productValues(d), slug, id],
     );
     if (!rowCount) throw new HttpError(404, 'Product not found');

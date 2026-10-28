@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInfiniteQuery, useMutation } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'motion/react';
@@ -71,7 +71,10 @@ function ReviewForm({ slug, onClose }) {
 
 export function Reviews({ slug }) {
   const { t, i18n } = useTranslation();
-  const [writing, setWriting] = useState(false);
+  // Arriving from a review request link (…/product/slug#reviews): open the form right away
+  const fromLink = typeof window !== 'undefined' && window.location.hash === '#reviews';
+  const [writing, setWriting] = useState(fromLink);
+  const sectionRef = useRef(null);
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['reviews', slug],
     queryFn: ({ pageParam }) => api(`/products/${encodeURIComponent(slug)}/reviews`, { params: { page: pageParam } }),
@@ -79,11 +82,15 @@ export function Reviews({ slug }) {
     getNextPageParam: (last) => (last.page < last.pages ? last.page + 1 : undefined),
   });
   const first = data?.pages[0];
+  const loaded = Boolean(data);
+  useEffect(() => {
+    if (fromLink && loaded) sectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [fromLink, loaded]);
   const rows = data?.pages.flatMap((p) => p.rows) ?? [];
   const date = (v) => new Intl.DateTimeFormat(LOCALE_TAGS[i18n.language], { dateStyle: 'medium' }).format(new Date(v));
 
   return (
-    <section id="reviews" className="scroll-mt-28 border-t border-line pt-16">
+    <section id="reviews" ref={sectionRef} className="scroll-mt-28 border-t border-line pt-16">
       <div className="grid gap-10 lg:grid-cols-[320px_1fr]">
         <div className="lg:sticky lg:top-28 lg:self-start">
           <h2 className="font-display text-4xl">{t('reviews.title')}</h2>

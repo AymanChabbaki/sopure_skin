@@ -106,6 +106,7 @@ export function MobileMenu() {
           </Fragment>
         ))}
         {[
+          ['/guides', t('nav.guides')],
           ['/about', t('nav.about')],
           ['/faq', t('nav.faq')],
           ['/contact', t('nav.contact')],

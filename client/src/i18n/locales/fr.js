@@ -19,6 +19,7 @@ export default {
     offers: 'Promotions',
     about: 'À propos',
     faq: 'FAQ',
+    guides: 'Conseils beauté',
     contact: 'Contact',
     shipping: 'Livraison & paiement',
     returns: 'Retours & remboursements',
@@ -268,6 +269,14 @@ export default {
     delaysText: '24 à 48h à Casablanca, 2 à 4 jours ouvrables ailleurs.',
     payment: 'Paiement',
     paymentText: 'Paiement uniquement en espèces à la livraison. Aucune information bancaire n’est demandée.',
+  },
+  guides: {
+    title: 'Conseils beauté coréenne',
+    subtitle: 'Routines, conseils par type de peau et sélections de produits pour prendre soin de votre peau.',
+    readMore: 'Lire le guide',
+    products: 'Les produits de ce guide',
+    back: 'Tous les conseils',
+    empty: 'Nos premiers guides arrivent bientôt.',
   },
   footer: {
     about: 'Cosmétiques coréens 100% authentiques, livrés partout au Maroc avec paiement à la livraison.',

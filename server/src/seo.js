@@ -4,6 +4,7 @@ import { config, LOCALES, DEFAULT_LOCALE, r2Enabled } from './config.js';
 import { getSettings } from './lib/settings.js';
 import { getProductBySlug, relatedProducts } from './lib/catalog.js';
 import { indexNowKey } from './lib/indexnow.js';
+import { articleHtml } from './lib/articles.js';
 import { escapeHtml as esc, stripHtml, tr, truncate } from './lib/utils.js';
 
 const SITE = config.siteUrl;
@@ -28,6 +29,14 @@ const T = {
     ar: 'التوصيل لجميع مدن المغرب والدفع عند الاستلام.',
   },
   photo: { fr: 'photo', en: 'photo', ar: 'صورة' },
+  howToUse: { fr: 'Utilisation', en: 'How to use', ar: 'طريقة الاستعمال' },
+  ingredients: { fr: 'Ingrédients', en: 'Ingredients', ar: 'المكونات' },
+  guideProducts: { fr: 'Les produits de ce guide', en: 'Products in this guide', ar: 'منتجات هذا الدليل' },
+  guidesPitch: {
+    fr: 'Routines coréennes, conseils par type de peau et sélections de produits : nos guides pour prendre soin de votre peau au Maroc.',
+    en: 'Korean routines, advice by skin type and product picks: our guides to caring for your skin in Morocco.',
+    ar: 'روتينات كورية ونصائح حسب نوع البشرة واختيارات المنتجات: أدلتنا للعناية ببشرتك في المغرب.',
+  },
 };
 
 const STATIC_PAGES = {
@@ -39,6 +48,7 @@ const STATIC_PAGES = {
   shipping: { fr: 'Livraison & paiement', en: 'Shipping & payment', ar: 'التوصيل والدفع' },
   policies: { fr: 'Conditions de vente, retours & confidentialité', en: 'Terms of sale, returns & privacy', ar: 'شروط البيع والإرجاع والخصوصية' },
   routine: { fr: 'Composer ma routine de soin coréenne', en: 'Build my Korean skincare routine', ar: 'كوّني روتين العناية الكوري الخاص بك' },
+  guides: { fr: 'Conseils beauté coréenne', en: 'Korean beauty tips', ar: 'نصائح الجمال الكوري' },
 };
 // Private or transactional pages: never indexed
 const NOINDEX_PAGES = {
@@ -277,6 +287,7 @@ export async function buildPage(pathname, search = '') {
         url,
         image: p.images.map((i) => absolute(i.url)),
         sku: p.sku || String(p.id),
+        gtin: p.gtin || undefined,
         brand: p.brand_name ? { '@type': 'Brand', name: p.brand_name } : undefined,
         category: typeCategory ? tr(typeCategory.name, locale) : undefined,
         aggregateRating: await realRating(p.id),
@@ -307,6 +318,12 @@ export async function buildPage(pathname, search = '') {
         )
         .join('') +
       `<p>${p.price} MAD</p><p>${esc(stripHtml(tr(p.description, locale)))}</p>` +
+      // How-to-use and ingredients are unique text crawlers should see, not only the description
+      [['howToUse', p.how_to_use], ['ingredients', p.ingredients]]
+        .map(([key, field]) => [key, stripHtml(tr(field, locale))])
+        .filter(([, text]) => text)
+        .map(([key, text]) => `<h2>${esc(T[key][locale])}</h2><p>${esc(text)}</p>`)
+        .join('') +
       // Breadcrumb, brand and related products as real links
       `<p><a href="/${locale}">${esc(T.home[locale])}</a> › ` +
       (typeCategory ? `<a href="/${locale}/category/${typeCategory.slug}">${esc(tr(typeCategory.name, locale))}</a>` : `<a href="/${locale}/shop">${esc(T.shop[locale])}</a>`) +
@@ -368,8 +385,62 @@ export async function buildPage(pathname, search = '') {
       ]),
     );
     page.body = `<h1>${esc(name)}</h1>${intro ? `<p>${esc(intro)}</p>` : ''}<ul>${productLinks(items, locale)}</ul>`;
+  } else if (section === 'guides' && slug) {
+    const { rows: [a] } = await query('SELECT * FROM articles WHERE slug = $1 AND is_published', [decodeURIComponent(slug)]);
+    if (!a) {
+      page.noindex = true;
+      return page;
+    }
+    const title = tr(a.title, locale);
+    const url = `${SITE}/${locale}/guides/${a.slug}`;
+    const body = tr(a.body, locale);
+    const excerpt = stripHtml(tr(a.excerpt, locale)) || truncate(stripHtml(body.replace(/^#+\s+/gm, '')), 300);
+    const { rows: products } = a.product_ids.length
+      ? await query(`${PRODUCT_CARD_SQL} WHERE p.id = ANY($1) AND p.is_active`, [a.product_ids])
+      : { rows: [] };
+    page.title = `${title} | ${BRAND}`;
+    page.description = truncate(excerpt, 160);
+    page.type = 'article';
+    page.image = a.cover_url || products[0]?.image;
+    page.imageAlt = title;
+    page.preloadImage = a.cover_url ? { src: a.cover_url, srcSm: a.cover_url } : null;
+    page.jsonLd.push(
+      LD({
+        '@type': 'BlogPosting',
+        '@id': `${url}#article`,
+        headline: truncate(title, 110),
+        description: excerpt || undefined,
+        image: page.image ? [absolute(page.image)] : undefined,
+        datePublished: new Date(a.published_at || a.created_at).toISOString(),
+        dateModified: new Date(a.updated_at).toISOString(),
+        inLanguage: locale,
+        mainEntityOfPage: url,
+        author: { '@id': ORG_ID },
+        publisher: { '@id': ORG_ID },
+        isPartOf: { '@id': SITE_ID },
+      }),
+      breadcrumbLd(locale, [
+        { name: T.home[locale], path: '' },
+        { name: STATIC_PAGES.guides[locale], path: '/guides' },
+        { name: title, path: `/guides/${a.slug}` },
+      ]),
+    );
+    page.body =
+      `<article><h1>${esc(title)}</h1>` +
+      (a.cover_url ? `<img src="${esc(absolute(a.cover_url))}" alt="${esc(title)}" width="1200" height="675">` : '') +
+      articleHtml(body) +
+      '</article>' +
+      (products.length ? `<h2>${esc(T.guideProducts[locale])}</h2><ul>${productLinks(products, locale)}</ul>` : '');
   } else if (STATIC_PAGES[section]) {
     page.title = `${STATIC_PAGES[section][locale]} | ${BRAND}`;
+    if (section === 'guides') {
+      const { rows: articles } = await query('SELECT slug, title, excerpt FROM articles WHERE is_published ORDER BY published_at DESC');
+      page.description = T.guidesPitch[locale];
+      page.body =
+        `<h1>${esc(STATIC_PAGES.guides[locale])}</h1><ul>` +
+        articles.map((a) => `<li><a href="/${locale}/guides/${a.slug}">${esc(tr(a.title, locale))}</a>${tr(a.excerpt, locale) ? ` – ${esc(stripHtml(tr(a.excerpt, locale)))}` : ''}</li>`).join('') +
+        '</ul>';
+    }
     if (section === 'shop') {
       // The shop lists the whole catalog for crawlers
       const { rows: all } = await query(`${PRODUCT_CARD_SQL} WHERE p.is_active ORDER BY p.sales_count DESC`);
@@ -539,7 +610,7 @@ function urlEntry(path, lastmod, images = []) {
 }
 
 seoRouter.get('/sitemap.xml', async (_req, res) => {
-  const [products, categories, brands, settings] = await Promise.all([
+  const [products, categories, brands, settings, articles] = await Promise.all([
     query(
       `SELECT p.slug, p.updated_at,
               coalesce((SELECT json_agg(url ORDER BY position) FROM product_images WHERE product_id = p.id), '[]') AS images
@@ -550,6 +621,7 @@ seoRouter.get('/sitemap.xml', async (_req, res) => {
     query(`SELECT b.slug, b.logo_url, (SELECT max(updated_at) FROM products WHERE brand_id = b.id) AS lastmod
              FROM brands b WHERE EXISTS (SELECT 1 FROM products p WHERE p.brand_id = b.id AND p.is_active)`),
     getSettings(),
+    query('SELECT slug, cover_url, updated_at FROM articles WHERE is_published ORDER BY published_at DESC'),
   ]);
   const latest = products.rows.reduce((m, p) => (p.updated_at > m ? p.updated_at : m), new Date(0));
   const heroImages = (settings.hero || []).map((h) => h.image).filter(Boolean);
@@ -564,6 +636,8 @@ seoRouter.get('/sitemap.xml', async (_req, res) => {
     urlEntry('/faq', null),
     urlEntry('/contact', null),
     urlEntry('/shipping', null),
+    urlEntry('/guides', articles.rows[0]?.updated_at ?? null),
+    ...articles.rows.map((a) => urlEntry(`/guides/${a.slug}`, a.updated_at, a.cover_url ? [a.cover_url] : [])),
     ...categories.rows.map((c) => urlEntry(`/category/${c.slug}`, c.lastmod)),
     ...brands.rows.map((b) => urlEntry(`/brand/${b.slug}`, b.lastmod, b.logo_url ? [b.logo_url] : [])),
     ...products.rows.map((p) => urlEntry(`/product/${p.slug}`, p.updated_at, p.images)),
@@ -666,7 +740,7 @@ seoRouter.get('/feeds/google-merchant.xml', async (_req, res) => {
   const settings = await getSettings();
   const { rows } = await query(
     `SELECT p.id, p.slug, p.name->>'fr' AS name, p.description->>'fr' AS description, p.short_description->>'fr' AS short,
-            p.price, p.compare_at_price, p.stock, b.name AS brand,
+            p.price, p.compare_at_price, p.stock, p.gtin, b.name AS brand,
             coalesce((SELECT json_agg(url ORDER BY position) FROM product_images WHERE product_id = p.id), '[]') AS images,
             (SELECT c.name->>'fr' FROM product_categories pc JOIN categories c ON c.id = pc.category_id
               WHERE pc.product_id = p.id AND c.kind = 'type' LIMIT 1) AS type
@@ -691,7 +765,8 @@ seoRouter.get('/feeds/google-merchant.xml', async (_req, res) => {
       onSale ? `<g:sale_price>${p.price.toFixed(2)} MAD</g:sale_price>` : '',
       p.brand ? `<g:brand>${esc(p.brand)}</g:brand>` : '',
       '<g:condition>new</g:condition>',
-      '<g:identifier_exists>no</g:identifier_exists>',
+      // With a barcode Google matches the product across stores; without one it must be told none exists
+      p.gtin ? `<g:gtin>${esc(p.gtin)}</g:gtin>` : '<g:identifier_exists>no</g:identifier_exists>',
       // Health & Beauty > Personal Care > Cosmetics > Skin Care
       '<g:google_product_category>567</g:google_product_category>',
       p.type ? `<g:product_type>Soins du visage &gt; ${esc(p.type)}</g:product_type>` : '',
