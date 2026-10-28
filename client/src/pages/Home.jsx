@@ -10,7 +10,8 @@ import { useLocalePath } from '../hooks/useLocalePath.js';
 export default function Home() {
   const { t } = useTranslation();
   const lp = useLocalePath();
-  const best = useProducts({ sort: 'popular', limit: 10 });
+  // Only products marked « Best-seller » in the admin (same list as the menu link)
+  const best = useProducts({ bestSeller: true, sort: 'popular', limit: 10 });
   const fresh = useProducts({ sort: 'newest', limit: 8 });
   const offers = useProducts({ onSale: true, sort: 'popular', limit: 10 });
   return (
@@ -21,10 +22,12 @@ export default function Home() {
       <SloganBand />
       <CategoryRail />
 
-      <section className="container-x pb-16 sm:pb-24">
-        <SectionHeading title={t('home.bestSellersTitle')} subtitle={t('home.bestSellersSubtitle')} link={lp('/shop?sort=popular')} linkLabel={t('nav.viewAll')} />
-        <ProductCarousel products={best.data?.rows} loading={best.isLoading} />
-      </section>
+      {(best.isLoading || best.data?.rows?.length > 0) && (
+        <section className="container-x pb-16 sm:pb-24">
+          <SectionHeading title={t('home.bestSellersTitle')} subtitle={t('home.bestSellersSubtitle')} link={lp('/shop?bestSeller=true')} linkLabel={t('nav.viewAll')} />
+          <ProductCarousel products={best.data?.rows} loading={best.isLoading} />
+        </section>
+      )}
 
       <RoutineFinder />
 
