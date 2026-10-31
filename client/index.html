@@ -1,13 +1,17 @@
 <!doctype html>
 <html lang="fr" dir="ltr">
   <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=GT-K822SVR7"></script>
+    <!-- Google tag (gtag.js): Google tag GT-K822SVR7 + Google Analytics 4 G-38TN5R8BNX, one loader for both.
+         Admin pages are not measured. GA4 tracks page changes of the SPA through its history-based page views. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-38TN5R8BNX"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'GT-K822SVR7');
+      if (!location.pathname.startsWith('/admin')) {
+        gtag('js', new Date());
+        gtag('config', 'GT-K822SVR7');
+        gtag('config', 'G-38TN5R8BNX');
+      }
     </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />

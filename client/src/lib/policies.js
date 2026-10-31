@@ -4,7 +4,7 @@
  * `s` = { casa, other, free, days, email, phone, whatsapp, city }
  */
 
-export const POLICIES_UPDATED = '2026-10-17';
+export const POLICIES_UPDATED = '2026-10-31';
 
 export const POLICY_SECTIONS = {
   fr: (s) => [
@@ -40,7 +40,8 @@ export const POLICY_SECTIONS = {
         ['Utilisation', 'Ces données servent uniquement à traiter et livrer votre commande, à vous contacter à son sujet et, si vous l’avez demandé, à vous envoyer nos nouveautés. Nous ne vendons ni ne louons vos données.'],
         ['Partage', 'Vos nom, téléphone et adresse sont transmis au service de livraison, uniquement pour acheminer votre colis. Nos prestataires techniques (hébergement, base de données, stockage des images) n’y accèdent que pour faire fonctionner le site.'],
         ['Assistante Soso', 'Les messages écrits à notre assistante virtuelle sont traités par un service d’intelligence artificielle (Groq) pour générer les réponses. N’y indiquez pas d’informations sensibles. Les conversations ne sont pas conservées sur nos serveurs.'],
-        ['Stockage dans votre navigateur', 'Le site enregistre dans votre navigateur votre panier, vos favoris, votre langue et la conversation en cours avec l’assistante. Nous n’utilisons pas de cookies publicitaires.'],
+        ['Stockage dans votre navigateur', 'Le site enregistre dans votre navigateur votre panier, vos favoris, votre langue et la conversation en cours avec l’assistante.'],
+        ['Mesure d’audience (cookies)', 'Nous utilisons Google Analytics et la balise Google, qui déposent des cookies de mesure pour savoir comment le site est visité (pages vues, appareil, provenance) et améliorer la boutique. Ces statistiques sont traitées par Google. Vous pouvez refuser ces cookies dans les réglages de votre navigateur ou avec le module de désactivation de Google Analytics.'],
         ['Conservation', 'Les données de commande sont conservées le temps nécessaire au suivi de la commande et aux obligations comptables. Vous pouvez vous désinscrire de la newsletter à tout moment.'],
         ['Vos droits', `Conformément à la loi 09-08 relative à la protection des données personnelles, vous disposez d’un droit d’accès, de rectification et d’opposition. Écrivez-nous à ${s.email}.`],
       ],
@@ -80,7 +81,8 @@ export const POLICY_SECTIONS = {
         ['How we use it', 'Only to process and deliver your order, contact you about it and, if you asked, send you our news. We never sell or rent your data.'],
         ['Sharing', 'Your name, phone and address are passed to the delivery service only to deliver your parcel. Our technical providers (hosting, database, image storage) only access it to run the website.'],
         ['Soso assistant', 'Messages written to our virtual assistant are processed by an artificial intelligence service (Groq) to generate answers. Do not share sensitive information. Conversations are not stored on our servers.'],
-        ['Browser storage', 'The website stores your cart, wishlist, language and current assistant conversation in your browser. We do not use advertising cookies.'],
+        ['Browser storage', 'The website stores your cart, wishlist, language and current assistant conversation in your browser.'],
+        ['Audience measurement (cookies)', 'We use Google Analytics and the Google tag, which set measurement cookies to understand how the website is visited (pages viewed, device, where visitors come from) and to improve the shop. These statistics are processed by Google. You can refuse these cookies in your browser settings or with the Google Analytics opt-out add-on.'],
         ['Retention', 'Order data is kept as long as needed to follow up the order and for accounting obligations. You can unsubscribe from the newsletter at any time.'],
         ['Your rights', `Under Moroccan law 09-08 on personal data protection, you have the right to access, correct and object to the use of your data. Write to us at ${s.email}.`],
       ],
@@ -120,7 +122,8 @@ export const POLICY_SECTIONS = {
         ['الاستعمال', 'تُستعمل هذه البيانات فقط لمعالجة طلبك وتوصيله والتواصل معك بشأنه، وإرسال جديدنا إذا طلبت ذلك. لا نبيع ولا نؤجر بياناتك.'],
         ['المشاركة', 'يُرسل اسمك وهاتفك وعنوانك إلى شركة التوصيل فقط لإيصال طردك. مزودونا التقنيون (الاستضافة، قاعدة البيانات، تخزين الصور) لا يطّلعون عليها إلا لتشغيل الموقع.'],
         ['المساعدة سوسو', 'تتم معالجة الرسائل الموجهة إلى مساعدتنا الافتراضية عبر خدمة ذكاء اصطناعي (Groq) لتوليد الأجوبة. لا تشاركي معلومات حساسة. لا نحتفظ بالمحادثات على خوادمنا.'],
-        ['التخزين في المتصفح', 'يحفظ الموقع في متصفحك سلة المشتريات والمفضلة واللغة والمحادثة الجارية مع المساعدة. لا نستعمل ملفات تعريف الارتباط الإعلانية.'],
+        ['التخزين في المتصفح', 'يحفظ الموقع في متصفحك سلة المشتريات والمفضلة واللغة والمحادثة الجارية مع المساعدة.'],
+        ['قياس الزيارات (ملفات تعريف الارتباط)', 'نستعمل Google Analytics وعلامة Google، اللذين يضعان ملفات تعريف ارتباط للقياس لمعرفة كيفية زيارة الموقع (الصفحات المشاهدة، الجهاز، مصدر الزيارة) وتحسين المتجر. تتم معالجة هذه الإحصائيات من طرف Google. يمكنك رفض هذه الملفات من إعدادات متصفحك أو عبر إضافة إلغاء الاشتراك في Google Analytics.'],
         ['مدة الاحتفاظ', 'نحتفظ ببيانات الطلب طوال المدة اللازمة لتتبعه وللالتزامات المحاسبية. يمكنك إلغاء الاشتراك في النشرة في أي وقت.'],
         ['حقوقك', `طبقاً للقانون 09-08 المتعلق بحماية المعطيات الشخصية، لك الحق في الولوج إلى بياناتك وتصحيحها والاعتراض على استعمالها. راسلينا على ${s.email}.`],
       ],
