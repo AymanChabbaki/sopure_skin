@@ -39,3 +39,7 @@ desktop.ini
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Cloudflare Wrangler
+.wrangler/
+.dev.vars

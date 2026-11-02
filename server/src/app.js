@@ -47,6 +47,15 @@ async function getTemplate() {
 
 export const app = express();
 app.set('trust proxy', 1);
+// Behind the Cloudflare Worker, the visitor's IP arrives in X-Client-IP. It is trusted only with the shared
+// PROXY_SECRET, so rate limits (login, orders, chat) apply per visitor instead of to the Worker as a whole.
+app.use((req, _res, next) => {
+  const ip = req.get('x-client-ip');
+  if (process.env.PROXY_SECRET && ip && req.get('x-proxy-secret') === process.env.PROXY_SECRET) {
+    Object.defineProperty(req, 'ip', { value: ip, configurable: true });
+  }
+  next();
+});
 app.disable('x-powered-by');
 
 app.use(

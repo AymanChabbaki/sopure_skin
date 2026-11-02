@@ -569,6 +569,18 @@ export async function renderIndex(template, pathname, search = '') {
 export const seoRouter = Router();
 
 /** Client-side navigation asks the server for the exact same metadata. */
+/**
+ * SEO fragments for a page, for a frontend hosted elsewhere (Cloudflare Worker) that merges them into
+ * its own index.html: same output as renderIndex, without depending on the frontend build's file names.
+ */
+seoRouter.get('/api/seo/render', async (req, res) => {
+  const page = await buildPage(String(req.query.path || '/'), String(req.query.search || ''));
+  res
+    .set('Cache-Control', 'no-cache')
+    .set('CDN-Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600')
+    .json({ lang: page.locale, dir: page.locale === 'ar' ? 'rtl' : 'ltr', head: renderHead(page), body: page.body, noindex: page.noindex });
+});
+
 seoRouter.get('/api/seo', async (req, res) => {
   const path = String(req.query.path || '/').slice(0, 300);
   const page = await buildPage(path, String(req.query.search || ''));
