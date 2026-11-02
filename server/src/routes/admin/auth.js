@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import rateLimit from 'express-rate-limit';
+import rateLimit from '../../lib/rateLimit.js';
 import { z } from 'zod';
 import { query } from '../../db/pool.js';
 import { validate } from '../../middleware/errors.js';

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import rateLimit from 'express-rate-limit';
+import rateLimit from '../lib/rateLimit.js';
 import { z } from 'zod';
 import { query, withTransaction } from '../db/pool.js';
 import { listProducts, getProductBySlug, toCard, toDetail, relatedProducts } from '../lib/catalog.js';

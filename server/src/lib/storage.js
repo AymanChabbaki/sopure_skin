@@ -5,7 +5,10 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand } fr
 import { config, r2Enabled } from '../config.js';
 import { cfEnv, onWorkers } from './runtime.js';
 
-export const LOCAL_UPLOAD_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../uploads');
+// import.meta.url is empty on Cloudflare Workers, where uploads always go to R2
+export const LOCAL_UPLOAD_DIR = import.meta.url
+  ? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../uploads')
+  : '/tmp/uploads';
 
 // On Cloudflare Workers the bucket is a native binding (BUCKET); elsewhere R2 is reached through its S3 API
 const bucket = () => cfEnv().BUCKET;

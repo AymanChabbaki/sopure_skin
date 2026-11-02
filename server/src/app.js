@@ -18,7 +18,8 @@ import { seoRouter, renderIndex } from './seo.js';
 import { LOCAL_UPLOAD_DIR, storageDriver } from './lib/storage.js';
 import { errorHandler, notFound } from './middleware/errors.js';
 
-const root = path.dirname(fileURLToPath(import.meta.url));
+// import.meta.url is empty on Cloudflare Workers (no file system there)
+const root = import.meta.url ? path.dirname(fileURLToPath(import.meta.url)) : process.cwd();
 
 /** The built client when it sits next to the server (local / single-server hosting). */
 const templatePath = [path.resolve(root, '../../client/dist/index.html'), path.join(process.cwd(), 'client/dist/index.html')].find((p) =>
@@ -81,7 +82,8 @@ app.use(attachRequestDb);
 app.use(cors({ origin: config.corsOrigins, credentials: true }));
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
-app.use(morgan(config.isProd ? 'combined' : 'dev'));
+// morgan compiles its formats with new Function(), which Workers forbid; Cloudflare logs requests itself
+if (!onWorkers) app.use(morgan(config.isProd ? 'combined' : 'dev'));
 
 app.get('/api/health', async (_req, res) => {
   await pool.query('SELECT 1');
