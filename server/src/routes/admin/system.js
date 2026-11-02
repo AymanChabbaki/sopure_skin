@@ -7,7 +7,7 @@ import { DEFAULT_SETTINGS, getSettings, saveSetting } from '../../lib/settings.j
 import { removeImage, storeImage } from '../../lib/images.js';
 import { storageDriver } from '../../lib/storage.js';
 import { localizedUrls, submitUrls } from '../../lib/indexnow.js';
-import { mailEnabled, sendMail } from '../../lib/mailer.js';
+import { mailEnabled, mailTransport, sendMail } from '../../lib/mailer.js';
 import { HttpError } from '../../lib/utils.js';
 import { validate } from '../../middleware/errors.js';
 import { requireOwner } from '../../middleware/auth.js';
@@ -50,11 +50,16 @@ settingsRouter.post('/indexnow', async (_req, res) => {
 
 /** Order email alerts: status and a test message. */
 settingsRouter.get('/email', (_req, res) => {
-  res.json({ enabled: mailEnabled(), to: process.env.ORDER_NOTIFY_EMAIL || null, from: process.env.SMTP_FROM || process.env.SMTP_USER || null });
+  res.json({
+    enabled: mailEnabled(),
+    transport: mailTransport(),
+    to: process.env.ORDER_NOTIFY_EMAIL || null,
+    from: process.env.MAIL_FROM || process.env.SMTP_FROM || (process.env.RESEND_API_KEY ? 'onboarding@resend.dev' : process.env.SMTP_USER) || null,
+  });
 });
 
 settingsRouter.post('/email/test', async (_req, res) => {
-  if (!mailEnabled()) throw new HttpError(400, 'SMTP non configuré (variables SMTP_HOST, SMTP_USER, SMTP_PASS)');
+  if (!mailEnabled()) throw new HttpError(400, 'Email non configuré : ajoutez RESEND_API_KEY (Cloudflare) ou SMTP_HOST, SMTP_USER, SMTP_PASS');
   try {
     await sendMail({
       subject: 'Test · alertes commandes So Pure Skin',

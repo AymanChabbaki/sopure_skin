@@ -2,14 +2,19 @@ import nodemailer from 'nodemailer';
 import { query } from '../db/pool.js';
 import { config } from '../config.js';
 import { getSettings } from './settings.js';
+import { onWorkers } from './runtime.js';
 
 /**
- * Emails sent by the shop (new order alerts). Configured with SMTP_* env vars;
- * without them nothing is sent and orders work exactly the same.
+ * Emails sent by the shop (new order alerts). Two transports, without them nothing is sent and orders work the same:
+ * - RESEND_API_KEY: Resend's HTTPS API. Required on Cloudflare Workers, which cannot open SMTP connections.
+ * - SMTP_HOST / SMTP_USER / SMTP_PASS: classic SMTP (Gmail app password…), Node only.
  */
 
 let transporter;
-export const mailEnabled = () => Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+const resendEnabled = () => Boolean(process.env.RESEND_API_KEY);
+const smtpEnabled = () => !onWorkers && Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+export const mailEnabled = () => resendEnabled() || smtpEnabled();
+export const mailTransport = () => (resendEnabled() ? 'resend' : smtpEnabled() ? 'smtp' : null);
 
 function getTransporter() {
   if (!transporter) {
@@ -33,6 +38,22 @@ async function recipients() {
   return (await getSettings()).contact?.email || process.env.SMTP_USER;
 }
 
+/** Resend accepts any sender once your domain is verified; before that only onboarding@resend.dev (to your own address). */
+const senderAddress = () =>
+  process.env.MAIL_FROM || process.env.SMTP_FROM || (resendEnabled() ? 'So Pure Skin <onboarding@resend.dev>' : `So Pure Skin <${process.env.SMTP_USER}>`);
+
+async function sendWithResend({ from, to, subject, html, text }) {
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from, to: String(to).split(',').map((s) => s.trim()).filter(Boolean), subject, html, text }),
+    signal: AbortSignal.timeout(10000),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.message || `Resend HTTP ${res.status}`);
+  return body.id;
+}
+
 const esc = (v) =>
   String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const dh = (v) => `${new Intl.NumberFormat('fr-MA', { maximumFractionDigits: 2 }).format(Number(v) || 0)} DH`;
@@ -40,8 +61,9 @@ const whatsappNumber = (phone) => String(phone).replace(/\D/g, '').replace(/^0/,
 
 export async function sendMail({ to, subject, html, text }) {
   if (!mailEnabled()) return { skipped: true };
-  const from = process.env.SMTP_FROM || `So Pure Skin <${process.env.SMTP_USER}>`;
-  const info = await getTransporter().sendMail({ from, to: to || (await recipients()), subject, html, text });
+  const mail = { from: senderAddress(), to: to || (await recipients()), subject, html, text };
+  if (resendEnabled()) return { sent: true, id: await sendWithResend(mail) };
+  const info = await getTransporter().sendMail(mail);
   return { sent: true, id: info.messageId };
 }
 

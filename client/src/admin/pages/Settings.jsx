@@ -301,7 +301,7 @@ function OrderEmailCard({ contactEmail }) {
                 {data.from && <> depuis {data.from}</>}.
               </>
             ) : (
-              'Ajoutez SMTP_HOST, SMTP_USER et SMTP_PASS dans les variables d’environnement (Vercel) pour recevoir un email à chaque commande.'
+              'Ajoutez le secret RESEND_API_KEY dans Cloudflare (clé gratuite sur resend.com) pour recevoir un email à chaque commande.'
             )}
           </p>
         </div>

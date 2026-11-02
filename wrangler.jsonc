@@ -26,15 +26,15 @@
     "R2_BUCKET": "sopurskin",
     "R2_PUBLIC_URL": "https://pub-8d8051f867af45509aae3e3141419fb3.r2.dev",
     "GROQ_MODEL": "openai/gpt-oss-120b",
-    "GROQ_FALLBACK_MODELS": "openai/gpt-oss-20b",
-    "SMTP_PORT": "465"
+    "GROQ_FALLBACK_MODELS": "openai/gpt-oss-20b"
   },
   // Secrets (never in this file): npm run cf:secrets  — or one by one: npx wrangler secret put NAME
-  //   DATABASE_URL, JWT_SECRET, GROQ_API_KEY, SMTP_HOST, SMTP_USER, SMTP_PASS, SMTP_FROM, ORDER_NOTIFY_EMAIL,
+  //   DATABASE_URL, JWT_SECRET, GROQ_API_KEY, RESEND_API_KEY (order emails), ORDER_NOTIFY_EMAIL, MAIL_FROM,
   //   GOOGLE_SITE_VERIFICATION, BING_SITE_VERIFICATION
   "alias": {
     "sharp": "./server/src/lib/stubs/sharp.js",
-    "@aws-sdk/client-s3": "./server/src/lib/stubs/aws-s3.js"
+    "@aws-sdk/client-s3": "./server/src/lib/stubs/aws-s3.js",
+    "nodemailer": "./server/src/lib/stubs/nodemailer.js"
   },
   "observability": { "enabled": true }
   // Custom domain (DNS of sopureskin.com on Cloudflare):
