@@ -182,32 +182,46 @@ export function SearchInput({ value, onChange, placeholder = 'Rechercher…', cl
 
 /* ----------------------------- Image uploader ---------------------------- */
 
-const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
+// Same sizes as the server (server/src/lib/images.js): banners are wider, the thumb doubles as the mobile banner
+const IMAGE_SIZES = { banners: [1920, 960], default: [1200, 480] };
 
-/**
- * Serverless hosts cap request bodies (4.5 MB on Vercel): big photos are downscaled
- * in the browser first. The server converts everything to WebP anyway.
- */
-async function shrink(file) {
-  if (file.size <= MAX_UPLOAD_BYTES || !file.type.startsWith('image/') || file.type === 'image/gif') return file;
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 2400 / Math.max(bitmap.width, bitmap.height));
+/** Resized copy of a decoded image; WebP when the browser can encode it (Safari may fall back to JPEG). */
+async function encode(bitmap, width, quality) {
+  const scale = Math.min(1, width / bitmap.width);
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(bitmap.width * scale);
   canvas.height = Math.round(bitmap.height * scale);
   canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.9));
-  return new File([blob], file.name.replace(/\.\w+$/, '.webp'), { type: 'image/webp' });
+  const webp = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', quality));
+  if (webp?.type === 'image/webp') return webp;
+  return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality));
+}
+
+/**
+ * Converts an image in the browser into the two optimized versions the shop stores (full + thumb).
+ * The server (Cloudflare Workers) cannot run image libraries, and smaller uploads are faster anyway.
+ */
+async function toVariants(file, folder) {
+  const [fullWidth, thumbWidth] = IMAGE_SIZES[folder] || IMAGE_SIZES.default;
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  try {
+    const [full, thumb] = await Promise.all([encode(bitmap, fullWidth, 0.82), encode(bitmap, thumbWidth, 0.78)]);
+    const ext = full.type === 'image/webp' ? 'webp' : 'jpg';
+    const base = file.name.replace(/\.\w+$/, '');
+    return { full: new File([full], `${base}.${ext}`, { type: full.type }), thumb: new File([thumb], `${base}-thumb.${ext}`, { type: thumb.type }) };
+  } finally {
+    bitmap.close();
+  }
 }
 
 export async function uploadFiles(files, folder = 'products', name = '') {
-  const ready = await Promise.all([...files].map(shrink));
-  // One request per file keeps every body under the serverless limit
+  // One request per image keeps every body small
   const results = [];
-  for (const file of ready) {
+  for (const file of [...files].filter((f) => f.type.startsWith('image/'))) {
+    const { full, thumb } = await toVariants(file, folder);
     const form = new FormData();
-    form.append('files', file);
+    form.append('files', full);
+    form.append('thumbs', thumb);
     results.push(...(await adminApi('/uploads', { method: 'POST', body: form, params: { folder, name } })));
   }
   return results;

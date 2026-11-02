@@ -18,9 +18,13 @@
     "db:migrate": "npm run db:migrate -w server",
     "db:seed": "npm run db:seed -w server",
     "db:logos": "npm run db:logos -w server",
-    "db:sample-reviews": "npm run db:sample-reviews -w server --"
+    "db:sample-reviews": "npm run db:sample-reviews -w server --",
+    "cf:dev": "npm run build -w client && wrangler dev",
+    "deploy": "npm run build -w client && wrangler deploy",
+    "cf:secrets": "node server/scripts/cf-secrets.mjs"
   },
   "devDependencies": {
-    "concurrently": "^9.2.0"
+    "concurrently": "^9.2.0",
+    "wrangler": "^4.156.1"
   }
 }

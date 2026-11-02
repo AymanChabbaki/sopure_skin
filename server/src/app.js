@@ -9,7 +9,8 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import { config } from './config.js';
-import { pool } from './db/pool.js';
+import { attachRequestDb, pool } from './db/pool.js';
+import { cfEnv, onWorkers } from './lib/runtime.js';
 import { publicRouter } from './routes/public.js';
 import { adminRouter } from './routes/admin/index.js';
 import { chatRouter } from './routes/chat.js';
@@ -35,7 +36,11 @@ let cachedTemplate = null;
  */
 async function getTemplate() {
   if (cachedTemplate && (config.isProd || !templatePath)) return cachedTemplate;
-  if (templatePath) {
+  if (cfEnv().ASSETS) {
+    // Cloudflare Workers: the built client is in the static assets ("/" is index.html)
+    const res = await cfEnv().ASSETS.fetch(new Request('https://assets.local/'));
+    cachedTemplate = await res.text();
+  } else if (templatePath) {
     cachedTemplate = await readFile(templatePath, 'utf8');
   } else if (process.env.WEB_URL) {
     const res = await fetch(new URL('index.html', process.env.WEB_URL.replace(/\/?$/, '/')));
@@ -50,6 +55,11 @@ app.set('trust proxy', 1);
 // Behind the Cloudflare Worker, the visitor's IP arrives in X-Client-IP. It is trusted only with the shared
 // PROXY_SECRET, so rate limits (login, orders, chat) apply per visitor instead of to the Worker as a whole.
 app.use((req, _res, next) => {
+  // On Cloudflare the edge sets cf-connecting-ip itself (visitors cannot fake it)
+  if (onWorkers && req.get('cf-connecting-ip')) {
+    Object.defineProperty(req, 'ip', { value: req.get('cf-connecting-ip'), configurable: true });
+    return next();
+  }
   const ip = req.get('x-client-ip');
   if (process.env.PROXY_SECRET && ip && req.get('x-proxy-secret') === process.env.PROXY_SECRET) {
     Object.defineProperty(req, 'ip', { value: ip, configurable: true });
@@ -65,7 +75,9 @@ app.use(
     crossOriginResourcePolicy: { policy: 'cross-origin' },
   }),
 );
-app.use(compression());
+// Cloudflare compresses responses at the edge
+if (!onWorkers) app.use(compression());
+app.use(attachRequestDb);
 app.use(cors({ origin: config.corsOrigins, credentials: true }));
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());

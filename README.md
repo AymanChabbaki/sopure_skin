@@ -64,6 +64,28 @@ et disque en lecture seule, d'où R2 obligatoire. En local, `vercel dev` lance l
 
 Hors Vercel (VPS, AlwaysData Node.js) : `npm run build` puis `NODE_ENV=production npm start` (un seul serveur Express sert tout).
 
+## Déploiement du frontend sur Cloudflare Workers
+
+Le site (React) peut être servi par un Worker Cloudflare, l'API Express restant sur Vercel.
+Le Worker (`client/worker/index.js`, config `client/wrangler.jsonc`) :
+
+- sert les fichiers du build Vite depuis le réseau Cloudflare (bundles mis en cache 1 an, `client/public/_headers`) ;
+- ajoute à chaque page boutique (`/fr`, `/en`, `/ar`…) les balises SEO et les liens pour Google, obtenus via `/api/seo/render` ;
+- transmet à l'API `/api/*`, `sitemap.xml`, `robots.txt`, `llms*.txt`, `/feeds/*` et la clé IndexNow : le cookie admin reste sur le domaine de la boutique ;
+- si l'API ne répond pas, la page s'affiche quand même (sans les balises SEO serveur).
+
+Mise en place :
+
+1. Dans `client/wrangler.jsonc`, mettre l'URL Vercel de l'API dans `API_ORIGIN` (ex. `https://sopure-skin.vercel.app`, pas www.sopureskin.com).
+2. Générer un secret (`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`), puis :
+   - côté Cloudflare : `cd client && npx wrangler secret put PROXY_SECRET`
+   - côté Vercel : variable `PROXY_SECRET` avec la même valeur (l'API lit alors la vraie IP des visiteuses pour les limites de connexion, commandes, chat).
+3. `npx wrangler login` puis `npm run deploy:cf -w client` (build + déploiement). Test : `https://sopureskin-web.<compte>.workers.dev`.
+4. Domaine : avec le DNS de sopureskin.com sur Cloudflare, décommenter `routes` (`www.sopureskin.com`, `custom_domain`) et redéployer. Garder `SITE_URL=https://www.sopureskin.com` sur Vercel.
+5. Le domaine Vercel `www.sopureskin.com` doit alors être retiré du projet Vercel (sinon conflit DNS) ; l'API reste joignable par son URL `.vercel.app`.
+
+Développement : `npm run cf:dev -w client` (Worker local sur http://localhost:8787, `API_ORIGIN` modifiable avec `--var API_ORIGIN:http://localhost:4000`).
+
 ## Règles métier
 
 | Règle | Valeur par défaut | Modifiable dans |

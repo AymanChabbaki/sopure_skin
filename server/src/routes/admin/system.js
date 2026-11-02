@@ -91,16 +91,20 @@ export const uploadsRouter = Router();
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024, files: 12 },
+  limits: { fileSize: 10 * 1024 * 1024, files: 24 },
   fileFilter: (_req, file, cb) => cb(null, /^image\/(jpeg|png|webp|avif|gif)$/.test(file.mimetype)),
 });
 
-uploadsRouter.post('/', upload.array('files', 12), async (req, res) => {
-  if (!req.files?.length) throw new HttpError(400, 'No valid image received');
+uploadsRouter.post('/', upload.fields([{ name: 'files', maxCount: 12 }, { name: 'thumbs', maxCount: 12 }]), async (req, res) => {
+  const files = req.files?.files || [];
+  // The admin converts images in the browser: `thumbs[i]` is the small WebP version of `files[i]`
+  const thumbs = req.files?.thumbs || [];
+  if (!files.length) throw new HttpError(400, 'No valid image received');
+  const preprocessed = thumbs.length === files.length && [...files, ...thumbs].every((f) => /^image\/(webp|jpeg)$/.test(f.mimetype));
   const folder = ['products', 'categories', 'brands', 'banners', 'testimonials', 'articles'].includes(req.query.folder) ? req.query.folder : 'products';
   // Optional ?name= (product / brand name) gives the files descriptive names for image SEO
   const name = String(req.query.name || '').slice(0, 120);
-  const stored = await Promise.all(req.files.map((f) => storeImage(f.buffer, folder, name)));
+  const stored = await Promise.all(files.map((f, i) => storeImage(f.buffer, folder, name, preprocessed ? thumbs[i].buffer : null, f.mimetype)));
   res.status(201).json(stored);
 });
 

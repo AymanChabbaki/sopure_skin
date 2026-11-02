@@ -1,3 +1,5 @@
+import { onWorkers } from './lib/runtime.js';
+
 const required = (name, fallback) => {
   const value = process.env[name] ?? fallback;
   if (value === undefined) throw new Error(`Missing environment variable: ${name}`);
@@ -46,8 +48,10 @@ export const config = {
   },
 };
 
+// On Cloudflare Workers R2 is a binding (no keys needed); elsewhere the S3 credentials are required
 export const r2Enabled = Boolean(
-  config.r2.accountId && config.r2.accessKeyId && config.r2.secretAccessKey && config.r2.bucket && config.r2.publicUrl,
+  config.r2.publicUrl &&
+    (onWorkers || (config.r2.accountId && config.r2.accessKeyId && config.r2.secretAccessKey && config.r2.bucket)),
 );
 
 export const LOCALES = ['fr', 'en', 'ar'];

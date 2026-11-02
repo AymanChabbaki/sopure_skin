@@ -3,10 +3,15 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3';
 import { config, r2Enabled } from '../config.js';
+import { cfEnv, onWorkers } from './runtime.js';
 
 export const LOCAL_UPLOAD_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../uploads');
 
-const s3 = r2Enabled
+// On Cloudflare Workers the bucket is a native binding (BUCKET); elsewhere R2 is reached through its S3 API
+const bucket = () => cfEnv().BUCKET;
+const CACHE = 'public, max-age=31536000, immutable';
+
+const s3 = r2Enabled && !onWorkers
   ? new S3Client({
       region: 'auto',
       endpoint: `https://${config.r2.accountId}.r2.cloudflarestorage.com`,
@@ -19,6 +24,10 @@ const s3 = r2Enabled
  * Returns the public URL.
  */
 export async function putObject(key, body, contentType) {
+  if (bucket()) {
+    await bucket().put(key, body, { httpMetadata: { contentType, cacheControl: CACHE } });
+    return `${config.r2.publicUrl}/${key}`;
+  }
   if (s3) {
     await s3.send(
       new PutObjectCommand({
@@ -39,6 +48,12 @@ export async function putObject(key, body, contentType) {
 
 /** Server-side copy (no download/upload) to a new key; returns the new public URL. */
 export async function copyObject(fromKey, toKey) {
+  if (bucket()) {
+    const source = await bucket().get(fromKey);
+    if (!source) throw new Error(`Object not found: ${fromKey}`);
+    await bucket().put(toKey, source.body, { httpMetadata: { contentType: 'image/webp', cacheControl: CACHE } });
+    return `${config.r2.publicUrl}/${toKey}`;
+  }
   if (s3) {
     await s3.send(
       new CopyObjectCommand({
@@ -61,11 +76,12 @@ export async function copyObject(fromKey, toKey) {
 export async function deleteObject(key) {
   if (!key) return;
   try {
-    if (s3) await s3.send(new DeleteObjectCommand({ Bucket: config.r2.bucket, Key: key }));
+    if (bucket()) await bucket().delete(key);
+    else if (s3) await s3.send(new DeleteObjectCommand({ Bucket: config.r2.bucket, Key: key }));
     else await unlink(path.join(LOCAL_UPLOAD_DIR, key));
   } catch (err) {
     console.warn(`Could not delete object ${key}: ${err.message}`);
   }
 }
 
-export const storageDriver = s3 ? 'r2' : 'local';
+export const storageDriver = onWorkers || s3 ? 'r2' : 'local';
