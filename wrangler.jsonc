@@ -2,41 +2,61 @@
 // Entry: server/src/worker.js. Guide: README "Hébergement sur Cloudflare Workers".
 // Deploy: npm run deploy   (local test: npm run cf:dev)
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "sopureskin",
-  "main": "server/src/worker.js",
-  "compatibility_date": "2026-10-01",
-  // Node.js APIs for Express, pg, jsonwebtoken…; process.env is filled from vars and secrets
-  "compatibility_flags": ["nodejs_compat"],
-  "assets": {
-    "directory": "./client/dist",
-    "binding": "ASSETS",
-    // /admin/* and unknown paths get index.html (the React router takes over)
-    "not_found_handling": "single-page-application",
-    // Hashed bundles and images are served straight from the edge without running the Worker
-    "run_worker_first": ["/*", "!/assets/*", "!/hero/*", "!/brand/*"]
-  },
-  "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "sopurskin" }],
-  // Recommended: Hyperdrive pools the connections to AlwaysData (much faster). Create it, then uncomment:
-  //   npx wrangler hyperdrive create sopureskin-db --connection-string="postgres://USER:PASSWORD@postgresql-aidevcommunity.alwaysdata.net:5432/aidevcommunity_sopurskin"
-  // "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "<id printed by the command>" }],
-  "vars": {
-    "NODE_ENV": "production",
-    "SITE_URL": "https://www.sopureskin.com",
-    "R2_BUCKET": "sopurskin",
-    "R2_PUBLIC_URL": "https://pub-8d8051f867af45509aae3e3141419fb3.r2.dev",
-    "GROQ_MODEL": "openai/gpt-oss-120b",
-    "GROQ_FALLBACK_MODELS": "openai/gpt-oss-20b"
-  },
-  // Secrets (never in this file): npm run cf:secrets  — or one by one: npx wrangler secret put NAME
-  //   DATABASE_URL, JWT_SECRET, GROQ_API_KEY, RESEND_API_KEY (order emails), ORDER_NOTIFY_EMAIL, MAIL_FROM,
-  //   GOOGLE_SITE_VERIFICATION, BING_SITE_VERIFICATION
-  "alias": {
-    "sharp": "./server/src/lib/stubs/sharp.js",
-    "@aws-sdk/client-s3": "./server/src/lib/stubs/aws-s3.js",
-    "nodemailer": "./server/src/lib/stubs/nodemailer.js"
-  },
-  "observability": { "enabled": true }
-  // Custom domain (DNS of sopureskin.com on Cloudflare):
-  // "routes": [{ "pattern": "www.sopureskin.com", "custom_domain": true }, { "pattern": "sopureskin.com", "custom_domain": true }]
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "sopureskin",
+	"main": "server/src/worker.js",
+	"compatibility_date": "2026-10-01",
+	// Node.js APIs for Express, pg, jsonwebtoken…; process.env is filled from vars and secrets
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"assets": {
+		"directory": "./client/dist",
+		"binding": "ASSETS",
+		// /admin/* and unknown paths get index.html (the React router takes over)
+		"not_found_handling": "single-page-application",
+		// Hashed bundles and images are served straight from the edge without running the Worker
+		"run_worker_first": [
+			"/*",
+			"!/assets/*",
+			"!/hero/*",
+			"!/brand/*"
+		]
+	},
+	"r2_buckets": [
+		{
+			"binding": "BUCKET",
+			"bucket_name": "sopurskin"
+		}
+	],
+	// Recommended: Hyperdrive pools the connections to AlwaysData (much faster). Create it, then uncomment:
+	//   npx wrangler hyperdrive create sopureskin-db --connection-string="postgres://USER:PASSWORD@postgresql-aidevcommunity.alwaysdata.net:5432/aidevcommunity_sopurskin"
+	// "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "<id printed by the command>" }],
+	"vars": {
+		"NODE_ENV": "production",
+		"SITE_URL": "https://www.sopureskin.com",
+		"R2_BUCKET": "sopurskin",
+		"R2_PUBLIC_URL": "https://pub-8d8051f867af45509aae3e3141419fb3.r2.dev",
+		"GROQ_MODEL": "openai/gpt-oss-120b",
+		"GROQ_FALLBACK_MODELS": "openai/gpt-oss-20b"
+	},
+	// Secrets (never in this file): npm run cf:secrets  — or one by one: npx wrangler secret put NAME
+	//   DATABASE_URL, JWT_SECRET, GROQ_API_KEY, RESEND_API_KEY (order emails), ORDER_NOTIFY_EMAIL, MAIL_FROM,
+	//   GOOGLE_SITE_VERIFICATION, BING_SITE_VERIFICATION
+	"alias": {
+		"sharp": "./server/src/lib/stubs/sharp.js",
+		"@aws-sdk/client-s3": "./server/src/lib/stubs/aws-s3.js",
+		"nodemailer": "./server/src/lib/stubs/nodemailer.js"
+	},
+	"observability": {
+		"enabled": true
+	},
+	"hyperdrive": [
+		{
+			"binding": "HYPERDRIVE",
+			"id": "49403f462d9b4215b53d32dd3066338d"
+		}
+	]
+	// Custom domain (DNS of sopureskin.com on Cloudflare):
+	// "routes": [{ "pattern": "www.sopureskin.com", "custom_domain": true }, { "pattern": "sopureskin.com", "custom_domain": true }]
 }
