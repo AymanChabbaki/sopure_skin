@@ -28,7 +28,7 @@
       "bindings": [{ "type": "service", "service": "web", "format": "url", "env": "WEB_URL" }]
     }
   },
-  "redirects": [{ "source": "/", "destination": "/fr", "permanent": false }],
+  "redirects": [{ "source": "/", "destination": "/fr", "permanent": true }],
   "rewrites": [
     { "source": "/api/(.*)", "destination": { "service": "api" } },
     { "source": "/sitemap.xml", "destination": { "service": "api" } },

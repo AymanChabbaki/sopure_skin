@@ -114,7 +114,8 @@ app.get('/{*splat}', async (req, res, next) => {
   const template = await getTemplate();
   if (!template) return next(); // API-only deployment without a client
   if (req.path.startsWith('/admin')) return res.type('html').send(template);
-  if (req.path === '/') return res.redirect(302, '/fr');
+  // Permanent: Google reads the homepage (favicon, site name) through this redirect
+  if (req.path === '/') return res.redirect(301, '/fr');
   res
     .type('html')
     .set('Cache-Control', 'no-cache')
