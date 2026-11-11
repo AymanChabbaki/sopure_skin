@@ -334,7 +334,7 @@ export default function Product() {
                 [Truck, t('product.deliveryInfo', { casa: s?.casablancaFee ?? 20, other: s?.otherFee ?? 35 })],
                 [Gift, t('product.freeInfo', { count: s?.freeAboveItems ?? 5 })],
                 [HandCoins, t('product.codInfo')],
-                [BadgeCheck, t('product.authenticInfo')],
+                [BadgeCheck, product.brand ? t('product.authenticBrand', { brand: product.brand.name }) : t('product.authenticInfo')],
               ].map(([Icon, text]) => (
                 <li key={text} className="flex items-center gap-3 rounded-2xl bg-brand-50/70 p-3.5 text-[13px] text-brand-950">
                   <Icon className="size-5 shrink-0 text-brand-600" strokeWidth={1.75} />

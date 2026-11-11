@@ -84,7 +84,7 @@ export function Hero() {
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
     >
-      <h1 className="sr-only">So Pure Skin, {t('meta.tagline')}</h1>
+      <h1 className="sr-only">{t('home.seoH1')}</h1>
 
       {/* Image layer: cross-fade + slow zoom. Drag to swipe on touch screens. */}
       <motion.div

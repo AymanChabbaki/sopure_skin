@@ -167,7 +167,8 @@ export default function Shop() {
   };
 
   const title = category?.name || brand?.name || (q ? t('shop.searchFor', { q }) : t('shop.title'));
-  const subtitle = category?.description || brand?.description || t('shop.subtitle');
+  // Brands without a description still get a sentence with the searched terms ("anua maroc")
+  const subtitle = category?.description || brand?.description || (brand ? t('shop.brandSubtitle', { brand: brand.name }) : t('shop.subtitle'));
   const total = data?.total ?? 0;
 
   return (

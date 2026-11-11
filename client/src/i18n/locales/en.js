@@ -66,6 +66,11 @@ export default {
     trust3: 'Delivery all over Morocco',
   },
   home: {
+    seoH1: 'Korean skincare and K-beauty in Morocco – So Pure Skin',
+    seoTitle: 'Authentic K-beauty in Morocco',
+    seoText1: 'So Pure Skin is your Korean skincare store in Morocco: {{count}} 100% authentic products from the best K-beauty brands:',
+    seoText2: 'Serums, toners, moisturizers, sunscreens, cleansers and masks: build your Korean skincare routine and get it delivered to Casablanca, Rabat, Marrakech, Tangier, Agadir, Fes and everywhere in Morocco, with cash on delivery.',
+    seoTypes: 'By skincare type:',
     categoriesTitle: 'Find your essential',
     categoriesSubtitle: 'Every step of your Korean routine, carefully curated.',
     bestSellersTitle: 'Best sellers',
@@ -113,6 +118,7 @@ export default {
     support: { title: 'Personal advice', text: 'Our team is here for you on WhatsApp' },
   },
   shop: {
+    brandSubtitle: 'Every 100% authentic {{brand}} product in Morocco: genuine Korean skincare, delivered everywhere with cash on delivery.',
     title: 'Shop',
     subtitle: 'All the authentic K-beauty, delivered to your door.',
     filters: 'Filters',
@@ -141,6 +147,7 @@ export default {
     page: 'Page {{page}} of {{pages}}',
   },
   product: {
+    authenticBrand: '100% authentic {{brand}} product',
     brand: 'Brand',
     description: 'Description',
     howToUse: 'How to use',

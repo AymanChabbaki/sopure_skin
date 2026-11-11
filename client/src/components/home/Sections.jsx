@@ -335,3 +335,53 @@ export function NewsletterSection() {
     </section>
   );
 }
+
+/* ------------------------------ K-beauty intro ------------------------------ */
+
+/**
+ * Short visible text with the searches the shop wants to rank for ("cosmétiques coréens maroc", "k-beauty",
+ * brand names) and links to every big brand and care type. Same wording as the server-rendered intro (seo.js).
+ */
+export function KBeautyIntro() {
+  const { t } = useTranslation();
+  const lp = useLocalePath();
+  const { data: brands = [] } = useBrands();
+  const { data: categories = [] } = useCategories();
+  if (!brands.length) return null;
+  const top = [...brands].sort((a, b) => b.productCount - a.productCount).slice(0, 12);
+  const count = brands.reduce((sum, b) => sum + Number(b.productCount || 0), 0);
+  const types = categories.filter((c) => c.kind === 'type');
+  const link = 'font-medium text-brand-700 underline-offset-4 hover:underline';
+  return (
+    <section className="container-x py-16 sm:py-20">
+      <Reveal className="mx-auto max-w-3xl text-center">
+        <h2 className="font-display text-3xl text-ink sm:text-4xl">{t('home.seoTitle')}</h2>
+        <p className="mt-5 leading-relaxed text-ink/75">
+          {t('home.seoText1', { count })}{' '}
+          {top.map((b, i) => (
+            <span key={b.id}>
+              <Link to={lp(`/brand/${b.slug}`)} className={link}>
+                {b.name}
+              </Link>
+              {i < top.length - 1 ? ', ' : '. '}
+            </span>
+          ))}
+          {t('home.seoText2')}
+        </p>
+        {types.length > 0 && (
+          <p className="mt-4 text-sm leading-relaxed text-muted">
+            {t('home.seoTypes')}{' '}
+            {types.map((c, i) => (
+              <span key={c.id}>
+                <Link to={lp(`/category/${c.slug}`)} className={link}>
+                  {c.name}
+                </Link>
+                {i < types.length - 1 ? ' · ' : ''}
+              </span>
+            ))}
+          </p>
+        )}
+      </Reveal>
+    </section>
+  );
+}

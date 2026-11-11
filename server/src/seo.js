@@ -31,6 +31,37 @@ const T = {
   photo: { fr: 'photo', en: 'photo', ar: 'صورة' },
   howToUse: { fr: 'Utilisation', en: 'How to use', ar: 'طريقة الاستعمال' },
   ingredients: { fr: 'Ingrédients', en: 'Ingredients', ar: 'المكونات' },
+  homeH1: {
+    fr: 'Cosmétiques coréens et K-beauty au Maroc',
+    en: 'Korean skincare and K-beauty in Morocco',
+    ar: 'مستحضرات التجميل الكورية والجمال الكوري في المغرب',
+  },
+  // Natural sentences carrying the main searches: "k beauty maroc", "cosmétique coréenne", brand names
+  homeIntro: {
+    fr: (n, brands) =>
+      `So Pure Skin est votre boutique de K-beauty au Maroc : ${n} cosmétiques coréens 100% originaux des marques ${brands}. Sérums, toners, crèmes hydratantes, écrans solaires, nettoyants et masques pour une routine de soin coréenne complète, livrés à Casablanca, Rabat, Marrakech, Tanger, Agadir, Fès et partout au Maroc avec paiement à la livraison.`,
+    en: (n, brands) =>
+      `So Pure Skin is your K-beauty store in Morocco: ${n} 100% authentic Korean skincare products from ${brands}. Serums, toners, moisturizers, sunscreens, cleansers and masks for a complete Korean skincare routine, delivered to Casablanca, Rabat, Marrakech, Tangier, Agadir, Fes and all of Morocco with cash on delivery.`,
+    ar: (n, brands) =>
+      `So Pure Skin هو متجرك للجمال الكوري في المغرب: ${n} منتجاً كورياً أصلياً 100% من علامات ${brands}. سيروم، تونر، كريمات مرطبة، واقيات شمس، غسول وأقنعة لروتين عناية كوري كامل، مع التوصيل إلى الدار البيضاء والرباط ومراكش وطنجة وأكادير وفاس وكل المغرب والدفع عند الاستلام.`,
+  },
+  shopPitch: {
+    fr: (n, brands) => `${n} cosmétiques coréens originaux au Maroc : ${brands}… Paiement à la livraison.`,
+    en: (n, brands) => `${n} authentic Korean skincare products in Morocco: ${brands}… Cash on delivery.`,
+    ar: (n, brands) => `${n} منتجاً كورياً أصلياً في المغرب: ${brands}… الدفع عند الاستلام.`,
+  },
+  // Brands without a written description
+  brandPitch: {
+    fr: (b, n, top) => `Achetez ${b} au Maroc : ${n} produits ${b} 100% originaux${top ? `, dont ${top}` : ''}. Cosmétiques coréens authentiques, livraison partout au Maroc et paiement à la livraison.`,
+    en: (b, n, top) => `Buy ${b} in Morocco: ${n} 100% authentic ${b} products${top ? `, including ${top}` : ''}. Genuine Korean skincare, delivered everywhere in Morocco with cash on delivery.`,
+    ar: (b, n, top) => `اشتري ${b} في المغرب: ${n} منتجات ${b} أصلية 100%${top ? `، منها ${top}` : ''}. مستحضرات تجميل كورية أصلية مع التوصيل لكل المغرب والدفع عند الاستلام.`,
+  },
+  categoryBrands: { fr: 'Marques', en: 'Brands', ar: 'العلامات' },
+  productPitch: {
+    fr: (name, brand, price) => `${name}${brand ? ` ${/^[aeiouyh]/i.test(brand) ? 'd’' : 'de '}${brand}` : ''} : cosmétique coréenne 100% originale, disponible au Maroc à ${price} DH. Livraison partout au Maroc, paiement à la livraison.`,
+    en: (name, brand, price) => `${name}${brand ? ` by ${brand}` : ''}: 100% authentic Korean skincare, available in Morocco for ${price} MAD. Delivery everywhere in Morocco, cash on delivery.`,
+    ar: (name, brand, price) => `${name}${brand ? ` من ${brand}` : ''}: منتج كوري أصلي 100%، متوفر في المغرب بسعر ${price} درهم. التوصيل لكل المغرب والدفع عند الاستلام.`,
+  },
   guideProducts: { fr: 'Les produits de ce guide', en: 'Products in this guide', ar: 'منتجات هذا الدليل' },
   guidesPitch: {
     fr: 'Routines coréennes, conseils par type de peau et sélections de produits : nos guides pour prendre soin de votre peau au Maroc.',
@@ -189,6 +220,23 @@ async function hubs() {
   return navCache.data;
 }
 
+let brandCache = { at: 0, data: null };
+
+/** Brands ranked by number of products online (cached 5 minutes), for keyword-rich intros. */
+async function topBrands() {
+  if (brandCache.data && Date.now() - brandCache.at < 300_000) return brandCache.data;
+  const { rows } = await query(
+    `SELECT b.name, b.slug, count(p.id)::int AS n FROM brands b JOIN products p ON p.brand_id = b.id AND p.is_active
+      GROUP BY b.id ORDER BY n DESC, b.name`,
+  );
+  brandCache = { at: Date.now(), data: { brands: rows, products: rows.reduce((sum, b) => sum + b.n, 0) } };
+  return brandCache.data;
+}
+
+/** "Anua, COSRX, Beauty of Joseon et SKIN1004" */
+const nameList = (names, locale) =>
+  names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} ${{ fr: 'et', en: 'and', ar: 'و' }[locale]} ${names.at(-1)}`;
+
 const productLinks = (items, locale) =>
   items
     .map((p) => {
@@ -257,7 +305,12 @@ export async function buildPage(pathname, search = '') {
          FROM products p LEFT JOIN brands b ON b.id = p.brand_id
         WHERE p.is_active ORDER BY p.sales_count DESC LIMIT 48`,
     );
-    page.body = `<h1>${esc(page.title)}</h1><p>${esc(page.description)}</p><ul>${productLinks(top, locale)}</ul>`;
+    const { brands, products } = await topBrands();
+    const brandLinks = brands.slice(0, 12).map((b) => `<a href="/${locale}/brand/${b.slug}">${esc(b.name)}</a>`);
+    page.body =
+      `<h1>${esc(T.homeH1[locale])}</h1>` +
+      `<p>${T.homeIntro[locale](products, nameList(brandLinks, locale))}</p>` +
+      `<ul>${productLinks(top, locale)}</ul>`;
   } else if (section === 'product' && slug) {
     const p = await getProductBySlug(decodeURIComponent(slug));
     if (!p?.is_active) {
@@ -267,10 +320,13 @@ export async function buildPage(pathname, search = '') {
     const name = tr(p.name, locale);
     const url = `${SITE}/${locale}/product/${p.slug}`;
     const short = stripHtml(tr(p.meta_description, locale) || tr(p.short_description, locale) || tr(p.description, locale));
-    page.title = `${tr(p.meta_title, locale) || `${name} – ${T.priceIn[locale](p.price)}`} | ${BRAND}`;
+    // The brand is a main search term ("anua toner maroc"): add it when the product name does not contain it
+    const brandInName = !p.brand_name || name.toLowerCase().includes(p.brand_name.toLowerCase());
+    page.title = `${tr(p.meta_title, locale) || `${name}${brandInName ? '' : ` – ${p.brand_name}`} – ${T.priceIn[locale](p.price)}`} | ${BRAND}`;
     // Summary sized so the delivery line always fits in Google's ~160 characters
     const pitch = T.deliveryPitch[locale];
-    page.description = `${truncate(short, 158 - pitch.length)} ${pitch}`;
+    const lead = brandInName || short.toLowerCase().includes(p.brand_name.toLowerCase()) ? short : `${p.brand_name} – ${short}`;
+    page.description = `${truncate(lead, 158 - pitch.length)} ${pitch}`;
     page.image = p.images[0]?.url;
     page.imageAlt = `${name}${p.brand_name ? ` – ${p.brand_name}` : ''}`;
     page.type = 'product';
@@ -317,7 +373,8 @@ export async function buildPage(pathname, search = '') {
             `<img src="${esc(absolute(img.url))}" alt="${esc(i === 0 ? page.imageAlt : `${name} – ${T.photo[locale]} ${i + 1}`)}" width="1200" height="1200"${i ? ' loading="lazy"' : ''}>`,
         )
         .join('') +
-      `<p>${p.price} MAD</p><p>${esc(stripHtml(tr(p.description, locale)))}</p>` +
+      `<p>${p.price} MAD</p><p>${esc(T.productPitch[locale](name, brandInName ? '' : p.brand_name, p.price))}</p>` +
+      `<p>${esc(stripHtml(tr(p.description, locale)))}</p>` +
       // How-to-use and ingredients are unique text crawlers should see, not only the description
       [['howToUse', p.how_to_use], ['ingredients', p.ingredients]]
         .map(([key, field]) => [key, stripHtml(tr(field, locale))])
@@ -352,7 +409,11 @@ export async function buildPage(pathname, search = '') {
         ORDER BY p.sales_count DESC LIMIT 200`,
       [row.id],
     );
-    const intro = stripHtml(tr(row.description, locale));
+    const written = stripHtml(tr(row.description, locale));
+    const topNames = items.slice(0, 2).map((p) => tr(p.name, locale));
+    const intro = written || (isCategory ? '' : T.brandPitch[locale](name, items.length, nameList(topNames, locale)));
+    // Brands found in a category: "sérum coréen anua", "toner cosrx"…
+    const categoryBrands = isCategory ? [...new Set(items.map((p) => p.brand).filter(Boolean))].slice(0, 10) : [];
     page.title = `${isCategory ? `${name} – ${T.categorySuffix[locale]}` : T.brandSuffix[locale](name)} | ${BRAND}`;
     page.description = truncate(intro || `${name} – ${T.deliveryPitch[locale]}`, 160);
     page.image = row.image_url || row.logo_url || items[0]?.image;
@@ -384,7 +445,10 @@ export async function buildPage(pathname, search = '') {
         { name, path: `/${section}/${slug}` },
       ]),
     );
-    page.body = `<h1>${esc(name)}</h1>${intro ? `<p>${esc(intro)}</p>` : ''}<ul>${productLinks(items, locale)}</ul>`;
+    page.body =
+      `<h1>${esc(name)}</h1>${intro ? `<p>${esc(intro)}</p>` : ''}` +
+      (categoryBrands.length ? `<p>${esc(T.categoryBrands[locale])} : ${esc(categoryBrands.join(', '))}</p>` : '') +
+      `<ul>${productLinks(items, locale)}</ul>`;
   } else if (section === 'guides' && slug) {
     const { rows: [a] } = await query('SELECT * FROM articles WHERE slug = $1 AND is_published', [decodeURIComponent(slug)]);
     if (!a) {
@@ -444,7 +508,9 @@ export async function buildPage(pathname, search = '') {
     if (section === 'shop') {
       // The shop lists the whole catalog for crawlers
       const { rows: all } = await query(`${PRODUCT_CARD_SQL} WHERE p.is_active ORDER BY p.sales_count DESC`);
-      page.body = `<h1>${esc(STATIC_PAGES.shop[locale])}</h1><ul>${productLinks(all, locale)}</ul>`;
+      const { brands, products } = await topBrands();
+      page.description = truncate(T.shopPitch[locale](products, brands.slice(0, 6).map((b) => b.name).join(', ')), 160);
+      page.body = `<h1>${esc(STATIC_PAGES.shop[locale])}</h1><p>${esc(page.description)}</p><ul>${productLinks(all, locale)}</ul>`;
     }
     // Internal search results and filtered listings are not landing pages
     if (section === 'shop' && params.get('q')) page.noindex = true;

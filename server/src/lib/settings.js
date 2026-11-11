@@ -104,15 +104,16 @@ export const DEFAULT_SETTINGS = {
     tiktok: 'https://www.tiktok.com/@sopure.skin',
   },
   seo: {
+    // Search terms first ("cosmétiques coréens", "k-beauty maroc"), brand name last
     title: {
-      fr: 'So Pure Skin | Cosmétiques coréens authentiques au Maroc',
-      en: 'So Pure Skin | Authentic Korean skincare in Morocco',
-      ar: 'So Pure Skin | مستحضرات تجميل كورية أصلية في المغرب',
+      fr: 'Cosmétiques coréens & K-beauty au Maroc | So Pure Skin',
+      en: 'Korean Skincare & K-beauty in Morocco | So Pure Skin',
+      ar: 'مستحضرات التجميل الكورية في المغرب | So Pure Skin',
     },
     description: {
-      fr: 'Boutique de K-beauty au Maroc : Anua, Skin1004, Beauty of Joseon, COSRX et plus. Paiement à la livraison, livraison Casablanca 20 DH.',
-      en: 'K-beauty store in Morocco: Anua, Skin1004, Beauty of Joseon, COSRX and more. Cash on delivery, Casablanca delivery 20 MAD.',
-      ar: 'متجر الجمال الكوري في المغرب: Anua و Skin1004 و Beauty of Joseon و COSRX والمزيد. الدفع عند الاستلام.',
+      fr: 'Cosmétiques coréens 100% originaux au Maroc : Anua, SKIN1004, Beauty of Joseon, COSRX, Medicube, Abib… Sérums, toners, écrans solaires. Paiement à la livraison.',
+      en: '100% authentic Korean skincare in Morocco: Anua, SKIN1004, Beauty of Joseon, COSRX, Medicube, Abib… Serums, toners, sunscreens. Cash on delivery.',
+      ar: 'مستحضرات تجميل كورية أصلية 100% في المغرب: Anua و SKIN1004 و Beauty of Joseon و COSRX و Medicube… سيروم، تونر، واقي شمس. الدفع عند الاستلام.',
     },
   },
 };

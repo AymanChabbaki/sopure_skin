@@ -66,6 +66,11 @@ export default {
     trust3: 'Livraison partout au Maroc',
   },
   home: {
+    seoH1: 'Cosmétiques coréens et K-beauty au Maroc – So Pure Skin',
+    seoTitle: 'La K-beauty authentique au Maroc',
+    seoText1: 'So Pure Skin est votre boutique de cosmétiques coréens au Maroc : {{count}} soins 100% originaux des meilleures marques de K-beauty :',
+    seoText2: 'Sérums, toners, crèmes hydratantes, écrans solaires, nettoyants et masques : composez votre routine de soin coréenne et faites-vous livrer à Casablanca, Rabat, Marrakech, Tanger, Agadir, Fès et partout au Maroc, avec paiement à la livraison.',
+    seoTypes: 'Par type de soin :',
     categoriesTitle: 'Trouvez votre essentiel',
     categoriesSubtitle: 'Chaque étape de votre routine coréenne, soigneusement sélectionnée.',
     bestSellersTitle: 'Les best-sellers',
@@ -113,6 +118,7 @@ export default {
     support: { title: 'Conseils personnalisés', text: 'Une équipe à votre écoute sur WhatsApp' },
   },
   shop: {
+    brandSubtitle: 'Tous les produits {{brand}} 100% originaux au Maroc : cosmétiques coréens authentiques, livrés partout avec paiement à la livraison.',
     title: 'Boutique',
     subtitle: 'Toute la K-beauty authentique, livrée chez vous.',
     filters: 'Filtres',
@@ -141,6 +147,7 @@ export default {
     page: 'Page {{page}} sur {{pages}}',
   },
   product: {
+    authenticBrand: 'Produit {{brand}} 100% original',
     brand: 'Marque',
     description: 'Description',
     howToUse: 'Utilisation',
