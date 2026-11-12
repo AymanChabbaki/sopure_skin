@@ -40,7 +40,7 @@ function ProductPicker({ categories, selected, onToggle }) {
           <option value="">Toutes les catégories</option>
           {types.map((c) => (
             <option key={c.id} value={c.slug}>
-              {c.name.fr} ({c.productCount ?? '…'})
+              {c.name.fr}{c.productCount != null ? ` (${c.productCount})` : ''}
             </option>
           ))}
         </select>
@@ -91,12 +91,15 @@ function PackEditor({ pack, categories, products, onClose }) {
   const routines = categories.filter((c) => c.kind === 'routine');
   const total = form.productIds.reduce((s, id) => s + (byId.get(id)?.price || 0), 0);
 
-  const toggleProduct = (id) => set('productIds')(form.productIds.includes(id) ? form.productIds.filter((x) => x !== id) : [...form.productIds, id]);
-  const move = (i, d) => {
-    const next = [...form.productIds];
-    [next[i], next[i + d]] = [next[i + d], next[i]];
-    set('productIds')(next);
-  };
+  // Functional updates: several quick clicks must all count
+  const toggleProduct = (id) =>
+    setForm((f) => ({ ...f, productIds: f.productIds.includes(id) ? f.productIds.filter((x) => x !== id) : [...f.productIds, id] }));
+  const move = (i, d) =>
+    setForm((f) => {
+      const next = [...f.productIds];
+      [next[i], next[i + d]] = [next[i + d], next[i]];
+      return { ...f, productIds: next };
+    });
 
   const save = useAdminMutation((body) => adminApi(pack ? `/packs/${pack.id}` : '/packs', { method: pack ? 'PUT' : 'POST', body }), {
     success: pack ? 'Pack enregistré' : 'Pack créé',
@@ -141,7 +144,7 @@ function PackEditor({ pack, categories, products, onClose }) {
                   <button
                     key={c.id}
                     type="button"
-                    onClick={() => set('categoryIds')(on ? form.categoryIds.filter((x) => x !== c.id) : [...form.categoryIds, c.id])}
+                    onClick={() => setForm((f) => ({ ...f, categoryIds: f.categoryIds.includes(c.id) ? f.categoryIds.filter((x) => x !== c.id) : [...f.categoryIds, c.id] }))}
                     className={cn('rounded-full border px-3 py-1.5 text-xs transition', on ? 'border-brand-500 bg-brand-500 text-white' : 'border-line hover:border-brand-300')}
                   >
                     {c.name.fr}

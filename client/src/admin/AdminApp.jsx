@@ -4,6 +4,8 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   LayoutDashboard,
+  Boxes,
+  Clapperboard,
   BarChart3,
   ShoppingCart,
   Package,
@@ -30,6 +32,8 @@ import { cn } from '../lib/format.js';
 
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
 const Statistics = lazy(() => import('./pages/Statistics.jsx'));
+const PacksPage = lazy(() => import('./pages/Packs.jsx'));
+const VideosPage = lazy(() => import('./pages/Videos.jsx'));
 const Orders = lazy(() => import('./pages/Orders.jsx'));
 const OrderDetail = lazy(() => import('./pages/OrderDetail.jsx'));
 const Products = lazy(() => import('./pages/Products.jsx'));
@@ -99,10 +103,12 @@ const NAV = [
   { to: '/admin/statistics', label: 'Statistiques', icon: BarChart3 },
   { to: '/admin/orders', label: 'Commandes', icon: ShoppingCart, badge: 'pending' },
   { to: '/admin/products', label: 'Produits', icon: Package },
+  { to: '/admin/packs', label: 'Packs', icon: Boxes },
   { to: '/admin/categories', label: 'Catégories', icon: FolderTree },
   { to: '/admin/brands', label: 'Marques', icon: Award },
   { to: '/admin/reviews', label: 'Avis clients', icon: Star },
   { to: '/admin/testimonials', label: 'Témoignages', icon: MessageCircleHeart },
+  { to: '/admin/videos', label: 'Vidéos', icon: Clapperboard },
   { to: '/admin/guides', label: 'Conseils & guides', icon: BookOpen },
   { to: '/admin/subscribers', label: 'Newsletter', icon: Mail },
   { to: '/admin/settings', label: 'Paramètres', icon: Settings },
@@ -267,6 +273,8 @@ export default function AdminApp() {
                     <Routes>
                       <Route index element={<Dashboard />} />
                       <Route path="statistics" element={<Statistics />} />
+                      <Route path="packs" element={<PacksPage />} />
+                      <Route path="videos" element={<VideosPage />} />
                       <Route path="orders" element={<Orders />} />
                       <Route path="orders/:id" element={<OrderDetail />} />
                       <Route path="products" element={<Products />} />
