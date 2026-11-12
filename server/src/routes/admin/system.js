@@ -7,6 +7,7 @@ import { DEFAULT_SETTINGS, getSettings, saveSetting } from '../../lib/settings.j
 import { removeImage, storeImage } from '../../lib/images.js';
 import { storageDriver } from '../../lib/storage.js';
 import { localizedUrls, submitUrls } from '../../lib/indexnow.js';
+import { flushPublish, publishEnabled, publishStatus } from '../../lib/publish.js';
 import { mailEnabled, mailTransport, sendMail } from '../../lib/mailer.js';
 import { HttpError } from '../../lib/utils.js';
 import { validate } from '../../middleware/errors.js';
@@ -46,6 +47,17 @@ settingsRouter.post('/indexnow', async (_req, res) => {
   const paths = ['/', '/shop', '/brands', '/routine', '/faq', '/shipping', '/policies', '/about', '/contact',
     ...categories.map((c) => `/category/${c.slug}`), ...brands.map((b) => `/brand/${b.slug}`), ...products.map((p) => `/product/${p.slug}`)];
   res.json(await submitUrls(paths.flatMap(localizedUrls)));
+});
+
+/** Static storefront pages: when they were last rebuilt, and a button to rebuild them now. */
+settingsRouter.get('/publish', async (_req, res) => {
+  res.json(await publishStatus());
+});
+
+settingsRouter.post('/publish', async (_req, res) => {
+  if (!publishEnabled()) throw new HttpError(400, 'Ajoutez DEPLOY_HOOK_URL (Vercel > Settings > Git > Deploy Hooks) dans les variables d’environnement');
+  await flushPublish({ force: true });
+  res.json(await publishStatus());
 });
 
 /** Order email alerts: status and a test message. */

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, Reorder } from 'motion/react';
-import { Truck, Megaphone, Image as ImageIcon, Phone, Search, Plus, Trash2, GripVertical, Loader2, Save, Cloud, HardDrive, Send, Copy, Mail, Menu } from 'lucide-react';
+import { Truck, Megaphone, Image as ImageIcon, Phone, Search, Plus, Trash2, GripVertical, Loader2, Save, Cloud, HardDrive, Send, Copy, Mail, Menu, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, EDITING, Field, I18nInput, ImageUploader, PageTitle, Switch, adminApi, useAdminMutation, useAdminQuery } from '../ui.jsx';
 import { Skeleton } from '../../components/ui/Primitives.jsx';
@@ -321,6 +321,39 @@ const SEO_FILES = [
   ['/robots.txt', 'Règles d’exploration (moteurs et assistants IA autorisés)'],
 ];
 
+/**
+ * The shop pages are static files generated at each deploy (zero server CPU). Catalog changes trigger a
+ * rebuild automatically (at most every 10 minutes); this card shows its state and forces one.
+ */
+function PublishCard() {
+  const { data } = useAdminQuery(['publish'], '/settings/publish');
+  const publish = useAdminMutation(() => adminApi('/settings/publish', { method: 'POST' }), {
+    success: 'Publication lancée : la boutique sera à jour dans 3 à 5 minutes',
+    invalidate: [['admin', 'publish']],
+  });
+  if (!data) return null;
+  return (
+    <section className="rounded-2xl border border-line bg-zinc-50/60 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="font-semibold">Publication des pages</h3>
+          <p className="mt-1 text-sm text-muted">
+            {!data.enabled
+              ? 'Republication automatique inactive : ajoutez DEPLOY_HOOK_URL dans Vercel.'
+              : data.pending
+                ? 'Des modifications attendent : publication automatique dans 10 minutes maximum.'
+                : 'Les pages vues par Google sont à jour.'}
+            {data.lastAt && ` Dernière publication : ${new Date(data.lastAt).toLocaleString('fr-MA', { dateStyle: 'short', timeStyle: 'short' })}.`}
+          </p>
+        </div>
+        <button type="button" onClick={() => publish.mutate()} disabled={!data.enabled || publish.isPending} className="btn-outline py-2.5">
+          {publish.isPending ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />} Publier maintenant
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function SeoTab({ value, save, all }) {
   const [s, setS] = useState(value);
   const [returns, setReturns] = useState(all.returns || { enabled: false, days: 7, fees: 'customer' });
@@ -335,6 +368,7 @@ function SeoTab({ value, save, all }) {
 
   return (
     <div className="space-y-8">
+      <PublishCard />
       <section className="space-y-5">
         <I18nInput label="Titre du site (page d’accueil)" value={s.title} onChange={(v) => setS({ ...s, title: v })} />
         <I18nInput label="Méta description" value={s.description} onChange={(v) => setS({ ...s, description: v })} multiline rows={3} />

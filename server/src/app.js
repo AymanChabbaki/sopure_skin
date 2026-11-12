@@ -84,7 +84,7 @@ app.use(cors({ origin: config.corsOrigins, credentials: true }));
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 // morgan compiles its formats with new Function(), which Workers forbid; Cloudflare logs requests itself
-if (!onWorkers) app.use(morgan(config.isProd ? 'combined' : 'dev'));
+if (!onWorkers && !process.env.PRERENDER) app.use(morgan(config.isProd ? 'combined' : 'dev'));
 
 app.get('/api/health', async (_req, res) => {
   await pool.query('SELECT 1');

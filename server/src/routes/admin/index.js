@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAdmin } from '../../middleware/auth.js';
 import { query } from '../../db/pool.js';
 import { notifyPaths } from '../../lib/indexnow.js';
+import { flushPublish, markChanged } from '../../lib/publish.js';
 import { authRouter } from './auth.js';
 import { dashboardRouter } from './dashboard.js';
 import { productsRouter } from './products.js';
@@ -21,6 +22,12 @@ adminRouter.use((_req, res, next) => {
 adminRouter.use('/auth', authRouter);
 adminRouter.use(requireAdmin);
 
+/** Admin reads (the dashboard polls every minute) publish changes that were waiting for the 10-minute delay. */
+adminRouter.use((req, res, next) => {
+  if (req.method === 'GET') res.on('finish', () => flushPublish().catch(() => null));
+  next();
+});
+
 /**
  * After every successful catalog change, tell search engines (IndexNow) which store pages changed.
  * Runs after the response is sent, so it never slows down or breaks the admin.
@@ -31,6 +38,8 @@ adminRouter.use((req, res, next) => {
     if (res.statusCode >= 400) return;
     try {
       const [, resource, id] = req.path.split('/');
+      // Actions that change nothing public (publish button, IndexNow ping, test email)
+      if (resource === 'settings' && ['publish', 'indexnow', 'email'].includes(id)) return;
       const paths = ['/', '/shop'];
       if (resource === 'products') {
         const ids = id && /^\d+$/.test(id) ? [Number(id)] : req.body?.ids || [];
@@ -50,10 +59,18 @@ adminRouter.use((req, res, next) => {
           const { rows } = await query('SELECT slug FROM articles WHERE id = $1 AND is_published', [id]);
           rows.forEach((r) => paths.push(`/guides/${r.slug}`));
         }
+      } else if (resource === 'orders') {
+        // A cancelled or returned order puts items back in stock: the static pages need the new availability
+        await markChanged();
+        await flushPublish();
+        return;
       } else if (resource !== 'settings' && resource !== 'reviews') {
-        return; // orders, uploads, team…: nothing public changed
+        return; // uploads, team…: nothing public changed
       }
       notifyPaths(paths);
+      // Static storefront pages: rebuild them (at most every 10 minutes, see lib/publish.js)
+      await markChanged();
+      await flushPublish();
     } catch {
       /* best effort */
     }

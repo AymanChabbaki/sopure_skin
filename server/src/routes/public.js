@@ -8,6 +8,7 @@ import { pickLocale, tr, HttpError } from '../lib/utils.js';
 import { validate } from '../middleware/errors.js';
 import { adjustSize, sizesStock } from '../lib/sizes.js';
 import { notifyNewOrder } from '../lib/mailer.js';
+import { markChanged } from '../lib/publish.js';
 import { estimatedDeliveryDate } from '../lib/delivery.js';
 import { CDN_API } from '../lib/cache.js';
 
@@ -258,6 +259,8 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
 
   // Email alert to the shop (awaited so serverless hosts don't cut it off; it never fails the order)
   await notifyNewOrder(order.id);
+  // Stock changed: the static product pages are rebuilt on the next admin visit (lib/publish.js)
+  await markChanged().catch(() => null);
 
   res.status(201).json({
     number: order.number,

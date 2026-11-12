@@ -5,9 +5,11 @@
     "web": {
       "root": "client/",
       "framework": "vite",
-      "installCommand": "cd .. && npm install --workspace=client --include=dev",
-      "buildCommand": "npm run build",
+      "installCommand": "cd .. && npm install --workspace=client --workspace=server --include=dev",
+      "buildCommand": "npm run build && node ../server/scripts/prerender.mjs",
       "outputDirectory": "dist",
+      "cleanUrls": true,
+      "trailingSlash": false,
       "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
       "headers": [
         {
@@ -32,14 +34,6 @@
   "redirects": [{ "source": "/", "destination": "/fr", "permanent": true }],
   "rewrites": [
     { "source": "/api/(.*)", "destination": { "service": "api" } },
-    { "source": "/sitemap.xml", "destination": { "service": "api" } },
-    { "source": "/robots.txt", "destination": { "service": "api" } },
-    { "source": "/llms.txt", "destination": { "service": "api" } },
-    { "source": "/llms-full.txt", "destination": { "service": "api" } },
-    { "source": "/feeds/:path*", "destination": { "service": "api" } },
-    { "source": "/:key([0-9a-f]{32}).txt", "destination": { "service": "api" } },
-    { "source": "/:lang(fr|en|ar)", "destination": { "service": "api" } },
-    { "source": "/:lang(fr|en|ar)/:path*", "destination": { "service": "api" } },
     { "source": "/(.*)", "destination": { "service": "web" } }
   ]
 }
