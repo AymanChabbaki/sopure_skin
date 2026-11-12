@@ -53,8 +53,16 @@ try {
   const key = indexNowKey();
   if (key) await save(`${key}.txt`, key);
 
-  // Every page listed in the sitemap: /fr -> fr.html, /fr/product/x -> fr/product/x.html (cleanUrls)
+  // Every page listed in the sitemap, saved under its exact URL path without extension (/fr/product/x ->
+  // fr/product/x): Vercel serves an exact file before its rewrites, while "x.html" lookups (cleanUrls) come after
+  // the SPA fallback rewrite. Paths that are also folders (/fr, /fr/guides) cannot be files: they are saved as
+  // .html and mapped by explicit rewrites in vercel.json. Content-Type is set by vercel.json headers.
   const pages = [...new Set([...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1].replace(config.siteUrl, '')))];
+  const folders = new Set(pages.flatMap((p) => p.split('/').slice(1, -1).map((_, i, parts) => `/${parts.slice(0, i + 1).join('/')}`)));
+  const REWRITTEN = /^\/(fr|en|ar)(\/guides)?$/;
+  const unmapped = pages.filter((p) => folders.has(p) && !REWRITTEN.test(p));
+  if (unmapped.length) throw new Error(`Pages that are also folders need a rewrite in vercel.json: ${unmapped.join(', ')}`);
+  const fileFor = (p) => `${p.replace(/^\//, '')}${folders.has(p) || REWRITTEN.test(p) ? '.html' : ''}`;
   let done = 0;
   const queue = [...pages];
   const worker = async () => {
@@ -62,7 +70,7 @@ try {
       const html = await get(p);
       // renderIndex falls back to the bare shell when the page data fails: never publish that
       if (!html.includes('data-ssr')) throw new Error(`${p}: rendered without SEO tags`);
-      await save(`${p.replace(/^\//, '')}.html`, html);
+      await save(fileFor(p), html);
       done += 1;
     }
   };
