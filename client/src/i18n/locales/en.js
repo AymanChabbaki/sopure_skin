@@ -244,7 +244,7 @@ export default {
     items: [
       { q: 'Are the products authentic?', a: 'Yes. All our products are 100% original, imported from South Korea through official distributors.' },
       { q: 'How do I pay for my order?', a: 'Payment is cash on delivery only, directly to the courier.' },
-      { q: 'How much is delivery?', a: 'Delivery costs {{casa}} MAD in Casablanca and {{other}} MAD in other Moroccan cities. It is free for any order of more than {{count}} products.' },
+      { q: 'How much is delivery?', a: 'Delivery costs {{casa}} MAD in Casablanca and {{other}} MAD in other Moroccan cities depending on the city (details on the Delivery page). It is free for any order of more than {{count}} products.' },
       { q: 'How long does delivery take?', a: '24 to 48h in Casablanca and 2 to 4 working days in other cities.' },
       { q: 'How do I choose products for my skin?', a: 'Use our “tailored routine” diagnosis on the home page, or message us on WhatsApp for personal advice.' },
       { q: 'Can I change or cancel my order?', a: 'Yes, as long as it has not been shipped. Contact us by phone or WhatsApp.' },
