@@ -118,7 +118,7 @@ uploadsRouter.post('/', upload.fields([{ name: 'files', maxCount: 12 }, { name: 
   const thumbs = req.files?.thumbs || [];
   if (!files.length) throw new HttpError(400, 'No valid image received');
   const preprocessed = thumbs.length === files.length && [...files, ...thumbs].every((f) => /^image\/(webp|jpeg)$/.test(f.mimetype));
-  const folder = ['products', 'categories', 'brands', 'banners', 'testimonials', 'articles'].includes(req.query.folder) ? req.query.folder : 'products';
+  const folder = ['products', 'categories', 'brands', 'banners', 'testimonials', 'articles', 'videos'].includes(req.query.folder) ? req.query.folder : 'products';
   // Optional ?name= (product / brand name) gives the files descriptive names for image SEO
   const name = String(req.query.name || '').slice(0, 120);
   const stored = await Promise.all(files.map((f, i) => storeImage(f.buffer, folder, name, preprocessed ? thumbs[i].buffer : null, f.mimetype)));

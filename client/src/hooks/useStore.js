@@ -64,3 +64,19 @@ export function computeShipping(shipping, city, itemsCount) {
   const isCasa = shipping.casablancaAliases.some((a) => a.toLowerCase() === city.trim().toLowerCase());
   return isCasa ? shipping.casablancaFee : shipping.otherFee;
 }
+
+/** Packs offered for a routine (category slug). */
+export function usePacks(category, options = {}) {
+  const lang = useLang();
+  return useQuery({
+    queryKey: ['packs', lang, category],
+    queryFn: () => api('/packs', { params: { lang, category } }),
+    staleTime: 60_000,
+    ...options,
+  });
+}
+
+export function useVideos() {
+  const lang = useLang();
+  return useQuery({ queryKey: ['videos', lang], queryFn: () => api('/videos', { params: { lang } }), staleTime: 60_000 });
+}

@@ -129,7 +129,8 @@ const SKINS = [
 ];
 const CONCERNS = ['none', 'acne', 'taches', 'points-noirs', 'rougeurs'];
 
-export function RoutineFinder() {
+/** `onChoose(slug)`: when given (routine page), the result is shown in place instead of opening the routine. */
+export function RoutineFinder({ onChoose }) {
   const { t } = useTranslation();
   const lp = useLocalePath();
   const navigate = useNavigate();
@@ -142,6 +143,7 @@ export function RoutineFinder() {
     // Most specific routine that exists, then the general skin routine, then the whole shop
     const candidates = [concern !== 'none' && `routine-${skin}-${concern}`, `routine-${skin}`].filter(Boolean);
     const match = candidates.find((s) => slugs.has(s));
+    if (onChoose) return onChoose(match || null);
     navigate(match ? lp(`/category/${match}`) : lp('/shop'));
   };
 

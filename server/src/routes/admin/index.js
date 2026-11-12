@@ -10,6 +10,7 @@ import { categoriesRouter, brandsRouter } from './taxonomy.js';
 import { ordersRouter } from './orders.js';
 import { reviewsRouter } from './reviews.js';
 import { articlesRouter } from './articles.js';
+import { packsRouter, videosRouter } from './packs.js';
 import { statsRouter } from './stats.js';
 import { settingsRouter, uploadsRouter, teamRouter, subscribersRouter } from './system.js';
 
@@ -85,6 +86,8 @@ adminRouter.use('/brands', brandsRouter);
 adminRouter.use('/orders', ordersRouter);
 adminRouter.use('/reviews', reviewsRouter);
 adminRouter.use('/articles', articlesRouter);
+adminRouter.use('/packs', packsRouter);
+adminRouter.use('/videos', videosRouter);
 adminRouter.use('/settings', settingsRouter);
 adminRouter.use('/uploads', uploadsRouter);
 adminRouter.use('/team', teamRouter);

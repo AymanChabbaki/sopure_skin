@@ -1,7 +1,10 @@
+import { useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'motion/react';
 import { ArrowRight, Sparkles } from 'lucide-react';
+import { RoutinePacks } from '../components/product/Packs.jsx';
+import { usePacks } from '../hooks/useStore.js';
 import { RoutineFinder, RitualSteps } from '../components/home/Sections.jsx';
 import { PageHeader, SectionHeading, Skeleton } from '../components/ui/Primitives.jsx';
 import { staggerContainer, staggerItem } from '../components/ui/Reveal.jsx';
@@ -33,7 +36,16 @@ function RoutineCard({ routine }) {
 
 export default function RoutineBuilder() {
   const { t } = useTranslation();
+  const lp = useLocalePath();
   const { data: categories = [], isLoading } = useCategories();
+  const [chosen, setChosen] = useState(undefined);
+  const resultRef = useRef(null);
+  const chosenRoutine = categories.find((c) => c.slug === chosen);
+  const { data: chosenPacks = [], isFetched } = usePacks(chosen, { enabled: Boolean(chosen) });
+  const choose = (slug) => {
+    setChosen(slug);
+    setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+  };
   const routines = categories.filter((c) => c.kind === 'routine' && c.productCount > 0);
   // "routine-mixte" = general routine for a skin type; "routine-mixte-acne" = targeted routine
   const general = routines.filter((r) => r.slug.split('-').length === 2);
@@ -43,7 +55,33 @@ export default function RoutineBuilder() {
     <>
       <PageHeader eyebrow={t('routinePage.eyebrow')} title={t('routinePage.title')} subtitle={t('routinePage.subtitle')} />
 
-      <RoutineFinder />
+      <RoutineFinder onChoose={choose} />
+
+      {/* Result of the finder: the packs of the matching routine */}
+      {chosen !== undefined && (
+        <div ref={resultRef} className="container-x scroll-mt-28 pt-8">
+          {chosenRoutine ? (
+            <>
+              <RoutinePacks category={chosen} title={chosenRoutine.name} subtitle={t('packs.routineSubtitle')} />
+              {isFetched && !chosenPacks.length && (
+                <p className="rounded-3xl bg-brand-50 p-6 text-center text-ink/80">{t('packs.none', { routine: chosenRoutine.name })}</p>
+              )}
+              <div className="mt-6 flex justify-center">
+                <Link to={lp(`/category/${chosen}`)} className="btn-outline group">
+                  {t('packs.allProducts', { routine: chosenRoutine.name })} <ArrowRight className="size-4 transition group-hover:translate-x-1 rtl:-scale-x-100" />
+                </Link>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center gap-4 rounded-3xl bg-brand-50 p-8 text-center">
+              <p>{t('packs.noRoutine')}</p>
+              <Link to={lp('/shop')} className="btn-primary">
+                {t('nav.allProducts')}
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
 
       <section className="container-x py-16 sm:py-20">
         <SectionHeading title={t('routinePage.orChoose')} subtitle={t('routinePage.orChooseText')} />
