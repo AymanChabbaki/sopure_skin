@@ -11,8 +11,12 @@ import { broadcastChange } from '../lib/live.js';
 
 export const adminApi = (path, options) => api(`/admin${path}`, options);
 
-/** Admin data stays live: refetched every 15 s while the tab is visible and whenever it regains focus. */
-export const LIVE_INTERVAL = 15_000;
+/**
+ * Admin data stays live: refetched every 60 s while the tab is visible and whenever it regains focus.
+ * Paused in hidden tabs: every refetch runs a server function, and an admin tab left open all day
+ * would otherwise use a large share of the hosting plan's CPU.
+ */
+export const LIVE_INTERVAL = 60_000;
 
 /** For edit forms: never refetch in the background, it would overwrite what the admin is typing. */
 export const EDITING = { refetchInterval: false, refetchOnWindowFocus: false };

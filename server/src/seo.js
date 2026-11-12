@@ -6,6 +6,7 @@ import { getProductBySlug, relatedProducts } from './lib/catalog.js';
 import { indexNowKey } from './lib/indexnow.js';
 import { articleHtml } from './lib/articles.js';
 import { escapeHtml as esc, stripHtml, tr, truncate } from './lib/utils.js';
+import { CDN_FILE, CDN_PAGE } from './lib/cache.js';
 
 const SITE = config.siteUrl;
 const BRAND = 'So Pure Skin';
@@ -643,34 +644,50 @@ seoRouter.get('/api/seo/render', async (req, res) => {
   const page = await buildPage(String(req.query.path || '/'), String(req.query.search || ''));
   res
     .set('Cache-Control', 'no-cache')
-    .set('CDN-Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600')
+    .set('CDN-Cache-Control', CDN_PAGE)
     .json({ lang: page.locale, dir: page.locale === 'ar' ? 'rtl' : 'ltr', head: renderHead(page), body: page.body, noindex: page.noindex });
 });
 
 seoRouter.get('/api/seo', async (req, res) => {
   const path = String(req.query.path || '/').slice(0, 300);
   const page = await buildPage(path, String(req.query.search || ''));
-  res.set('Cache-Control', 'no-cache').set('CDN-Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600');
+  res.set('Cache-Control', 'no-cache').set('CDN-Cache-Control', CDN_PAGE);
   res.json({ locale: page.locale, tags: headDescriptors(page) });
 });
 
+// Private pages and filter combinations (sort, price, multi-brand…): endless URL variants that only
+// cost crawl budget and server CPU. Every listing is reachable without them and canonicalizes to its clean URL.
+const ROBOTS_RULES = [
+  'Allow: /',
+  'Disallow: /admin',
+  'Disallow: /api/',
+  'Disallow: /*/cart',
+  'Disallow: /*/checkout',
+  'Disallow: /*/order/',
+  'Disallow: /*/wishlist',
+  'Disallow: /*?*q=',
+  'Disallow: /*?*sort=price',
+  'Disallow: /*?*minPrice=',
+  'Disallow: /*?*maxPrice=',
+  'Disallow: /*?*page=',
+  'Disallow: /*?*brand=',
+  'Disallow: /*?*category=',
+];
+// A crawler with its own group ignores the "*" group, so every group repeats the full rules
+const WELCOME_BOTS = ['Googlebot', 'Googlebot-Image', 'Bingbot', 'OAI-SearchBot', 'ChatGPT-User', 'Claude-SearchBot', 'Claude-User', 'PerplexityBot', 'Perplexity-User'];
+// Crawlers that only collect AI training data: heavy crawling, no visitors in return
+const BLOCKED_BOTS = ['GPTBot', 'ClaudeBot', 'anthropic-ai', 'Google-Extended', 'Applebot-Extended', 'CCBot', 'Bytespider', 'meta-externalagent', 'Amazonbot', 'cohere-ai'];
+
 seoRouter.get('/robots.txt', (_req, res) => {
-  res.type('text/plain').send(
+  res.type('text/plain').set('Cache-Control', 'no-cache').set('CDN-Cache-Control', CDN_FILE).send(
     [
       'User-agent: *',
-      'Allow: /',
-      'Disallow: /admin',
-      'Disallow: /api/',
-      'Disallow: /*/cart',
-      'Disallow: /*/checkout',
-      'Disallow: /*/order/',
-      'Disallow: /*/wishlist',
-      'Disallow: /*?q=',
+      ...ROBOTS_RULES,
       '',
-      '# Search engines and AI assistants are welcome to read the catalog',
-      ...['Googlebot', 'Googlebot-Image', 'Bingbot', 'GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-SearchBot', 'PerplexityBot', 'Google-Extended', 'Applebot-Extended'].flatMap(
-        (ua) => [`User-agent: ${ua}`, 'Allow: /', 'Disallow: /admin', 'Disallow: /api/', ''],
-      ),
+      '# Search engines and AI search assistants are welcome to read the catalog',
+      ...WELCOME_BOTS.flatMap((ua) => [`User-agent: ${ua}`, ...ROBOTS_RULES, '']),
+      '# AI training crawlers',
+      ...BLOCKED_BOTS.flatMap((ua) => [`User-agent: ${ua}`, 'Disallow: /', '']),
       `Sitemap: ${SITE}/sitemap.xml`,
     ].join('\n'),
   );
@@ -723,7 +740,7 @@ seoRouter.get('/sitemap.xml', async (_req, res) => {
 
   res
     .type('application/xml')
-    .set('Cache-Control', 'no-cache').set('CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600')
+    .set('Cache-Control', 'no-cache').set('CDN-Cache-Control', CDN_FILE)
     .send(
       `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" ` +
         `xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">${body}</urlset>`,
@@ -788,7 +805,7 @@ seoRouter.get('/llms.txt', async (_req, res) => {
         `- [${p.name}](${SITE}/fr/product/${p.slug}): ${p.price} MAD${p.brand ? ` · ${p.brand}` : ''}${p.types ? ` · ${p.types}` : ''}. ${truncate(stripHtml(p.short_description?.fr || ''), 140)}`,
     ),
   ];
-  res.type('text/plain; charset=utf-8').set('Cache-Control', 'no-cache').set('CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600').send(lines.join('\n'));
+  res.type('text/plain; charset=utf-8').set('Cache-Control', 'no-cache').set('CDN-Cache-Control', CDN_FILE).send(lines.join('\n'));
 });
 
 seoRouter.get('/llms-full.txt', async (_req, res) => {
@@ -808,7 +825,7 @@ seoRouter.get('/llms-full.txt', async (_req, res) => {
       '',
     );
   });
-  res.type('text/plain; charset=utf-8').set('Cache-Control', 'no-cache').set('CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600').send(lines.filter((l, i, a) => l !== '' || a[i - 1] !== '').join('\n'));
+  res.type('text/plain; charset=utf-8').set('Cache-Control', 'no-cache').set('CDN-Cache-Control', CDN_FILE).send(lines.filter((l, i, a) => l !== '' || a[i - 1] !== '').join('\n'));
 });
 
 /* ------------------------- Google Merchant Center feed ------------------------ */
@@ -856,7 +873,7 @@ seoRouter.get('/feeds/google-merchant.xml', async (_req, res) => {
   };
   res
     .type('application/xml')
-    .set('Cache-Control', 'no-cache').set('CDN-Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600')
+    .set('Cache-Control', 'no-cache').set('CDN-Cache-Control', CDN_FILE)
     .send(
       `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"><channel>` +
         `<title>${BRAND}</title><link>${SITE}/fr</link><description>${esc(tr(settings.seo.description, 'fr'))}</description>` +

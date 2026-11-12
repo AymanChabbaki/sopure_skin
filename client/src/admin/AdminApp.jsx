@@ -181,7 +181,8 @@ function useNewOrderAlerts(enabled) {
   const { data } = useQuery({
     queryKey: ['admin', 'orders', 'counts'],
     queryFn: () => adminApi('/orders', { params: { limit: 1 } }),
-    refetchInterval: LIVE_INTERVAL,
+    // Keeps checking in a hidden tab (to notify new orders), at a slower pace
+    refetchInterval: () => (document.hidden ? 120_000 : LIVE_INTERVAL),
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
     enabled,

@@ -9,6 +9,7 @@ import { validate } from '../middleware/errors.js';
 import { adjustSize, sizesStock } from '../lib/sizes.js';
 import { notifyNewOrder } from '../lib/mailer.js';
 import { estimatedDeliveryDate } from '../lib/delivery.js';
+import { CDN_API } from '../lib/cache.js';
 
 export const publicRouter = Router();
 
@@ -17,9 +18,9 @@ publicRouter.use((req, res, next) => {
   req.locale = pickLocale(req.query.lang);
   // Browsers must not serve stale data (Chrome honours stale-while-revalidate in its own cache):
   // "no-cache" = always revalidate via ETag, a cheap 304 when nothing changed.
-  // The CDN gets its own directive (ignored by browsers) and keeps a copy 15 s to absorb traffic spikes.
+  // The CDN gets its own directive (ignored by browsers), see lib/cache.js.
   res.set('Cache-Control', 'no-cache');
-  res.set('CDN-Cache-Control', 'public, s-maxage=15, stale-while-revalidate=60');
+  res.set('CDN-Cache-Control', CDN_API);
   next();
 });
 

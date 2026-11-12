@@ -17,6 +17,7 @@ import { chatRouter } from './routes/chat.js';
 import { seoRouter, renderIndex } from './seo.js';
 import { LOCAL_UPLOAD_DIR, storageDriver } from './lib/storage.js';
 import { errorHandler, notFound } from './middleware/errors.js';
+import { CDN_PAGE } from './lib/cache.js';
 
 // import.meta.url is empty on Cloudflare Workers (no file system there)
 const root = import.meta.url ? path.dirname(fileURLToPath(import.meta.url)) : process.cwd();
@@ -76,8 +77,8 @@ app.use(
     crossOriginResourcePolicy: { policy: 'cross-origin' },
   }),
 );
-// Cloudflare compresses responses at the edge
-if (!onWorkers) app.use(compression());
+// Vercel and Cloudflare compress responses at the edge: gzip in Node would only burn function CPU
+if (!onWorkers && !process.env.VERCEL) app.use(compression());
 app.use(attachRequestDb);
 app.use(cors({ origin: config.corsOrigins, credentials: true }));
 app.use(express.json({ limit: '2mb' }));
@@ -119,7 +120,7 @@ app.get('/{*splat}', async (req, res, next) => {
   res
     .type('html')
     .set('Cache-Control', 'no-cache')
-    .set('CDN-Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600')
+    .set('CDN-Cache-Control', CDN_PAGE)
     .send(await renderIndex(template, req.path, req.originalUrl.split('?')[1] || ''));
 });
 

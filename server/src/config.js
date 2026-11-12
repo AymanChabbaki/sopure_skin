@@ -14,7 +14,8 @@ const isProd = process.env.NODE_ENV === 'production';
  * the production domain Vercel exposes, never to localhost: a localhost canonical blocks indexing.
  */
 function resolveSiteUrl() {
-  const explicit = process.env.SITE_URL;
+  // trim(): a value pasted into the Vercel dashboard can carry a trailing newline, which breaks every canonical URL
+  const explicit = process.env.SITE_URL?.trim();
   if (explicit) return explicit.replace(/\/$/, '');
   const vercelDomain = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
   if (vercelDomain) {
@@ -44,7 +45,7 @@ export const config = {
     accessKeyId: process.env.R2_ACCESS_KEY_ID,
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
     bucket: process.env.R2_BUCKET,
-    publicUrl: (process.env.R2_PUBLIC_URL || '').replace(/\/$/, ''),
+    publicUrl: (process.env.R2_PUBLIC_URL || '').trim().replace(/\/$/, ''),
   },
 };
 
