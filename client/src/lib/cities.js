@@ -1,4 +1,4 @@
-/** Main Moroccan cities (Casablanca first: it has its own delivery fee). Arabic names shown in the AR UI. */
+/** Moroccan cities of the checkout list (grouped by delivery zone there). Arabic names shown in the AR UI. */
 export const CITIES = [
   ['Casablanca', 'الدار البيضاء'],
   ['Rabat', 'الرباط'],
@@ -18,6 +18,14 @@ export const CITIES = [
   ['Berrechid', 'برشيد'],
   ['Bouskoura', 'بوسكورة'],
   ['Dar Bouazza', 'دار بوعزة'],
+  ['Mediouna', 'مديونة'],
+  ['Tit Mellil', 'تيط مليل'],
+  ['Rahma', 'الرحمة'],
+  ['Lissasfa', 'ليساسفة'],
+  ['Nouaceur', 'النواصر'],
+  ['Aïn Harrouda', 'عين حرودة'],
+  ['Had Soualem', 'حد السوالم'],
+  ['Deroua', 'الدروة'],
   ['Béni Mellal', 'بني ملال'],
   ['Khouribga', 'خريبكة'],
   ['Safi', 'آسفي'],

@@ -22,10 +22,19 @@ settingsRouter.get('/', async (_req, res) => {
 });
 
 const shippingSchema = z.object({
-  casablancaFee: z.number().min(0),
-  otherFee: z.number().min(0),
   freeAboveItems: z.number().int().min(0),
-  casablancaAliases: z.array(z.string().min(1)).min(1),
+  otherFee: z.number().min(0),
+  zones: z
+    .array(
+      z.object({
+        id: z.string().trim().min(1).max(40),
+        label: z.object({ fr: z.string().default(''), en: z.string().default(''), ar: z.string().default('') }).partial(),
+        fee: z.number().min(0),
+        cities: z.array(z.string().trim().min(1)).min(1),
+        aliases: z.array(z.string().trim().min(1)).default([]),
+      }),
+    )
+    .max(20),
 });
 
 const returnsSchema = z.object({ enabled: z.boolean(), days: z.number().int().min(1).max(365), fees: z.enum(['free', 'customer']) });

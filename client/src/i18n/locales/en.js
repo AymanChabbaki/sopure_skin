@@ -114,7 +114,7 @@ export default {
   benefits: {
     authentic: { title: '100% authentic', text: 'Imported directly from Korea' },
     cod: { title: 'Cash on delivery', text: 'Pay in cash when you receive it' },
-    delivery: { title: 'Fast delivery', text: 'Casablanca 20 MAD · Other cities 35 MAD' },
+    delivery: { title: 'Fast delivery', text: 'Casablanca 20 MAD · Other cities 30–40 MAD' },
     support: { title: 'Personal advice', text: 'Our team is here for you on WhatsApp' },
   },
   shop: {

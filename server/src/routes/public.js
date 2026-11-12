@@ -3,7 +3,7 @@ import rateLimit from '../lib/rateLimit.js';
 import { z } from 'zod';
 import { query, withTransaction } from '../db/pool.js';
 import { listProducts, getProductBySlug, toCard, toDetail, relatedProducts } from '../lib/catalog.js';
-import { getSettings, computeShipping, isCasablanca } from '../lib/settings.js';
+import { getSettings, computeShipping, isCasablanca, canonicalCity } from '../lib/settings.js';
 import { pickLocale, tr, HttpError } from '../lib/utils.js';
 import { validate } from '../middleware/errors.js';
 import { adjustSize, publicSizes, sizesStock } from '../lib/sizes.js';
@@ -227,7 +227,7 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
     const subtotal = lines.reduce((s, l) => s + l.lineTotal, 0);
     const shippingFee = computeShipping({ city: data.city, itemsCount }, settings.shipping);
     // "casa", "الدار البيضاء"… are stored as one city so stats group correctly
-    if (isCasablanca(data.city, settings.shipping)) data.city = 'Casablanca';
+    data.city = canonicalCity(data.city, settings.shipping);
     const total = subtotal + shippingFee;
 
     // Order number is derived from the serial id, so it is unique without a race

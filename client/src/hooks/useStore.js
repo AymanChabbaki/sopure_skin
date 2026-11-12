@@ -56,13 +56,39 @@ export function useArticle(slug) {
   });
 }
 
-/** Shipping fee preview, mirrors the server rule (the server stays the source of truth). */
+/* Shipping: same rules as server/src/lib/settings.js (the server computes the fee actually charged). */
+
+const normCity = (v) =>
+  String(v ?? '')
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9؀-ۿ]+/g, ' ')
+    .trim();
+
+/** Delivery zone of a city, or null (= other cities). */
+export function shippingZone(shipping, city) {
+  const c = normCity(city);
+  if (!shipping || !c) return null;
+  return (shipping.zones || []).find((z) => [...z.cities, ...(z.aliases || [])].some((name) => normCity(name) === c)) || null;
+}
+
+/** Shipping fee preview for the checkout. */
 export function computeShipping(shipping, city, itemsCount) {
   if (!shipping) return null;
   if (itemsCount > shipping.freeAboveItems) return 0;
   if (!city) return null;
-  const isCasa = shipping.casablancaAliases.some((a) => a.toLowerCase() === city.trim().toLowerCase());
-  return isCasa ? shipping.casablancaFee : shipping.otherFee;
+  return shippingZone(shipping, city)?.fee ?? shipping.otherFee;
+}
+
+/** Figures for texts: Casablanca fee and the range elsewhere ("30–40"). */
+export function shippingSummary(shipping) {
+  if (!shipping?.zones) return { casa: 20, other: '30–40', min: 30, max: 40 };
+  const casa = shipping.zones.find((z) => z.id === 'casablanca')?.fee ?? shipping.otherFee;
+  const others = [...shipping.zones.filter((z) => z.id !== 'casablanca').map((z) => z.fee), shipping.otherFee];
+  const min = Math.min(...others);
+  const max = Math.max(...others);
+  return { casa, min, max, other: min === max ? `${min}` : `${min}–${max}` };
 }
 
 /** Packs offered for a routine (category slug). */
