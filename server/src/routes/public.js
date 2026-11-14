@@ -264,6 +264,8 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
 
   res.status(201).json({
     number: order.number,
+    // Shown back to the customer who just ordered (Trustpilot invitation greeting)
+    customerName: order.customer_name,
     itemsCount: order.items_count,
     subtotal: order.subtotal,
     shippingFee: order.shipping_fee,
