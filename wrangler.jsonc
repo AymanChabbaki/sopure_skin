@@ -1,62 +1,46 @@
-// So Pure Skin on Cloudflare Workers: React storefront + Express API in one Worker.
-// Entry: server/src/worker.js. Guide: README "Hébergement sur Cloudflare Workers".
-// Deploy: npm run deploy   (local test: npm run cf:dev)
+// So Pure Skin on Cloudflare Workers.
+// - Shop pages are pre-rendered static files (server/scripts/prerender.mjs) served from the edge: no Worker run, no CPU.
+// - Only /api/* runs the Worker (Express, server/src/worker.js), with public GET responses cached at the edge.
+// Deploy from this PC: npm run deploy   — or connect the GitHub repo in Workers Builds (see README / chat notes).
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "sopureskin",
 	"main": "server/src/worker.js",
 	"compatibility_date": "2026-10-01",
 	// Node.js APIs for Express, pg, jsonwebtoken…; process.env is filled from vars and secrets
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
+	"compatibility_flags": ["nodejs_compat"],
 	"assets": {
 		"directory": "./client/dist",
 		"binding": "ASSETS",
-		// /admin/* and unknown paths get index.html (the React router takes over)
+		// /fr/shop -> fr/shop.html (pre-rendered pages)
+		"html_handling": "auto-trailing-slash",
+		// /admin/* and pages created after the last build get index.html (the React router takes over)
 		"not_found_handling": "single-page-application",
-		// Hashed bundles and images are served straight from the edge without running the Worker
-		"run_worker_first": [
-			"/*",
-			"!/assets/*",
-			"!/hero/*",
-			"!/brand/*"
-		]
+		// Everything else never wakes the Worker (static requests are free and unlimited)
+		"run_worker_first": ["/api/*"]
 	},
-	"r2_buckets": [
-		{
-			"binding": "BUCKET",
-			"bucket_name": "sopurskin"
-		}
-	],
-	// Recommended: Hyperdrive pools the connections to AlwaysData (much faster). Create it, then uncomment:
-	//   npx wrangler hyperdrive create sopureskin-db --connection-string="postgres://USER:PASSWORD@postgresql-aidevcommunity.alwaysdata.net:5432/aidevcommunity_sopurskin"
-	// "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "<id printed by the command>" }],
+	"r2_buckets": [{ "binding": "BUCKET", "bucket_name": "sopureskin" }],
+	// Pools the connections to AlwaysData. Create it once in the new account, then paste the id below:
+	//   npx wrangler hyperdrive create sopureskin-db --connection-string="<DATABASE_URL from server/.env>"
+	"hyperdrive": [{ "binding": "HYPERDRIVE", "id": "9fefe78921064f5099269e989dad4213" }],
 	"vars": {
 		"NODE_ENV": "production",
 		"SITE_URL": "https://www.sopureskin.com",
-		"R2_BUCKET": "sopurskin",
-		"R2_PUBLIC_URL": "https://pub-8d8051f867af45509aae3e3141419fb3.r2.dev",
+		"R2_BUCKET": "sopureskin",
+		"R2_PUBLIC_URL": "https://pub-a4c0ec6360a84962baaf097a0b33e6d6.r2.dev",
 		"GROQ_MODEL": "openai/gpt-oss-120b",
 		"GROQ_FALLBACK_MODELS": "openai/gpt-oss-20b"
 	},
-	// Secrets (never in this file): npm run cf:secrets  — or one by one: npx wrangler secret put NAME
-	//   DATABASE_URL, JWT_SECRET, GROQ_API_KEY, RESEND_API_KEY (order emails), ORDER_NOTIFY_EMAIL, MAIL_FROM,
-	//   GOOGLE_SITE_VERIFICATION, BING_SITE_VERIFICATION
+	// Secrets (never in this file): npm run cf:secrets  (copies them from server/.env)
 	"alias": {
 		"sharp": "./server/src/lib/stubs/sharp.js",
 		"@aws-sdk/client-s3": "./server/src/lib/stubs/aws-s3.js",
 		"nodemailer": "./server/src/lib/stubs/nodemailer.js"
 	},
-	"observability": {
-		"enabled": true
-	},
-	"hyperdrive": [
-		{
-			"binding": "HYPERDRIVE",
-			"id": "49403f462d9b4215b53d32dd3066338d"
-		}
-	]
-	// Custom domain (DNS of sopureskin.com on Cloudflare):
-	// "routes": [{ "pattern": "www.sopureskin.com", "custom_domain": true }, { "pattern": "sopureskin.com", "custom_domain": true }]
+	"observability": { "enabled": true }
+	// Domain, once sopureskin.com is a zone in this Cloudflare account (or add it in the dashboard: Worker > Domains):
+	// "routes": [
+	// 	{ "pattern": "www.sopureskin.com", "custom_domain": true },
+	// 	{ "pattern": "sopureskin.com", "custom_domain": true }
+	// ]
 }

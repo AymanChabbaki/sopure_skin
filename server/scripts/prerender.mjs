@@ -62,7 +62,17 @@ try {
   const REWRITTEN = /^\/(fr|en|ar)(\/guides)?$/;
   const unmapped = pages.filter((p) => folders.has(p) && !REWRITTEN.test(p));
   if (unmapped.length) throw new Error(`Pages that are also folders need a rewrite in vercel.json: ${unmapped.join(', ')}`);
-  const fileFor = (p) => `${p.replace(/^\//, '')}${folders.has(p) || REWRITTEN.test(p) ? '.html' : ''}`;
+  // Cloudflare (html_handling auto-trailing-slash) maps /fr/shop to fr/shop.html: every page gets .html there
+  const onVercel = Boolean(process.env.VERCEL);
+  const fileFor = (p) => `${p.replace(/^\//, '')}${!onVercel || folders.has(p) || REWRITTEN.test(p) ? '.html' : ''}`;
+  if (!onVercel) {
+    // Cloudflare static assets rules: / -> /fr (permanent, as the server does) and long cache for hashed bundles
+    await save('_redirects', '/ /fr 301\n');
+    await save(
+      '_headers',
+      '/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n/hero/*\n  Cache-Control: public, max-age=2592000\n',
+    );
+  }
   let done = 0;
   const queue = [...pages];
   const worker = async () => {
