@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 
 /**
  * Trustpilot review invitations (Automatic Feedback Service, JavaScript integration).
- * The script loads only on the order confirmation page, so it costs nothing on the rest of the store, and asks
- * Trustpilot to email the customer a review invitation. The delay before sending (leave time for cash-on-delivery
+ * The official snippet is in index.html (every page: Trustpilot verifies the domain by finding it on the homepage);
+ * this component falls back to loading it if it was missing, then asks Trustpilot to email the customer an invitation. The delay before sending (leave time for cash-on-delivery
  * shipping) and the email template are set in Trustpilot > Get reviews > Invitation settings.
  * Orders without an email address cannot be invited.
  */
