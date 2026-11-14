@@ -1,7 +1,7 @@
-// Cloudflare Workers build only (wrangler.jsonc "alias"): SMTP connections are not possible there,
-// emails go through Resend's HTTPS API (lib/mailer.js).
+// Cloudflare Workers build only (wrangler.jsonc "alias"): nodemailer needs node:net.
+// On Workers, lib/mailer.js sends SMTP through worker-mailer instead.
 export default {
   createTransport() {
-    throw new Error('SMTP is not available on Cloudflare Workers: set RESEND_API_KEY');
+    throw new Error('nodemailer is not used on Cloudflare Workers (see lib/mailer.js)');
   },
 };

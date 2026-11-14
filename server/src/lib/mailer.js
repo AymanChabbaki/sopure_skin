@@ -6,13 +6,14 @@ import { onWorkers } from './runtime.js';
 
 /**
  * Emails sent by the shop (new order alerts). Two transports, without them nothing is sent and orders work the same:
- * - RESEND_API_KEY: Resend's HTTPS API. Required on Cloudflare Workers, which cannot open SMTP connections.
- * - SMTP_HOST / SMTP_USER / SMTP_PASS: classic SMTP (Gmail app password…), Node only.
+ * - SMTP_HOST / SMTP_USER / SMTP_PASS: classic SMTP (Spacemail: mail.spacemail.com port 465, full address + mailbox
+ *   password). Node uses nodemailer; Cloudflare Workers use worker-mailer (TCP sockets, ports 465/587 allowed).
+ * - RESEND_API_KEY: Resend's HTTPS API, used instead of SMTP when set.
  */
 
 let transporter;
 const resendEnabled = () => Boolean(process.env.RESEND_API_KEY);
-const smtpEnabled = () => !onWorkers && Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+const smtpEnabled = () => Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
 export const mailEnabled = () => resendEnabled() || smtpEnabled();
 export const mailTransport = () => (resendEnabled() ? 'resend' : smtpEnabled() ? 'smtp' : null);
 
@@ -54,6 +55,37 @@ async function sendWithResend({ from, to, subject, html, text }) {
   return body.id;
 }
 
+/** "Name <a@b.c>" -> { name, email } */
+const parseAddress = (value) => {
+  const m = String(value).match(/^\s*"?([^"<]*?)"?\s*<([^>]+)>\s*$/);
+  return m ? { name: m[1] || undefined, email: m[2].trim() } : { email: String(value).trim() };
+};
+
+/** SMTP from Cloudflare Workers (nodemailer needs node:net, not available there) */
+async function sendFromWorker({ from, to, subject, html, text }) {
+  const { WorkerMailer } = await import('worker-mailer');
+  const port = Number(process.env.SMTP_PORT) || 465;
+  const mailer = await WorkerMailer.connect({
+    host: process.env.SMTP_HOST,
+    port,
+    secure: port === 465,
+    credentials: { username: process.env.SMTP_USER, password: process.env.SMTP_PASS },
+    authType: 'plain',
+  });
+  try {
+    await mailer.send({
+      from: parseAddress(from),
+      to: String(to).split(',').map((s) => s.trim()).filter(Boolean),
+      subject,
+      html,
+      text,
+    });
+  } finally {
+    await mailer.close().catch(() => null);
+  }
+  return { sent: true };
+}
+
 const esc = (v) =>
   String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const dh = (v) => `${new Intl.NumberFormat('fr-MA', { maximumFractionDigits: 2 }).format(Number(v) || 0)} DH`;
@@ -63,6 +95,7 @@ export async function sendMail({ to, subject, html, text }) {
   if (!mailEnabled()) return { skipped: true };
   const mail = { from: senderAddress(), to: to || (await recipients()), subject, html, text };
   if (resendEnabled()) return { sent: true, id: await sendWithResend(mail) };
+  if (onWorkers) return sendFromWorker(mail);
   const info = await getTransporter().sendMail(mail);
   return { sent: true, id: info.messageId };
 }
