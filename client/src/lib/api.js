@@ -1,3 +1,5 @@
+import { isSnapshotted, staticDataPath } from './staticData.js';
+
 const BASE = import.meta.env.VITE_API_URL || '';
 
 export class ApiError extends Error {
@@ -14,6 +16,15 @@ export async function api(path, { method = 'GET', body, params, headers, signal 
     Object.entries(params).forEach(([k, v]) => {
       if (v !== undefined && v !== null && v !== '' && v !== false) url.searchParams.set(k, v);
     });
+  }
+  // Public catalog data: static snapshot first (free CDN file), live API only when it does not exist
+  if (method === 'GET' && !BASE && isSnapshotted(path, url.searchParams)) {
+    try {
+      const res = await fetch(staticDataPath(path, url.searchParams), { signal });
+      if (res.ok && res.headers.get('content-type')?.includes('json')) return await res.json();
+    } catch (err) {
+      if (signal?.aborted) throw err;
+    }
   }
   const isForm = body instanceof FormData;
   const res = await fetch(url, {

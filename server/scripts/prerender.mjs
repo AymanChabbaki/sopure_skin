@@ -22,6 +22,7 @@ const { app } = await import('../src/app.js');
 const { pool } = await import('../src/db/pool.js');
 const { config } = await import('../src/config.js');
 const { indexNowKey } = await import('../src/lib/indexnow.js');
+const { staticDataPath } = await import('../../client/src/lib/staticData.js');
 
 const server = app.listen(0);
 await new Promise((resolve) => server.once('listening', resolve));
@@ -37,6 +38,64 @@ async function save(file, body) {
   const target = path.join(dist, file);
   await mkdir(path.dirname(target), { recursive: true });
   await writeFile(target, body);
+}
+
+/**
+ * Static API snapshots (client/src/lib/staticData.js): the public GET answers the storefront asks for, saved as
+ * /data/*.json so visitors read CDN files instead of running the Worker. The query strings below must match
+ * exactly what the client sends (hooks/useStore.js, pages/Home.jsx, pages/Shop.jsx).
+ */
+async function snapshotApi(pages) {
+  const t0 = Date.now();
+  const LANGS = ['fr', 'en', 'ar'];
+  const jobs = [];
+  const add = (p, params = {}) => jobs.push([p, new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)]))]);
+  const getJson = async (p, params) => JSON.parse(await get(`/api${p}?${new URLSearchParams(params)}`));
+
+  const categories = await getJson('/categories', { lang: 'fr' });
+  const brands = await getJson('/brands', { lang: 'fr' });
+  const articles = await getJson('/articles', { lang: 'fr' });
+  const listing = (extra) => ({ ...extra, sort: 'popular', page: 1, limit: 24 });
+  const slugs = new Set();
+  for (let page = 1, pagesCount = 1; page <= pagesCount; page += 1) {
+    const r = await getJson('/products', { sort: 'popular', page, limit: 100, lang: 'fr' });
+    pagesCount = r.pages;
+    r.rows.forEach((p) => slugs.add(p.slug));
+  }
+
+  add('/chat/status');
+  for (const lang of LANGS) {
+    for (const p of ['/settings', '/categories', '/brands', '/articles', '/videos']) add(p, { lang });
+    add('/products', { bestSeller: true, sort: 'popular', limit: 10, lang });
+    add('/products', { sort: 'newest', limit: 8, lang });
+    add('/products', { onSale: true, sort: 'popular', limit: 10, lang });
+    // Shop: every page of the full catalog, first pages of each category and brand
+    const shopPages = Math.ceil(slugs.size / 24);
+    for (let page = 1; page <= shopPages; page += 1) add('/products', { sort: 'popular', page, limit: 24, lang });
+    categories.forEach((c) => {
+      add('/products', { ...listing({ category: c.slug }), lang });
+      add('/packs', { lang, category: c.slug });
+    });
+    brands.forEach((b) => add('/products', { ...listing({ brand: b.slug }), lang }));
+    slugs.forEach((s) => add(`/products/${encodeURIComponent(s)}`, { lang }));
+    articles.forEach((a) => add(`/articles/${encodeURIComponent(a.slug)}`, { lang }));
+  }
+  slugs.forEach((s) => add(`/products/${encodeURIComponent(s)}/reviews`, { page: 1 }));
+  pages.forEach((p) => add('/seo', { path: p }));
+
+  let saved = 0;
+  const queue = [...jobs];
+  const worker = async () => {
+    for (let job = queue.shift(); job; job = queue.shift()) {
+      const [p, params] = job;
+      const res = await fetch(`${origin}/api${p}?${params}`);
+      if (res.status !== 200) continue; // not snapshotted: the client falls back to the live API
+      await save(staticDataPath(p, params).replace(/^\//, ''), await res.text());
+      saved += 1;
+    }
+  };
+  await Promise.all(Array.from({ length: Number(process.env.DATABASE_POOL_MAX) || 5 }, worker));
+  console.log(`Saved ${saved} of ${jobs.length} API snapshots in ${Math.round((Date.now() - t0) / 1000)} s`);
 }
 
 const started = Date.now();
@@ -87,6 +146,7 @@ try {
   // A few pages at a time: the database allows only a small pool of connections
   await Promise.all(Array.from({ length: Number(process.env.DATABASE_POOL_MAX) || 5 }, worker));
   console.log(`Pre-rendered ${done} pages in ${Math.round((Date.now() - started) / 1000)} s`);
+  if (!onVercel) await snapshotApi(pages);
 } finally {
   server.close();
   await pool.end();
