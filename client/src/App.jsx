@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, Navigate, RouterProvider } from 'react-router';
+import { createBrowserRouter, Navigate, RouterProvider, useRouteError } from 'react-router';
+import { isChunkError, reloadForNewVersion } from './lib/chunkReload.js';
 import { StoreLayout } from './components/layout/StoreLayout.jsx';
 import i18n, { LOCALES } from './i18n/index.js';
 import { useLiveSync } from './lib/live.js';
@@ -63,10 +64,31 @@ const storeRoutes = [
   { path: '*', element: page(NotFound) },
 ];
 
+/** Replaces the raw "Unexpected Application Error" screen. A page file of an older deploy: reload to the new one. */
+function RouteError() {
+  const error = useRouteError();
+  if (isChunkError(error) && reloadForNewVersion()) return null;
+  return (
+    <div className="grid min-h-[60vh] place-items-center px-4 text-center">
+      <div>
+        <p className="mb-4 text-lg">Une erreur est survenue. / Something went wrong.</p>
+        <button type="button" onClick={() => window.location.reload()} className="rounded-full border px-6 py-2">
+          Recharger / Reload
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const router = createBrowserRouter([
   { path: '/', element: <Navigate to={`/${i18n.language}`} replace /> },
-  { path: '/admin/*', element: page(AdminApp) },
-  ...LOCALES.map((lang) => ({ path: `/${lang}`, element: <StoreLayout lang={lang} />, children: storeRoutes })),
+  { path: '/admin/*', element: page(AdminApp), errorElement: <RouteError /> },
+  ...LOCALES.map((lang) => ({
+    path: `/${lang}`,
+    element: <StoreLayout lang={lang} />,
+    errorElement: <RouteError />,
+    children: storeRoutes,
+  })),
   // Unknown first segment (old links, typos): back to the store in the current language
   { path: '*', element: <Navigate to={`/${i18n.language}`} replace /> },
 ]);

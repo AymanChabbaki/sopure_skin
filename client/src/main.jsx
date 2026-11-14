@@ -11,6 +11,12 @@ import '@fontsource-variable/noto-kufi-arabic';
 import './i18n/index.js';
 import './index.css';
 import App from './App.jsx';
+import { reloadForNewVersion } from './lib/chunkReload.js';
+
+// A file of the previous deploy failed to load (tab opened before the deploy): reload to get the new version
+window.addEventListener('vite:preloadError', (event) => {
+  if (reloadForNewVersion()) event.preventDefault();
+});
 
 const queryClient = new QueryClient({
   defaultOptions: {
