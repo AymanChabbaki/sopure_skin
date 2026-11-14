@@ -11,11 +11,11 @@ export const isSnapshotted = (path, searchParams) =>
   SNAPSHOT_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`)) &&
   !['q', 'minPrice', 'maxPrice'].some((k) => searchParams.has(k));
 
-/** /products + ?sort=new&lang=fr  ->  /data/products@lang~3Dfr~26sort~3Dnew.json */
+/** /products + ?sort=new&lang=fr  ->  /data/products/~lang~3Dfr~26sort~3Dnew.json (no "@" or "=": the CDN redirects those) */
 export function staticDataPath(path, searchParams) {
   const qs = [...searchParams]
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([k, v]) => `${k}=${v}`)
     .join('&');
-  return `/data${path}${qs ? `@${encodeURIComponent(qs).replace(/%/g, '~')}` : ''}.json`;
+  return `/data${path}${qs ? `/~${encodeURIComponent(qs).replace(/%/g, '~')}` : ''}.json`;
 }

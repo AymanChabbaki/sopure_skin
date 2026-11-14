@@ -1,0 +1,8 @@
+// Tiny Worker that sends the bare domain to www. Deploy: npx wrangler deploy -c server/apex-redirect/wrangler.jsonc
+{
+	"name": "sopureskin-apex",
+	"main": "worker.js",
+	"compatibility_date": "2026-10-01",
+	"workers_dev": false,
+	"routes": [{ "pattern": "sopureskin.com", "custom_domain": true }]
+}

@@ -27,7 +27,7 @@
 		"NODE_ENV": "production",
 		"SITE_URL": "https://www.sopureskin.com",
 		"R2_BUCKET": "sopureskin",
-		"R2_PUBLIC_URL": "https://pub-a4c0ec6360a84962baaf097a0b33e6d6.r2.dev",
+		"R2_PUBLIC_URL": "https://images.sopureskin.com",
 		"GROQ_MODEL": "openai/gpt-oss-120b",
 		"GROQ_FALLBACK_MODELS": "openai/gpt-oss-20b"
 	},
@@ -37,10 +37,10 @@
 		"@aws-sdk/client-s3": "./server/src/lib/stubs/aws-s3.js",
 		"nodemailer": "./server/src/lib/stubs/nodemailer.js"
 	},
-	"observability": { "enabled": true }
-	// Domain, once sopureskin.com is a zone in this Cloudflare account (or add it in the dashboard: Worker > Domains):
-	// "routes": [
-	// 	{ "pattern": "www.sopureskin.com", "custom_domain": true },
-	// 	{ "pattern": "sopureskin.com", "custom_domain": true }
-	// ]
+	"observability": { "enabled": true },
+	"workers_dev": true,
+	// The bare domain is served by server/apex-redirect (301 to www)
+	"routes": [
+		{ "pattern": "www.sopureskin.com", "custom_domain": true }
+	]
 }
