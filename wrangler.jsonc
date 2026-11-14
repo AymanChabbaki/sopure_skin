@@ -42,5 +42,7 @@
 	// The bare domain is served by server/apex-redirect (301 to www)
 	"routes": [
 		{ "pattern": "www.sopureskin.com", "custom_domain": true }
-	]
+	],
+	// Publishes admin changes still waiting for the 5-minute delay, even when the admin is closed (worker.js scheduled)
+	"triggers": { "crons": ["*/5 * * * *"] }
 }

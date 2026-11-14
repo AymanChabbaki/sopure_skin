@@ -3,11 +3,11 @@ import { query } from '../db/pool.js';
 /**
  * The storefront pages are pre-rendered as static files at each deploy (server/scripts/prerender.mjs),
  * so they cost no server CPU. When the catalog changes, a new deploy is requested through a Vercel
- * Deploy Hook (DEPLOY_HOOK_URL), at most once every 10 minutes: changes made in between stay "pending"
- * and are published by the next admin request after the delay (the admin polls every minute).
+ * Deploy Hook (DEPLOY_HOOK_URL), at most once every 5 minutes: changes made in between stay "pending"
+ * and are published by the next admin request or by the 5-minute cron trigger (worker.js), whichever comes first.
  * State lives in the settings table under the "publish" key: { pending, at (epoch seconds) }.
  */
-const MIN_INTERVAL = 600;
+const MIN_INTERVAL = 300;
 
 export const publishEnabled = () => Boolean(process.env.DEPLOY_HOOK_URL);
 

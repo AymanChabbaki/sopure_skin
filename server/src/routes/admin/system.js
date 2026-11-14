@@ -64,7 +64,7 @@ settingsRouter.get('/publish', async (_req, res) => {
 });
 
 settingsRouter.post('/publish', async (_req, res) => {
-  if (!publishEnabled()) throw new HttpError(400, 'Ajoutez DEPLOY_HOOK_URL (Vercel > Settings > Git > Deploy Hooks) dans les variables d’environnement');
+  if (!publishEnabled()) throw new HttpError(400, 'Ajoutez DEPLOY_HOOK_URL (Cloudflare > Worker > Settings > Builds > Deploy Hooks) aux secrets du Worker');
   await flushPublish({ force: true });
   res.json(await publishStatus());
 });

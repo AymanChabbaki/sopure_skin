@@ -8,6 +8,8 @@
  */
 import { httpServerHandler } from 'cloudflare:node';
 import { app } from './app.js';
+import { withDb } from './db/pool.js';
+import { flushPublish } from './lib/publish.js';
 
 const PORT = 8080;
 app.listen(PORT);
@@ -19,6 +21,12 @@ const isCacheable = (request, url) =>
   !request.headers.has('authorization');
 
 export default {
+  /** Cron (wrangler.jsonc triggers): starts the storefront rebuild when admin changes are pending (lib/publish.js). */
+  async scheduled(_event, env, ctx) {
+    globalThis.__CF_ENV = env;
+    ctx.waitUntil(withDb(() => flushPublish()).catch((err) => console.error('Scheduled publish failed:', err.message)));
+  },
+
   async fetch(request, env, ctx) {
     // Bindings (ASSETS, BUCKET, HYPERDRIVE…) for the modules that need them (lib/runtime.js)
     globalThis.__CF_ENV = env;

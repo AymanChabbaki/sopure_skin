@@ -38,5 +38,5 @@ export async function submitUrls(urls) {
 
 /** Convenience for admin routes: notify the store paths a change affects. */
 export function notifyPaths(paths) {
-  submitUrls(paths.flatMap(localizedUrls)).catch(() => null);
+  return submitUrls(paths.flatMap(localizedUrls)).catch(() => null);
 }

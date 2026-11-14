@@ -364,7 +364,7 @@ const SEO_FILES = [
 
 /**
  * The shop pages are static files generated at each deploy (zero server CPU). Catalog changes trigger a
- * rebuild automatically (at most every 10 minutes); this card shows its state and forces one.
+ * rebuild automatically (at most every 5 minutes); this card shows its state and forces one.
  */
 function PublishCard() {
   const { data } = useAdminQuery(['publish'], '/settings/publish');
@@ -380,9 +380,9 @@ function PublishCard() {
           <h3 className="font-semibold">Publication des pages</h3>
           <p className="mt-1 text-sm text-muted">
             {!data.enabled
-              ? 'Republication automatique inactive : ajoutez DEPLOY_HOOK_URL dans Vercel.'
+              ? 'Republication automatique inactive : ajoutez DEPLOY_HOOK_URL aux secrets du Worker Cloudflare.'
               : data.pending
-                ? 'Des modifications attendent : publication automatique dans 10 minutes maximum.'
+                ? 'Des modifications attendent : publication automatique dans 5 minutes maximum (+2 à 3 min de build).'
                 : 'Les pages vues par Google sont à jour.'}
             {data.lastAt && ` Dernière publication : ${new Date(data.lastAt).toLocaleString('fr-MA', { dateStyle: 'short', timeStyle: 'short' })}.`}
           </p>

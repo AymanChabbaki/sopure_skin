@@ -23,59 +23,59 @@ adminRouter.use((_req, res, next) => {
 adminRouter.use('/auth', authRouter);
 adminRouter.use(requireAdmin);
 
-/** Admin reads (the dashboard polls every minute) publish changes that were waiting for the 10-minute delay. */
-adminRouter.use((req, res, next) => {
-  if (req.method === 'GET') res.on('finish', () => flushPublish().catch(() => null));
-  next();
-});
-
 /**
- * After every successful catalog change, tell search engines (IndexNow) which store pages changed.
- * Runs after the response is sent, so it never slows down or breaks the admin.
+ * Publishing the static storefront after admin changes.
+ * Everything runs BEFORE the route answers: on Cloudflare Workers, work started after the response is sent is
+ * cancelled, so a 'finish' hook would silently never mark the change. Marking first is harmless if the change then
+ * fails (one extra rebuild), and the rebuild starts reading the database long after the route has committed.
+ * A cron trigger (worker.js) also flushes pending changes every 5 minutes, even when the admin is closed.
  */
-adminRouter.use((req, res, next) => {
-  if (req.method === 'GET') return next();
-  res.on('finish', async () => {
-    if (res.statusCode >= 400) return;
-    try {
-      const [, resource, id] = req.path.split('/');
-      // Actions that change nothing public (publish button, IndexNow ping, test email)
-      if (resource === 'settings' && ['publish', 'indexnow', 'email'].includes(id)) return;
-      const paths = ['/', '/shop'];
-      if (resource === 'products') {
-        const ids = id && /^\d+$/.test(id) ? [Number(id)] : req.body?.ids || [];
-        if (ids.length) {
-          const { rows } = await query('SELECT slug FROM products WHERE id = ANY($1)', [ids]);
-          rows.forEach((r) => paths.push(`/product/${r.slug}`));
-        }
-      } else if (resource === 'categories' || resource === 'brands') {
-        paths.push(resource === 'brands' ? '/brands' : '/shop');
-        if (id && /^\d+$/.test(id)) {
-          const { rows } = await query(`SELECT slug FROM ${resource} WHERE id = $1`, [id]);
-          rows.forEach((r) => paths.push(`/${resource === 'brands' ? 'brand' : 'category'}/${r.slug}`));
-        }
-      } else if (resource === 'articles') {
-        paths.push('/guides');
-        if (id && /^\d+$/.test(id)) {
-          const { rows } = await query('SELECT slug FROM articles WHERE id = $1 AND is_published', [id]);
-          rows.forEach((r) => paths.push(`/guides/${r.slug}`));
-        }
-      } else if (resource === 'orders') {
-        // A cancelled or returned order puts items back in stock: the static pages need the new availability
-        await markChanged();
-        await flushPublish();
-        return;
-      } else if (resource !== 'settings' && resource !== 'reviews') {
-        return; // uploads, team…: nothing public changed
-      }
-      notifyPaths(paths);
-      // Static storefront pages: rebuild them (at most every 10 minutes, see lib/publish.js)
+// Resources whose changes are visible on the storefront (uploads, team, subscribers… are not)
+const PUBLIC_RESOURCES = new Set(['products', 'categories', 'brands', 'articles', 'settings', 'reviews', 'packs', 'videos', 'orders']);
+
+async function changedPaths(resource, id, body) {
+  const paths = ['/', '/shop'];
+  if (resource === 'products') {
+    const ids = id && /^\d+$/.test(id) ? [Number(id)] : body?.ids || [];
+    if (ids.length) {
+      const { rows } = await query('SELECT slug FROM products WHERE id = ANY($1)', [ids]);
+      rows.forEach((r) => paths.push(`/product/${r.slug}`));
+    }
+  } else if (resource === 'categories' || resource === 'brands') {
+    paths.push(resource === 'brands' ? '/brands' : '/shop');
+    if (id && /^\d+$/.test(id)) {
+      const { rows } = await query(`SELECT slug FROM ${resource} WHERE id = $1`, [id]);
+      rows.forEach((r) => paths.push(`/${resource === 'brands' ? 'brand' : 'category'}/${r.slug}`));
+    }
+  } else if (resource === 'articles') {
+    paths.push('/guides');
+    if (id && /^\d+$/.test(id)) {
+      const { rows } = await query('SELECT slug FROM articles WHERE id = $1 AND is_published', [id]);
+      rows.forEach((r) => paths.push(`/guides/${r.slug}`));
+    }
+  }
+  return paths;
+}
+
+adminRouter.use(async (req, _res, next) => {
+  try {
+    if (req.method === 'GET') {
+      // Admin reads (the dashboard polls every minute) publish changes that were waiting for the delay
+      await flushPublish();
+      return next();
+    }
+    const [, resource, id] = req.path.split('/');
+    // Actions that change nothing public (publish button, IndexNow ping, test email)
+    const silent = resource === 'settings' && ['publish', 'indexnow', 'email'].includes(id);
+    if (PUBLIC_RESOURCES.has(resource) && !silent) {
+      // Orders: a cancelled or returned order puts items back in stock (no page to ping)
+      if (resource !== 'orders') await notifyPaths(await changedPaths(resource, id, req.body));
       await markChanged();
       await flushPublish();
-    } catch {
-      /* best effort */
     }
-  });
+  } catch (err) {
+    console.error('Publish hook failed:', err.message); // best effort: never block the admin
+  }
   next();
 });
 adminRouter.use('/dashboard', dashboardRouter);

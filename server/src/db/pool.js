@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import pg from 'pg';
 import { config } from '../config.js';
-import { cfEnv, onWorkers } from '../lib/runtime.js';
+import { cfEnv, keepAlive, onWorkers } from '../lib/runtime.js';
 
 // NUMERIC -> JS number (prices are small, safe as floats for display)
 pg.types.setTypeParser(1700, (v) => (v === null ? null : Number(v)));
@@ -37,11 +37,29 @@ function current() {
 /** Express middleware (Workers only): scopes a database pool to the request. */
 export function attachRequestDb(req, res, next) {
   if (!onWorkers) return next();
-  const store = {};
-  const close = () => store.pool?.end().catch(() => null);
+  const store = { tasks: [] };
+  let closed = false;
+  // Closed once the response is sent AND the work queued in store.tasks is done (that work runs after
+  // this listener, so the pool is closed a tick later, once the tasks are registered).
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    queueMicrotask(() => keepAlive(Promise.allSettled(store.tasks).then(() => store.pool?.end().catch(() => null))));
+  };
   res.once('finish', close);
   res.once('close', close);
   requestDb.run(store, next);
+}
+
+/** Database access outside an HTTP request (Workers cron trigger): own pool, closed when `fn` is done. */
+export async function withDb(fn) {
+  if (!onWorkers) return fn();
+  const store = { tasks: [] };
+  try {
+    return await requestDb.run(store, fn);
+  } finally {
+    await store.pool?.end().catch(() => null);
+  }
 }
 
 export const pool = {
