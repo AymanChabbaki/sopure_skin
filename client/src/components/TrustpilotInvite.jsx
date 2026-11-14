@@ -32,11 +32,20 @@ export function TrustpilotInvite({ order }) {
     const email = order?.googleReview?.email;
     if (!order?.number || !email || invited.has(order.number)) return;
     invited.add(order.number);
+    // Product reviews: sku = product id (same as g:id in the Google Merchant feed), French product page
+    const products = (order.products || []).map((p) => ({
+      sku: p.sku,
+      productUrl: `${window.location.origin}/fr/product/${p.slug}`,
+      imageUrl: p.image || undefined,
+      name: p.name,
+    }));
     trustpilot()('createInvitation', {
       recipientEmail: email,
       recipientName: order.customerName || undefined,
       referenceId: order.number,
       source: 'InvitationScript',
+      productSkus: products.map((p) => p.sku),
+      products,
     });
   }, [order]);
   return null;

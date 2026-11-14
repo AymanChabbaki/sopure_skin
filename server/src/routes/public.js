@@ -199,7 +199,7 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
     const ids = data.items.map((i) => i.productId);
     // Lock rows so concurrent orders cannot oversell
     const { rows: products } = await db.query(
-      `SELECT p.id, p.name, p.price, p.stock, p.is_active, p.has_sizes, p.sizes,
+      `SELECT p.id, p.slug, p.name, p.price, p.stock, p.is_active, p.has_sizes, p.sizes,
               (SELECT thumb_url FROM product_images WHERE product_id = p.id ORDER BY position LIMIT 1) AS image
          FROM products p WHERE p.id = ANY($1) FOR UPDATE`,
       [ids],
@@ -212,7 +212,7 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
       if (!p.has_sizes) {
         if (p.stock < item.quantity) throw new HttpError(409, 'Insufficient stock', { productId: item.productId, available: p.stock });
         p.stock -= item.quantity; // the same product can appear on several lines
-        return { ...item, size: null, name: tr(p.name, 'fr'), unitPrice: p.price, image: p.image, lineTotal: p.price * item.quantity };
+        return { ...item, slug: p.slug, size: null, name: tr(p.name, 'fr'), unitPrice: p.price, image: p.image, lineTotal: p.price * item.quantity };
       }
       // Sized product: the size must exist, be enabled and have enough stock; its own price wins
       const size = p.sizes.find((s) => s.enabled && s.label === item.size);
@@ -220,7 +220,7 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
       if (size.stock < item.quantity) throw new HttpError(409, 'Insufficient stock', { productId: item.productId, size: size.label, available: size.stock });
       p.sizes = adjustSize(p.sizes, size.label, -item.quantity);
       const unitPrice = size.price ?? p.price;
-      return { ...item, size: size.label, name: `${tr(p.name, 'fr')} – ${size.label}`, unitPrice, image: p.image, lineTotal: unitPrice * item.quantity };
+      return { ...item, slug: p.slug, size: size.label, name: `${tr(p.name, 'fr')} – ${size.label}`, unitPrice, image: p.image, lineTotal: unitPrice * item.quantity };
     });
 
     const itemsCount = lines.reduce((s, l) => s + l.quantity, 0);
@@ -254,7 +254,9 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
     for (const p of products.filter((x) => x.has_sizes)) {
       await db.query('UPDATE products SET sizes = $1, stock = $2 WHERE id = $3', [JSON.stringify(p.sizes), sizesStock(p.sizes), p.id]);
     }
-    return created;
+    // Products of the order, once each (Trustpilot product review invitations; sku = id, as in the Merchant feed)
+    const orderProducts = [...new Map(lines.map((l) => [l.productId, { sku: String(l.productId), slug: l.slug, name: tr(byId.get(l.productId).name, 'fr'), image: l.image }])).values()];
+    return { ...created, products: orderProducts };
   });
 
   // Email alert to the shop (awaited so serverless hosts don't cut it off; it never fails the order)
@@ -265,7 +267,8 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
   res.status(201).json({
     number: order.number,
     // Shown back to the customer who just ordered (Trustpilot invitation greeting)
-    customerName: order.customer_name,
+    customerName: data.customerName,
+    products: order.products,
     itemsCount: order.items_count,
     subtotal: order.subtotal,
     shippingFee: order.shipping_fee,
