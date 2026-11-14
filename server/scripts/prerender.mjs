@@ -63,7 +63,6 @@ async function snapshotApi(pages) {
     r.rows.forEach((p) => slugs.add(p.slug));
   }
 
-  add('/chat/status');
   for (const lang of LANGS) {
     for (const p of ['/settings', '/categories', '/brands', '/articles', '/videos']) add(p, { lang });
     add('/products', { bestSeller: true, sort: 'popular', limit: 10, lang });

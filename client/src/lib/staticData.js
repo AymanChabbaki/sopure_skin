@@ -5,7 +5,8 @@
  * filters, later pages) falls back to the live /api. Orders always go to /api, which re-checks prices and stock.
  * Shared by the client (lib/api.js) and the build script, so both compute the same file name.
  */
-export const SNAPSHOT_PREFIXES = ['/settings', '/categories', '/brands', '/articles', '/videos', '/chat/status', '/products', '/packs', '/seo'];
+// Not /chat/status: it depends on a runtime secret (GROQ_API_KEY) that the build server does not have
+export const SNAPSHOT_PREFIXES = ['/settings', '/categories', '/brands', '/articles', '/videos', '/products', '/packs', '/seo'];
 
 export const isSnapshotted = (path, searchParams) =>
   SNAPSHOT_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`)) &&

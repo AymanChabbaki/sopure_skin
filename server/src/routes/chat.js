@@ -7,6 +7,7 @@ import { publicSizes } from '../lib/sizes.js';
 import { getSettings, shippingTable } from '../lib/settings.js';
 import { HttpError, stripHtml, tr, truncate } from '../lib/utils.js';
 import { validate } from '../middleware/errors.js';
+import { CDN_API } from '../lib/cache.js';
 
 export const chatRouter = Router();
 
@@ -348,4 +349,8 @@ chatRouter.post(
 );
 
 // Lets the widget fall back to WhatsApp when no key is configured
-chatRouter.get('/status', (_req, res) => res.json({ enabled: Boolean(process.env.GROQ_API_KEY) }));
+// Edge-cached (worker.js): one Worker run per 5 minutes per Cloudflare location, not one per visitor
+chatRouter.get('/status', (_req, res) => {
+  res.set('CDN-Cache-Control', CDN_API);
+  res.json({ enabled: Boolean(process.env.GROQ_API_KEY) });
+});
