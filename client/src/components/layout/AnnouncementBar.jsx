@@ -1,6 +1,6 @@
 import { Truck, HandCoins, MapPin, BadgeCheck, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useSettings } from '../../hooks/useStore.js';
+import { useSettings, shippingSummary } from '../../hooks/useStore.js';
 
 const ICONS = [Truck, HandCoins, MapPin, BadgeCheck, Sparkles];
 
@@ -18,7 +18,7 @@ export function AnnouncementBar() {
     : [
         t('product.freeInfo', { count: s?.freeAboveItems ?? 5 }),
         t('product.codInfo'),
-        t('product.deliveryInfo', { casa: s?.casablancaFee ?? 20, other: s?.otherFee ?? 35 }),
+        t('product.deliveryInfo', shippingSummary(s)),
       ];
 
   // Repeat short lists so the track is always wider than the screen

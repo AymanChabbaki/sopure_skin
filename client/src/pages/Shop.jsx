@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { SlidersHorizontal, X, ChevronDown, ChevronLeft, ChevronRight, PackageSearch, Check } from 'lucide-react';
 import { ProductGrid } from '../components/product/ProductGrid.jsx';
 import { PageHeader } from '../components/ui/Primitives.jsx';
+import { RoutinePacks } from '../components/product/Packs.jsx';
 import { Drawer } from '../components/ui/Drawer.jsx';
 import { BrandLogo } from '../components/ui/BrandLogo.jsx';
 import { useBrands, useCategories, useProducts } from '../hooks/useStore.js';
@@ -199,6 +200,9 @@ export default function Shop() {
           )}
         </nav>
       </PageHeader>
+
+      {/* Routine pages: the ready-made packs first */}
+      {category?.kind === 'routine' && <RoutinePacks category={category.slug} className="container-x pb-12" />}
 
       <div className="container-x pb-20">
         {/* Toolbar */}

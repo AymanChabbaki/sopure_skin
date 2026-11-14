@@ -22,10 +22,19 @@ settingsRouter.get('/', async (_req, res) => {
 });
 
 const shippingSchema = z.object({
-  casablancaFee: z.number().min(0),
-  otherFee: z.number().min(0),
   freeAboveItems: z.number().int().min(0),
-  casablancaAliases: z.array(z.string().min(1)).min(1),
+  otherFee: z.number().min(0),
+  zones: z
+    .array(
+      z.object({
+        id: z.string().trim().min(1).max(40),
+        label: z.object({ fr: z.string().default(''), en: z.string().default(''), ar: z.string().default('') }).partial(),
+        fee: z.number().min(0),
+        cities: z.array(z.string().trim().min(1)).min(1),
+        aliases: z.array(z.string().trim().min(1)).default([]),
+      }),
+    )
+    .max(20),
 });
 
 const returnsSchema = z.object({ enabled: z.boolean(), days: z.number().int().min(1).max(365), fees: z.enum(['free', 'customer']) });
@@ -118,7 +127,7 @@ uploadsRouter.post('/', upload.fields([{ name: 'files', maxCount: 12 }, { name: 
   const thumbs = req.files?.thumbs || [];
   if (!files.length) throw new HttpError(400, 'No valid image received');
   const preprocessed = thumbs.length === files.length && [...files, ...thumbs].every((f) => /^image\/(webp|jpeg)$/.test(f.mimetype));
-  const folder = ['products', 'categories', 'brands', 'banners', 'testimonials', 'articles'].includes(req.query.folder) ? req.query.folder : 'products';
+  const folder = ['products', 'categories', 'brands', 'banners', 'testimonials', 'articles', 'videos'].includes(req.query.folder) ? req.query.folder : 'products';
   // Optional ?name= (product / brand name) gives the files descriptive names for image SEO
   const name = String(req.query.name || '').slice(0, 120);
   const stored = await Promise.all(files.map((f, i) => storeImage(f.buffer, folder, name, preprocessed ? thumbs[i].buffer : null, f.mimetype)));

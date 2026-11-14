@@ -9,7 +9,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Banknote, Loader2, ShieldCheck, User, MapPin, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart, useCartCount, useCartSubtotal } from '../store/cart.js';
-import { computeShipping, useSettings } from '../hooks/useStore.js';
+import { computeShipping, shippingZone, useSettings } from '../hooks/useStore.js';
 import { useLocalePath } from '../hooks/useLocalePath.js';
 import { api } from '../lib/api.js';
 import { CITIES } from '../lib/cities.js';
@@ -75,6 +75,17 @@ export default function Checkout() {
     resolver: zodResolver(schema),
     defaultValues: { customerName: '', phone: '', email: '', citySelect: '', cityOther: '', address: '', notes: '' },
   });
+
+  const cityGroups = useMemo(() => {
+    const sh = settings?.shipping;
+    if (!sh?.zones) return [{ key: 'all', label: t('checkout.city'), fee: '', cities: CITIES }];
+    const groups = [
+      ...sh.zones.map((z) => ({ key: z.id, label: z.label?.[i18n.language] || z.label?.fr || z.id, fee: z.fee, cities: [] })),
+      { key: 'other', label: t('shippingPage.other'), fee: sh.otherFee, cities: [] },
+    ];
+    for (const city of CITIES) groups.find((g) => g.key === (shippingZone(sh, city[0])?.id ?? 'other')).cities.push(city);
+    return groups.filter((g) => g.cities.length);
+  }, [settings, i18n.language, t]);
 
   const citySelect = useWatch({ control, name: 'citySelect' });
   const cityOther = useWatch({ control, name: 'cityOther' });
@@ -146,10 +157,15 @@ export default function Checkout() {
                 <Field label={t('checkout.city')} error={errors.citySelect?.message}>
                   <select {...register('citySelect')} className={cn('input cursor-pointer', errors.citySelect && 'border-red-300')}>
                     <option value="">{t('checkout.cityPlaceholder')}</option>
-                    {CITIES.map(([fr, ar]) => (
-                      <option key={fr} value={fr}>
-                        {i18n.language === 'ar' ? ar : fr}
-                      </option>
+                    {/* Grouped by delivery zone with its fee, so the price is known before choosing */}
+                    {cityGroups.map((g) => (
+                      <optgroup key={g.key} label={`${g.label} · ${g.fee} ${t('common.currency')}`}>
+                        {g.cities.map(([fr, ar]) => (
+                          <option key={fr} value={fr}>
+                            {i18n.language === 'ar' ? ar : fr}
+                          </option>
+                        ))}
+                      </optgroup>
                     ))}
                     <option value={OTHER}>{t('checkout.otherCity')}</option>
                   </select>

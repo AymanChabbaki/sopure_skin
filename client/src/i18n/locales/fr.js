@@ -114,7 +114,7 @@ export default {
   benefits: {
     authentic: { title: '100% authentique', text: 'Importé directement de Corée' },
     cod: { title: 'Paiement à la livraison', text: 'Payez en espèces à la réception' },
-    delivery: { title: 'Livraison rapide', text: 'Casablanca 20 DH · Autres villes 35 DH' },
+    delivery: { title: 'Livraison rapide', text: 'Casablanca 20 DH · Autres villes 30 à 40 DH' },
     support: { title: 'Conseils personnalisés', text: 'Une équipe à votre écoute sur WhatsApp' },
   },
   shop: {
@@ -244,7 +244,7 @@ export default {
     items: [
       { q: 'Les produits sont-ils authentiques ?', a: 'Oui. Tous nos produits sont 100% originaux, importés de Corée du Sud auprès de distributeurs officiels.' },
       { q: 'Comment payer ma commande ?', a: 'Le paiement se fait uniquement à la livraison, en espèces, directement au livreur.' },
-      { q: 'Combien coûte la livraison ?', a: 'La livraison coûte {{casa}} DH à Casablanca et {{other}} DH dans les autres villes du Maroc. Elle est gratuite pour toute commande de plus de {{count}} produits.' },
+      { q: 'Combien coûte la livraison ?', a: 'La livraison coûte {{casa}} DH à Casablanca et {{other}} DH dans les autres villes du Maroc selon la ville (détail sur la page Livraison). Elle est gratuite pour toute commande de plus de {{count}} produits.' },
       { q: 'Quels sont les délais de livraison ?', a: 'Comptez 24 à 48h à Casablanca et 2 à 4 jours ouvrables pour les autres villes.' },
       { q: 'Comment choisir les produits adaptés à ma peau ?', a: 'Utilisez notre diagnostic « Votre routine sur mesure » sur la page d’accueil, ou écrivez-nous sur WhatsApp pour un conseil personnalisé.' },
       { q: 'Puis-je modifier ou annuler ma commande ?', a: 'Oui, tant qu’elle n’a pas été expédiée. Contactez-nous par téléphone ou WhatsApp.' },
@@ -266,6 +266,26 @@ export default {
     toc: 'Sommaire',
     updated: 'Mise à jour : {{date}}',
     questions: 'Une question sur une commande ou vos données ? Notre équipe vous répond.',
+  },
+  packs: {
+    sectionEyebrow: 'Packs routine',
+    title: 'Les packs de cette routine',
+    subtitle: 'Toute la routine en un clic. Décochez un produit que vous avez déjà, le total s’ajuste.',
+    routineSubtitle: 'Nos packs pour votre peau. Décochez un produit que vous avez déjà, le total s’ajuste.',
+    eyebrow: 'Pack · {{count}} produits',
+    selected: '{{count}} sur {{total}} produits',
+    addAll: 'Ajouter tout le pack au panier',
+    addSelection: 'Ajouter {{count}} produits au panier',
+    added: '{{count}} produits ajoutés au panier',
+    none: 'Pas encore de pack pour « {{routine}} », mais tous ses produits sont disponibles.',
+    allProducts: 'Voir tous les produits « {{routine}} »',
+    noRoutine: 'Nous préparons une routine pour ce profil. En attendant, découvrez toute la boutique.',
+  },
+  videos: {
+    eyebrow: 'En vidéo',
+    title: 'La K-beauty en action',
+    subtitle: 'Textures, routines et conseils : regardez avant de choisir.',
+    shop: 'Voir le produit',
   },
   shippingPage: {
     title: 'Livraison & paiement',

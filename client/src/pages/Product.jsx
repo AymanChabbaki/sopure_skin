@@ -9,7 +9,7 @@ import { ProductCarousel } from '../components/product/ProductGrid.jsx';
 import { Price, QuantityInput, SectionHeading, Skeleton } from '../components/ui/Primitives.jsx';
 import { Stars } from '../components/ui/Stars.jsx';
 import { Reviews } from '../components/product/Reviews.jsx';
-import { useProduct, useSettings } from '../hooks/useStore.js';
+import { useProduct, useSettings, shippingSummary } from '../hooks/useStore.js';
 import { useLocalePath } from '../hooks/useLocalePath.js';
 import { useCart } from '../store/cart.js';
 import { useWishlist } from '../store/wishlist.js';
@@ -331,7 +331,7 @@ export default function Product() {
 
             <ul className="mt-8 grid gap-3 sm:grid-cols-2">
               {[
-                [Truck, t('product.deliveryInfo', { casa: s?.casablancaFee ?? 20, other: s?.otherFee ?? 35 })],
+                [Truck, t('product.deliveryInfo', shippingSummary(s))],
                 [Gift, t('product.freeInfo', { count: s?.freeAboveItems ?? 5 })],
                 [HandCoins, t('product.codInfo')],
                 [BadgeCheck, product.brand ? t('product.authenticBrand', { brand: product.brand.name }) : t('product.authenticInfo')],

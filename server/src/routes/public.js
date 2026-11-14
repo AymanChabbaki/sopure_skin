@@ -3,10 +3,10 @@ import rateLimit from '../lib/rateLimit.js';
 import { z } from 'zod';
 import { query, withTransaction } from '../db/pool.js';
 import { listProducts, getProductBySlug, toCard, toDetail, relatedProducts } from '../lib/catalog.js';
-import { getSettings, computeShipping, isCasablanca } from '../lib/settings.js';
+import { getSettings, computeShipping, isCasablanca, canonicalCity } from '../lib/settings.js';
 import { pickLocale, tr, HttpError } from '../lib/utils.js';
 import { validate } from '../middleware/errors.js';
-import { adjustSize, sizesStock } from '../lib/sizes.js';
+import { adjustSize, publicSizes, sizesStock } from '../lib/sizes.js';
 import { notifyNewOrder } from '../lib/mailer.js';
 import { markChanged } from '../lib/publish.js';
 import { estimatedDeliveryDate } from '../lib/delivery.js';
@@ -227,7 +227,7 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
     const subtotal = lines.reduce((s, l) => s + l.lineTotal, 0);
     const shippingFee = computeShipping({ city: data.city, itemsCount }, settings.shipping);
     // "casa", "الدار البيضاء"… are stored as one city so stats group correctly
-    if (isCasablanca(data.city, settings.shipping)) data.city = 'Casablanca';
+    data.city = canonicalCity(data.city, settings.shipping);
     const total = subtotal + shippingFee;
 
     // Order number is derived from the serial id, so it is unique without a race
@@ -290,6 +290,63 @@ publicRouter.post(
 );
 
 /* ---------------------------------- Guides --------------------------------- */
+
+/**
+ * Packs offered for a routine (category slug), or all active packs.
+ * Each product comes with its card data and, for sized products, the sizes the customer can pick.
+ */
+publicRouter.get('/packs', async (req, res) => {
+  const locale = pickLocale(req.query.lang);
+  const { category } = req.query;
+  const { rows: packs } = await query(
+    `SELECT p.id, p.name, p.description,
+            COALESCE((SELECT json_agg(pi.product_id ORDER BY pi.position) FROM pack_items pi WHERE pi.pack_id = p.id), '[]') AS product_ids
+       FROM packs p
+      WHERE p.is_active ${category ? `AND EXISTS (SELECT 1 FROM pack_categories pc JOIN categories c ON c.id = pc.category_id
+                                                   WHERE pc.pack_id = p.id AND c.slug = $1)` : ''}
+      ORDER BY p.position, p.id`,
+    category ? [String(category)] : [],
+  );
+  const ids = [...new Set(packs.flatMap((p) => p.product_ids))];
+  const { rows } = ids.length ? await listProducts({ ids, limit: 100 }) : { rows: [] };
+  const { rows: sizeRows } = ids.length
+    ? await query('SELECT id, price, compare_at_price, has_sizes, sizes FROM products WHERE id = ANY($1) AND has_sizes', [ids])
+    : { rows: [] };
+  const sizesById = new Map(sizeRows.map((r) => [r.id, publicSizes(r)]));
+  const byId = new Map(rows.map((r) => [r.id, { ...toCard(r, locale), sizes: sizesById.get(r.id) || [] }]));
+  res.set('Cache-Control', 'no-cache').set('CDN-Cache-Control', CDN_API);
+  res.json(
+    packs
+      .map((p) => ({
+        id: p.id,
+        name: tr(p.name, locale),
+        description: tr(p.description, locale),
+        // Inactive or deleted products silently drop out of the pack
+        products: p.product_ids.map((id) => byId.get(id)).filter(Boolean),
+      }))
+      .filter((p) => p.products.length),
+  );
+});
+
+/** Videos of the home page section. */
+publicRouter.get('/videos', async (req, res) => {
+  const locale = pickLocale(req.query.lang);
+  const { rows } = await query(
+    `SELECT v.id, v.title, v.url, v.poster_url, p.slug AS product_slug, p.name AS product_name, p.price AS product_price
+       FROM videos v LEFT JOIN products p ON p.id = v.product_id AND p.is_active
+      WHERE v.is_active ORDER BY v.position, v.id`,
+  );
+  res.set('Cache-Control', 'no-cache').set('CDN-Cache-Control', CDN_API);
+  res.json(
+    rows.map((v) => ({
+      id: v.id,
+      title: tr(v.title, locale),
+      url: v.url,
+      posterUrl: v.poster_url,
+      product: v.product_slug ? { slug: v.product_slug, name: tr(v.product_name, locale), price: v.product_price } : null,
+    })),
+  );
+});
 
 publicRouter.get('/articles', async (req, res) => {
   const { rows } = await query(

@@ -114,7 +114,7 @@ export default {
   benefits: {
     authentic: { title: '100% authentic', text: 'Imported directly from Korea' },
     cod: { title: 'Cash on delivery', text: 'Pay in cash when you receive it' },
-    delivery: { title: 'Fast delivery', text: 'Casablanca 20 MAD · Other cities 35 MAD' },
+    delivery: { title: 'Fast delivery', text: 'Casablanca 20 MAD · Other cities 30–40 MAD' },
     support: { title: 'Personal advice', text: 'Our team is here for you on WhatsApp' },
   },
   shop: {
@@ -244,7 +244,7 @@ export default {
     items: [
       { q: 'Are the products authentic?', a: 'Yes. All our products are 100% original, imported from South Korea through official distributors.' },
       { q: 'How do I pay for my order?', a: 'Payment is cash on delivery only, directly to the courier.' },
-      { q: 'How much is delivery?', a: 'Delivery costs {{casa}} MAD in Casablanca and {{other}} MAD in other Moroccan cities. It is free for any order of more than {{count}} products.' },
+      { q: 'How much is delivery?', a: 'Delivery costs {{casa}} MAD in Casablanca and {{other}} MAD in other Moroccan cities depending on the city (details on the Delivery page). It is free for any order of more than {{count}} products.' },
       { q: 'How long does delivery take?', a: '24 to 48h in Casablanca and 2 to 4 working days in other cities.' },
       { q: 'How do I choose products for my skin?', a: 'Use our “tailored routine” diagnosis on the home page, or message us on WhatsApp for personal advice.' },
       { q: 'Can I change or cancel my order?', a: 'Yes, as long as it has not been shipped. Contact us by phone or WhatsApp.' },
@@ -266,6 +266,26 @@ export default {
     toc: 'Contents',
     updated: 'Last updated: {{date}}',
     questions: 'A question about an order or your data? Our team is here to help.',
+  },
+  packs: {
+    sectionEyebrow: 'Routine packs',
+    title: 'Packs for this routine',
+    subtitle: 'The whole routine in one click. Untick a product you already have and the total updates.',
+    routineSubtitle: 'Our packs for your skin. Untick a product you already have and the total updates.',
+    eyebrow: 'Pack · {{count}} products',
+    selected: '{{count}} of {{total}} products',
+    addAll: 'Add the whole pack to cart',
+    addSelection: 'Add {{count}} products to cart',
+    added: '{{count}} products added to cart',
+    none: 'No pack yet for “{{routine}}”, but all its products are available.',
+    allProducts: 'See all “{{routine}}” products',
+    noRoutine: 'We are preparing a routine for this profile. Meanwhile, explore the whole shop.',
+  },
+  videos: {
+    eyebrow: 'On video',
+    title: 'K-beauty in action',
+    subtitle: 'Textures, routines and tips: watch before you choose.',
+    shop: 'See the product',
   },
   shippingPage: {
     title: 'Shipping & payment',

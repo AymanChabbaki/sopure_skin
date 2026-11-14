@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { query } from './db/pool.js';
 import { config, LOCALES, DEFAULT_LOCALE, r2Enabled } from './config.js';
-import { getSettings } from './lib/settings.js';
+import { getSettings, shippingSummary, shippingTable } from './lib/settings.js';
 import { getProductBySlug, relatedProducts } from './lib/catalog.js';
 import { indexNowKey } from './lib/indexnow.js';
 import { articleHtml } from './lib/articles.js';
@@ -94,12 +94,12 @@ const NOINDEX_PAGES = {
 
 const days = (min, max) => ({ '@type': 'QuantitativeValue', minValue: min, maxValue: max, unitCode: 'DAY' });
 
-/** Offer-level shipping (Google reads it for merchant listings). Morocco has no region support, so the higher rate is declared. */
+/** Offer-level shipping (Google reads it for merchant listings). Morocco has no region support, so the highest rate is declared. */
 function offerShipping(settings) {
   const s = settings.shipping;
   return {
     '@type': 'OfferShippingDetails',
-    shippingRate: { '@type': 'MonetaryAmount', value: s.otherFee, currency: 'MAD' },
+    shippingRate: { '@type': 'MonetaryAmount', value: shippingSummary(s).max, currency: 'MAD' },
     shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'MA' },
     deliveryTime: { '@type': 'ShippingDeliveryTime', handlingTime: days(0, 1), transitTime: days(1, 4) },
   };
@@ -113,7 +113,7 @@ function shippingService(settings) {
     '@type': 'ShippingService',
     '@id': `${SITE}/#shipping`,
     name: 'Livraison Maroc / Delivery Morocco',
-    description: `Casablanca ${s.casablancaFee} MAD, other cities ${s.otherFee} MAD, free for more than ${s.freeAboveItems} products. Cash on delivery.`,
+    description: `${shippingTable(s)}; free for more than ${s.freeAboveItems} products. Cash on delivery.`,
     fulfillmentType: 'FulfillmentTypeDelivery',
     handlingTime: { '@type': 'ServicePeriod', duration: days(0, 1) },
     shippingConditions: [
@@ -121,7 +121,7 @@ function shippingService(settings) {
         '@type': 'ShippingConditions',
         shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'MA' },
         numItems: { '@type': 'QuantitativeValue', minValue: 1, maxValue: s.freeAboveItems },
-        shippingRate: { '@type': 'MonetaryAmount', value: s.otherFee, currency: 'MAD' },
+        shippingRate: { '@type': 'MonetaryAmount', value: shippingSummary(s).max, currency: 'MAD' },
         transitTime: transit,
       },
       {
@@ -531,10 +531,11 @@ export async function buildPage(pathname, search = '') {
     }
     if (section === 'shipping' || section === 'faq') {
       const s = settings.shipping;
+      const f = shippingSummary(s);
       page.description = {
-        fr: `Paiement à la livraison partout au Maroc. Livraison ${s.casablancaFee} DH à Casablanca, ${s.otherFee} DH autres villes, gratuite pour plus de ${s.freeAboveItems} produits.`,
-        en: `Cash on delivery across Morocco. Delivery ${s.casablancaFee} MAD in Casablanca, ${s.otherFee} MAD elsewhere, free for more than ${s.freeAboveItems} products.`,
-        ar: `الدفع عند الاستلام في جميع أنحاء المغرب. التوصيل ${s.casablancaFee} درهم في الدار البيضاء و${s.otherFee} درهم لباقي المدن، ومجاني عند شراء أكثر من ${s.freeAboveItems} منتجات.`,
+        fr: `Paiement à la livraison partout au Maroc. Livraison ${f.casa} DH à Casablanca, ${f.other} DH ailleurs selon la ville, gratuite pour plus de ${s.freeAboveItems} produits.`,
+        en: `Cash on delivery across Morocco. Delivery ${f.casa} MAD in Casablanca, ${f.other} MAD elsewhere depending on the city, free for more than ${s.freeAboveItems} products.`,
+        ar: `الدفع عند الاستلام في جميع أنحاء المغرب. التوصيل ${f.casa} درهم في الدار البيضاء و${f.other} درهم لباقي المدن حسب المدينة، ومجاني عند شراء أكثر من ${s.freeAboveItems} منتجات.`,
       }[locale];
     }
   } else if (NOINDEX_PAGES[section]) {
@@ -777,7 +778,7 @@ function llmsHeader(s) {
     '',
     '## Key facts',
     '- Payment: cash on delivery only, everywhere in Morocco. No online payment.',
-    `- Delivery: ${sh.casablancaFee} MAD in Casablanca, ${sh.otherFee} MAD in other Moroccan cities, free for orders of more than ${sh.freeAboveItems} products. 24-48h in Casablanca, 2-4 working days elsewhere.`,
+    `- Delivery fee by city: ${shippingTable(sh)}. Free for orders of more than ${sh.freeAboveItems} products. 24-48h in Casablanca, 2-4 working days elsewhere.`,
     '- Languages: French (/fr), English (/en), Arabic (/ar).',
     `- Contact: phone ${s.contact.phone}, WhatsApp +${s.contact.whatsapp}, email ${s.contact.email}.`,
     `- Online shop: ${SITE}/fr/shop · Routine builder (free skin diagnosis): ${SITE}/fr/routine · Shipping & payment: ${SITE}/fr/shipping · FAQ: ${SITE}/fr/faq`,
@@ -865,7 +866,7 @@ seoRouter.get('/feeds/google-merchant.xml', async (_req, res) => {
       // Health & Beauty > Personal Care > Cosmetics > Skin Care
       '<g:google_product_category>567</g:google_product_category>',
       p.type ? `<g:product_type>Soins du visage &gt; ${esc(p.type)}</g:product_type>` : '',
-      `<g:shipping><g:country>MA</g:country><g:service>Livraison standard</g:service><g:price>${s.otherFee.toFixed(2)} MAD</g:price></g:shipping>`,
+      `<g:shipping><g:country>MA</g:country><g:service>Livraison standard</g:service><g:price>${shippingSummary(s).max.toFixed(2)} MAD</g:price></g:shipping>`,
       '</item>',
     ]
       .filter(Boolean)

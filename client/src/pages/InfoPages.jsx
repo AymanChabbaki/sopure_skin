@@ -10,7 +10,7 @@ import { Reveal, staggerContainer, staggerItem } from '../components/ui/Reveal.j
 import { LogoMark } from '../components/ui/Logo.jsx';
 import { BrandLogo } from '../components/ui/BrandLogo.jsx';
 import { Seo } from '../components/ui/Seo.jsx';
-import { useBrands, useProducts, useSettings } from '../hooks/useStore.js';
+import { useBrands, useProducts, useSettings, shippingSummary } from '../hooks/useStore.js';
 import { useLocalePath } from '../hooks/useLocalePath.js';
 import { useWishlist } from '../store/wishlist.js';
 import { cn } from '../lib/format.js';
@@ -142,7 +142,7 @@ export function Faq() {
   const lp = useLocalePath();
   const { data } = useSettings();
   const s = data?.shipping;
-  const items = t('faq.items', { returnObjects: true, casa: s?.casablancaFee ?? 20, other: s?.otherFee ?? 35, count: s?.freeAboveItems ?? 5 });
+  const items = t('faq.items', { returnObjects: true, ...shippingSummary(s), count: s?.freeAboveItems ?? 5 });
   const [open, setOpen] = useState(0);
 
   return (
@@ -237,24 +237,33 @@ export function Contact() {
 }
 
 export function ShippingInfo() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data } = useSettings();
   const s = data?.shipping;
+  const zoneIcons = { casablanca: MapPin };
+  // One card per delivery zone (towns in the reader's script), then "other cities" and free delivery
   const tiers = [
-    [MapPin, t('shippingPage.casa'), `${s?.casablancaFee ?? 20} ${t('common.currency')}`, false],
-    [Truck, t('shippingPage.other'), `${s?.otherFee ?? 35} ${t('common.currency')}`, false],
-    [Gift, t('shippingPage.free', { count: s?.freeAboveItems ?? 5 }), t('common.free'), true],
+    ...(s?.zones || []).map((z) => ({
+      key: z.id,
+      Icon: zoneIcons[z.id] || Truck,
+      label: z.label?.[i18n.language] || z.label?.fr || z.id,
+      price: `${z.fee} ${t('common.currency')}`,
+      towns: z.id === 'casablanca' ? [] : z.cities,
+    })),
+    { key: 'other', Icon: Truck, label: t('shippingPage.other'), price: `${s?.otherFee ?? 40} ${t('common.currency')}`, towns: [] },
+    { key: 'free', Icon: Gift, label: t('shippingPage.free', { count: s?.freeAboveItems ?? 5 }), price: t('common.free'), towns: [], highlight: true },
   ];
   return (
     <>
       <PageHeader title={t('shippingPage.title')} />
       <div className="container-x pb-24">
-        <motion.ul variants={staggerContainer} initial="hidden" animate="show" className="grid gap-5 md:grid-cols-3">
-          {tiers.map(([Icon, label, price, highlight]) => (
-            <motion.li key={label} variants={staggerItem} className={cn('rounded-3xl p-8', highlight ? 'bg-brand-500 text-white shadow-lift' : 'card')}>
+        <motion.ul variants={staggerContainer} initial="hidden" animate="show" className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {tiers.map(({ key, Icon, label, price, towns, highlight }) => (
+            <motion.li key={key} variants={staggerItem} className={cn('rounded-3xl p-8', highlight ? 'bg-brand-500 text-white shadow-lift' : 'card')}>
               <Icon className={cn('size-7', highlight ? 'text-white' : 'text-brand-500')} strokeWidth={1.5} />
               <p className={cn('mt-6 text-sm', highlight ? 'text-white/80' : 'text-muted')}>{label}</p>
               <p className="mt-1 font-display text-5xl">{price}</p>
+              {towns.length > 0 && <p className="mt-4 text-xs leading-relaxed text-muted">{towns.join(' · ')}</p>}
             </motion.li>
           ))}
         </motion.ul>
@@ -286,8 +295,7 @@ export function Policies() {
   const lang = POLICY_SECTIONS[i18n.language] ? i18n.language : 'fr';
   const c = data?.contact;
   const sections = POLICY_SECTIONS[lang]({
-    casa: data?.shipping?.casablancaFee ?? 20,
-    other: data?.shipping?.otherFee ?? 35,
+    ...shippingSummary(data?.shipping),
     free: data?.shipping?.freeAboveItems ?? 5,
     days: data?.returns?.days ?? 7,
     email: c?.email || 'so.pure.skin1@gmail.com',

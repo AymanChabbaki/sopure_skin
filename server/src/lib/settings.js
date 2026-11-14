@@ -2,11 +2,35 @@ import { query } from '../db/pool.js';
 
 export const DEFAULT_SETTINGS = {
   shipping: {
-    casablancaFee: 20,
-    otherFee: 35,
     // Free delivery when the cart holds MORE than this number of products
     freeAboveItems: 5,
-    casablancaAliases: ['casablanca', 'casa', 'dar el beida', 'الدار البيضاء'],
+    // Fee by zone. `cities` are shown to customers, `aliases` are other spellings (Arabic, variants).
+    // Matching ignores case, accents and dashes; orders store the listed name ("casa" -> "Casablanca").
+    zones: [
+      {
+        id: 'casablanca',
+        label: { fr: 'Casablanca', en: 'Casablanca', ar: 'الدار البيضاء' },
+        fee: 20,
+        cities: ['Casablanca'],
+        aliases: ['Casa', 'Dar el Beida', 'الدار البيضاء', 'كازا'],
+      },
+      {
+        id: 'casa-region',
+        label: { fr: 'Région de Casablanca', en: 'Casablanca region', ar: 'ضواحي الدار البيضاء' },
+        fee: 30,
+        cities: ['Mediouna', 'Tit Mellil', 'Rahma', 'Lissasfa', 'Bouskoura', 'Dar Bouazza', 'Nouaceur', 'Aïn Harrouda', 'Had Soualem', 'Deroua', 'Mohammedia'],
+        aliases: ['Tit Melil', 'Ain Harouda', 'مديونة', 'تيط مليل', 'الرحمة', 'ليساسفة', 'بوسكورة', 'دار بوعزة', 'النواصر', 'عين حرودة', 'حد السوالم', 'الدروة', 'المحمدية'],
+      },
+      {
+        id: 'big-cities',
+        label: { fr: 'Grandes villes', en: 'Major cities', ar: 'المدن الكبرى' },
+        fee: 35,
+        cities: ['Marrakech', 'Settat', 'Berrechid', 'Fès', 'Rabat', 'Salé', 'Témara', 'Tanger', 'Oujda', 'Meknès', 'Agadir', 'Kénitra', 'Tétouan', 'El Jadida'],
+        aliases: ['Berchid', 'Marrakesh', 'Fez', 'Tangier', 'مراكش', 'سطات', 'برشيد', 'فاس', 'الرباط', 'سلا', 'تمارة', 'طنجة', 'وجدة', 'مكناس', 'أكادير', 'القنيطرة', 'تطوان', 'الجديدة'],
+      },
+    ],
+    // Every city not listed in a zone
+    otherFee: 40,
   },
   announcements: [
     {
@@ -137,12 +161,53 @@ export async function saveSetting(key, value) {
   cache = null;
 }
 
-export function isCasablanca(city, shipping) {
-  const normalized = String(city).trim().toLowerCase();
-  return shipping.casablancaAliases.some((alias) => normalized === alias.toLowerCase());
+/* -------------------------------- Shipping -------------------------------- */
+// Same rules in client/src/hooks/useStore.js (checkout preview); the server value is the one charged.
+
+const normCity = (s) =>
+  String(s ?? '')
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9؀-ۿ]+/g, ' ')
+    .trim();
+
+/** Delivery zone of a city, or null (= "other cities"). */
+export function shippingZone(city, shipping) {
+  const c = normCity(city);
+  if (!c) return null;
+  return (shipping.zones || []).find((z) => [...z.cities, ...(z.aliases || [])].some((name) => normCity(name) === c)) || null;
 }
+
+export const isCasablanca = (city, shipping) => shippingZone(city, shipping)?.id === 'casablanca';
 
 export function computeShipping({ city, itemsCount }, shipping) {
   if (itemsCount > shipping.freeAboveItems) return 0;
-  return isCasablanca(city, shipping) ? shipping.casablancaFee : shipping.otherFee;
+  return shippingZone(city, shipping)?.fee ?? shipping.otherFee;
+}
+
+/** Name to store on the order: "casa" / "الدار البيضاء" become "Casablanca" so statistics group correctly. */
+export function canonicalCity(city, shipping) {
+  const zone = shippingZone(city, shipping);
+  if (!zone) return String(city).trim();
+  if (zone.id === 'casablanca') return zone.cities[0];
+  // The listed spelling ("tit-mellil" -> "Tit Mellil"); aliases keep what the customer typed
+  return zone.cities.find((name) => normCity(name) === normCity(city)) || String(city).trim();
+}
+
+/** Figures for texts: Casablanca fee and the range of the other zones ("30–40"). */
+export function shippingSummary(shipping) {
+  const casa = (shipping.zones || []).find((z) => z.id === 'casablanca')?.fee ?? shipping.otherFee;
+  const others = [...(shipping.zones || []).filter((z) => z.id !== 'casablanca').map((z) => z.fee), shipping.otherFee];
+  const min = Math.min(...others);
+  const max = Math.max(casa, ...others);
+  return { casa, min, max, other: min === Math.max(...others) ? `${min}` : `${min}–${Math.max(...others)}` };
+}
+
+/** Full fee table in English, for the assistant and llms.txt ("Casablanca 20 MAD; Casablanca region (Mediouna, …) 30 MAD; …"). */
+export function shippingTable(shipping) {
+  const zones = (shipping.zones || []).map(
+    (z) => `${z.label?.en || z.label?.fr || z.id}${z.id === 'casablanca' ? '' : ` (${z.cities.join(', ')})`} ${z.fee} MAD`,
+  );
+  return [...zones, `all other cities ${shipping.otherFee} MAD`].join('; ');
 }

@@ -68,36 +68,77 @@ function SaveButton({ mutation, onClick }) {
   );
 }
 
+const list = (text) => text.split(',').map((x) => x.trim()).filter(Boolean);
+
 function ShippingTab({ value, save }) {
-  const [v, setV] = useState(value);
-  const num = (k) => (e) => setV({ ...v, [k]: Number(e.target.value) });
+  const [v, setV] = useState(() => ({ ...value, zones: value.zones || [] }));
+  const setZone = (i, patch) => setV((cur) => ({ ...cur, zones: cur.zones.map((z, j) => (j === i ? { ...z, ...patch } : z)) }));
+  const addZone = () =>
+    setV((cur) => ({ ...cur, zones: [...cur.zones, { id: `zone-${Date.now()}`, label: { fr: '', en: '', ar: '' }, fee: cur.otherFee, cities: [], aliases: [] }] }));
+  const valid = v.zones.every((z) => z.label?.fr?.trim() && z.cities.length);
+
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="Casablanca (DH)">
-          <input type="number" min="0" value={v.casablancaFee} onChange={num('casablancaFee')} className="input" />
-        </Field>
-        <Field label="Autres villes (DH)">
-          <input type="number" min="0" value={v.otherFee} onChange={num('otherFee')} className="input" />
+      <p className="text-sm text-muted">
+        Le prix dépend de la ville saisie au paiement (majuscules, accents et tirets ignorés). Une ville absente des zones paie le tarif « autres villes ».
+      </p>
+
+      <div className="space-y-4">
+        {v.zones.map((z, i) => (
+          <div key={z.id} className="space-y-4 rounded-2xl border border-line p-4">
+            <div className="flex flex-wrap items-end gap-3">
+              <Field label="Nom de la zone (FR)" className="min-w-48 flex-1">
+                <input value={z.label?.fr || ''} onChange={(e) => setZone(i, { label: { ...z.label, fr: e.target.value } })} className="input" />
+              </Field>
+              <Field label="EN" className="w-40">
+                <input value={z.label?.en || ''} onChange={(e) => setZone(i, { label: { ...z.label, en: e.target.value } })} className="input" />
+              </Field>
+              <Field label="AR" className="w-40">
+                <input dir="rtl" value={z.label?.ar || ''} onChange={(e) => setZone(i, { label: { ...z.label, ar: e.target.value } })} className="input" />
+              </Field>
+              <Field label="Prix (DH)" className="w-28">
+                <input type="number" min="0" value={z.fee} onChange={(e) => setZone(i, { fee: Number(e.target.value) })} className="input" />
+              </Field>
+              {z.id !== 'casablanca' && (
+                <button type="button" onClick={() => setV((cur) => ({ ...cur, zones: cur.zones.filter((_, j) => j !== i) }))} className="icon-btn mb-1 text-muted hover:text-rose-600" aria-label="Supprimer la zone">
+                  <Trash2 className="size-4" />
+                </button>
+              )}
+            </div>
+            <Field label="Villes (affichées aux clientes, séparées par des virgules)">
+              <textarea rows={2} value={z.cities.join(', ')} onChange={(e) => setZone(i, { cities: list(e.target.value) })} className="input" />
+            </Field>
+            <Field label="Autres écritures reconnues (arabe, variantes : casa, Fez…)">
+              <textarea rows={2} value={(z.aliases || []).join(', ')} onChange={(e) => setZone(i, { aliases: list(e.target.value) })} className="input" />
+            </Field>
+          </div>
+        ))}
+        <button type="button" onClick={addZone} className="btn-outline py-2.5">
+          <Plus className="size-4" /> Ajouter une zone
+        </button>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Autres villes (DH)" hint="Toute ville qui n’est dans aucune zone">
+          <input type="number" min="0" value={v.otherFee} onChange={(e) => setV({ ...v, otherFee: Number(e.target.value) })} className="input" />
         </Field>
         <Field label="Gratuite pour plus de… (produits)" hint={`Gratuite à partir de ${v.freeAboveItems + 1} produits dans le panier`}>
-          <input type="number" min="0" value={v.freeAboveItems} onChange={num('freeAboveItems')} className="input" />
+          <input type="number" min="0" value={v.freeAboveItems} onChange={(e) => setV({ ...v, freeAboveItems: Number(e.target.value) })} className="input" />
         </Field>
       </div>
-      <Field label="Noms reconnus comme Casablanca" hint="Séparés par des virgules (pour la saisie « Autre ville »).">
-        <input
-          value={v.casablancaAliases.join(', ')}
-          onChange={(e) => setV({ ...v, casablancaAliases: e.target.value.split(',').map((s) => s.trim()).filter(Boolean) })}
-          className="input"
-        />
-      </Field>
+
       <div className="rounded-2xl bg-brand-50 p-4 text-sm text-brand-900">
-        Exemple : 3 produits à Rabat = <strong>{v.otherFee} DH</strong> · 2 produits à Casablanca = <strong>{v.casablancaFee} DH</strong> · {v.freeAboveItems + 1} produits partout ={' '}
-        <strong>gratuit</strong>. Paiement : à la livraison uniquement.
+        {v.zones.map((z) => (
+          <span key={z.id}>
+            {z.label?.fr || '…'} : <strong>{z.fee} DH</strong> ·{' '}
+          </span>
+        ))}
+        Autres villes : <strong>{v.otherFee} DH</strong> · {v.freeAboveItems + 1} produits et plus : <strong>gratuit</strong>. Paiement à la livraison uniquement.
       </div>
       <div className="flex justify-end">
-        <SaveButton mutation={save} onClick={() => save.mutate(['shipping', v])} />
+        <SaveButton mutation={save} onClick={() => valid && save.mutate(['shipping', v])} />
       </div>
+      {!valid && <p className="text-end text-xs text-rose-600">Chaque zone doit avoir un nom et au moins une ville.</p>}
     </div>
   );
 }
