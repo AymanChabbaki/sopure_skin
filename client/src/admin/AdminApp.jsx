@@ -115,15 +115,19 @@ const NAV = [
   { to: '/admin/team', label: 'Équipe', icon: Users },
 ];
 
-function Sidebar({ me, onNavigate }) {
+function OrderCount({ pending }) {
+  return (
+    <span
+      aria-label={pending == null ? 'Compteur indisponible' : `${pending} commande(s) en attente`}
+      className={cn('relative rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums', pending > 0 ? 'bg-amber-500 text-white' : 'bg-zinc-100 text-muted')}
+    >
+      {pending ?? '—'}
+    </span>
+  );
+}
+
+function Sidebar({ me, pending, onNavigate }) {
   const qc = useQueryClient();
-  const { data: counts } = useQuery({
-    queryKey: ['admin', 'orders', 'counts'],
-    queryFn: () => adminApi('/orders', { params: { limit: 1 } }),
-    refetchInterval: LIVE_INTERVAL,
-    refetchOnWindowFocus: true,
-  });
-  const pending = counts?.statusCounts?.pending || 0;
 
   const logout = async () => {
     await adminApi('/auth/logout', { method: 'POST' });
@@ -155,7 +159,7 @@ function Sidebar({ me, onNavigate }) {
                 {isActive && <motion.span layoutId="admin-nav" className="absolute inset-0 rounded-2xl bg-brand-50" transition={{ type: 'spring', stiffness: 500, damping: 35 }} />}
                 <Icon className="relative size-[18px]" />
                 <span className="relative flex-1">{label}</span>
-                {badge && pending > 0 && <span className="relative rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold text-white">{pending}</span>}
+                {badge && <OrderCount pending={pending} />}
               </>
             )}
           </NavLink>
@@ -194,7 +198,7 @@ function useNewOrderAlerts(enabled) {
     enabled,
   });
   const latest = data?.rows?.[0];
-  const pending = data?.statusCounts?.pending || 0;
+  const pending = data?.statusCounts ? (data.statusCounts.pending ?? 0) : null;
 
   useEffect(() => {
     if (!latest) return;
@@ -211,6 +215,7 @@ function useNewOrderAlerts(enabled) {
   useEffect(() => {
     document.title = pending > 0 ? `(${pending}) Administration | So Pure Skin` : 'Administration | So Pure Skin';
   }, [pending]);
+  return pending;
 }
 
 function Loading() {
@@ -230,7 +235,7 @@ export default function AdminApp() {
     staleTime: 5 * 60_000,
   });
 
-  useNewOrderAlerts(Boolean(me));
+  const pending = useNewOrderAlerts(Boolean(me));
 
   if (isLoading) return <Loading />;
 
@@ -242,7 +247,7 @@ export default function AdminApp() {
       ) : (
         <>
           <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-line bg-white lg:block">
-            <Sidebar me={me} />
+            <Sidebar me={me} pending={pending} />
           </aside>
           <AnimatePresence>
             {open && (
@@ -252,7 +257,7 @@ export default function AdminApp() {
                   <button type="button" onClick={() => setOpen(false)} className="icon-btn absolute top-5 right-3" aria-label="Fermer">
                     <X className="size-5" />
                   </button>
-                  <Sidebar me={me} onNavigate={() => setOpen(false)} />
+                  <Sidebar me={me} pending={pending} onNavigate={() => setOpen(false)} />
                 </motion.aside>
               </div>
             )}
@@ -264,6 +269,10 @@ export default function AdminApp() {
               </button>
               <Link to="/admin">
                 <Logo compact />
+              </Link>
+              <Link to="/admin/orders" className="ms-auto flex shrink-0 items-center gap-2 rounded-full border border-line px-3 py-1.5 text-xs font-medium">
+                <ShoppingCart className="size-4" aria-hidden="true" />
+                Commandes <OrderCount pending={pending} />
               </Link>
             </header>
             <main className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-10">
