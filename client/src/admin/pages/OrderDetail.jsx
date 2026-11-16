@@ -158,10 +158,11 @@ export default function OrderDetail() {
               <dd>{Number(order.shipping_fee) === 0 ? <span className="text-emerald-700">Offerte</span> : money(order.shipping_fee)}</dd>
             </div>
             <div className="flex justify-between border-t border-line pt-2 text-base font-semibold">
-              <dt>Total à encaisser</dt>
+              <dt>{order.payment_method === 'bank_transfer' ? 'Total à régler par virement' : 'Total à encaisser à la livraison'}</dt>
               <dd className="text-brand-700">{money(order.total)}</dd>
             </div>
           </dl>
+          {order.payment_method === 'bank_transfer' && <p className="border-t border-line p-5 text-sm text-muted">Communiquez les coordonnées bancaires à la cliente et vérifiez le virement avant l’expédition.</p>}
         </Card>
 
         <div className="space-y-6">

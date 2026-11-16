@@ -18,13 +18,14 @@ const packSchema = z.object({
   name: i18n.refine((v) => v.fr?.trim(), 'French name is required'),
   description: i18n.default({}),
   isActive: z.boolean().default(true),
+  routinePeriod: z.enum(['any', 'morning', 'night']).default('any'),
   productIds: z.array(z.number().int().positive()).min(1, 'Choose at least one product').max(20),
   categoryIds: z.array(z.number().int().positive()).default([]),
 });
 
 packsRouter.get('/', async (_req, res) => {
   const { rows } = await query(
-    `SELECT p.id, p.name, p.description, p.is_active AS "isActive", p.position,
+    `SELECT p.id, p.name, p.description, p.is_active AS "isActive", p.routine_period AS "routinePeriod", p.position,
             COALESCE((SELECT json_agg(pi.product_id ORDER BY pi.position) FROM pack_items pi WHERE pi.pack_id = p.id), '[]') AS "productIds",
             COALESCE((SELECT json_agg(pc.category_id) FROM pack_categories pc WHERE pc.pack_id = p.id), '[]') AS "categoryIds",
             COALESCE((SELECT sum(pr.price) FROM pack_items pi JOIN products pr ON pr.id = pi.product_id WHERE pi.pack_id = p.id), 0) AS total
@@ -49,9 +50,9 @@ packsRouter.post('/', validate(packSchema), async (req, res) => {
   const d = req.valid;
   const id = await withTransaction(async (db) => {
     const { rows: [row] } = await db.query(
-      `INSERT INTO packs (name, description, is_active, position)
-       VALUES ($1, $2, $3, (SELECT COALESCE(max(position), 0) + 1 FROM packs)) RETURNING id`,
-      [d.name, d.description, d.isActive],
+      `INSERT INTO packs (name, description, is_active, position, routine_period)
+       VALUES ($1, $2, $3, (SELECT COALESCE(max(position), 0) + 1 FROM packs), $4) RETURNING id`,
+      [d.name, d.description, d.isActive, d.routinePeriod],
     );
     await savePackRelations(db, row.id, d);
     return row.id;
@@ -68,8 +69,8 @@ packsRouter.put('/:id', validate(packSchema), async (req, res) => {
   const d = req.valid;
   const id = Number(req.params.id);
   await withTransaction(async (db) => {
-    const { rowCount } = await db.query('UPDATE packs SET name = $1, description = $2, is_active = $3, updated_at = now() WHERE id = $4', [
-      d.name, d.description, d.isActive, id,
+    const { rowCount } = await db.query('UPDATE packs SET name = $1, description = $2, is_active = $3, updated_at = now(), routine_period = $5 WHERE id = $4', [
+      d.name, d.description, d.isActive, id, d.routinePeriod,
     ]);
     if (!rowCount) throw new HttpError(404, 'Pack not found');
     await savePackRelations(db, id, d);

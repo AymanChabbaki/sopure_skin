@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'motion/react';
 import { ArrowRight, Sparkles } from 'lucide-react';
@@ -34,16 +34,34 @@ function RoutineCard({ routine }) {
   );
 }
 
+function RoutineResult({ routine }) {
+  const { t } = useTranslation();
+  const lp = useLocalePath();
+  const { data: packs = [], isFetched } = usePacks(routine.slug);
+  return (
+    <div className="pb-10">
+      <RoutinePacks category={routine.slug} title={routine.name} subtitle={t('packs.routineSubtitle')} />
+      {isFetched && !packs.length && <p className="rounded-3xl bg-brand-50 p-6 text-center text-ink/80">{t('packs.none', { routine: routine.name })}</p>}
+      <div className="mt-6 flex justify-center">
+        <Link to={lp(`/category/${routine.slug}`)} className="btn-outline group">
+          {t('packs.allProducts', { routine: routine.name })} <ArrowRight className="size-4 transition group-hover:translate-x-1 rtl:-scale-x-100" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export default function RoutineBuilder() {
   const { t } = useTranslation();
   const lp = useLocalePath();
   const { data: categories = [], isLoading } = useCategories();
-  const [chosen, setChosen] = useState(undefined);
+  const { state } = useLocation();
+  const [selection, setSelection] = useState(null);
+  const chosen = selection ?? state;
   const resultRef = useRef(null);
-  const chosenRoutine = categories.find((c) => c.slug === chosen);
-  const { data: chosenPacks = [], isFetched } = usePacks(chosen, { enabled: Boolean(chosen) });
-  const choose = (slug) => {
-    setChosen(slug);
+  const chosenRoutines = (chosen?.matches || []).map((slug) => categories.find((c) => c.slug === slug)).filter(Boolean);
+  const choose = (matches, partial) => {
+    setSelection({ matches, partial });
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
   };
   const routines = categories.filter((c) => c.kind === 'routine' && c.productCount > 0);
@@ -58,19 +76,12 @@ export default function RoutineBuilder() {
       <RoutineFinder onChoose={choose} />
 
       {/* Result of the finder: the packs of the matching routine */}
-      {chosen !== undefined && (
+      {chosen && (
         <div ref={resultRef} className="container-x scroll-mt-28 pt-8">
-          {chosenRoutine ? (
+          {isLoading ? <Skeleton className="h-40 rounded-3xl" /> : chosenRoutines.length ? (
             <>
-              <RoutinePacks category={chosen} title={chosenRoutine.name} subtitle={t('packs.routineSubtitle')} />
-              {isFetched && !chosenPacks.length && (
-                <p className="rounded-3xl bg-brand-50 p-6 text-center text-ink/80">{t('packs.none', { routine: chosenRoutine.name })}</p>
-              )}
-              <div className="mt-6 flex justify-center">
-                <Link to={lp(`/category/${chosen}`)} className="btn-outline group">
-                  {t('packs.allProducts', { routine: chosenRoutine.name })} <ArrowRight className="size-4 transition group-hover:translate-x-1 rtl:-scale-x-100" />
-                </Link>
-              </div>
+              {chosen.partial && <p className="mb-6 rounded-2xl bg-brand-50 p-4 text-center">{t('packs.partialMatch')}</p>}
+              {chosenRoutines.map((routine) => <RoutineResult key={routine.slug} routine={routine} />)}
             </>
           ) : (
             <div className="flex flex-col items-center gap-4 rounded-3xl bg-brand-50 p-8 text-center">

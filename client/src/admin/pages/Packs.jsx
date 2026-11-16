@@ -23,7 +23,8 @@ export function useAllProducts() {
   });
 }
 
-const EMPTY = { name: { fr: '', en: '', ar: '' }, description: {}, isActive: true, productIds: [], categoryIds: [] };
+const PERIODS = { any: 'Matin et soir', morning: 'Matin', night: 'Soir' };
+const EMPTY = { name: { fr: '', en: '', ar: '' }, description: {}, isActive: true, routinePeriod: 'any', productIds: [], categoryIds: [] };
 
 /** Product picker: browse by category, search, tick products. */
 function ProductPicker({ categories, selected, onToggle }) {
@@ -127,6 +128,12 @@ function PackEditor({ pack, categories, products, onClose }) {
         <div className="min-w-0 space-y-5">
           <I18nInput label="Nom du pack" value={form.name} onChange={set('name')} required placeholder="ex : Pack éclat 5 étapes" />
           <I18nInput label="Description courte (optionnel)" value={form.description} onChange={set('description')} multiline rows={2} />
+          <label className="block">
+            <span className="label">Moment de la routine</span>
+            <select className="input" value={form.routinePeriod || 'any'} onChange={(e) => set('routinePeriod')(e.target.value)}>
+              {Object.entries(PERIODS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </label>
           <div>
             <p className="label">Produits — choisissez par catégorie</p>
             <ProductPicker categories={categories} selected={form.productIds} onToggle={toggleProduct} />
@@ -244,6 +251,7 @@ export default function Packs() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h2 className="truncate text-lg font-semibold">{pack.name.fr}</h2>
+                    <p className="text-xs text-muted">{PERIODS[pack.routinePeriod || 'any']}</p>
                     <p className="text-sm text-muted">
                       {pack.productIds.length} produits · {money(pack.total)}
                     </p>

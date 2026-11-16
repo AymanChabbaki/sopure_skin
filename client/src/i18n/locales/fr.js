@@ -82,9 +82,9 @@ export default {
     brandsTitle: 'Les marques que vous aimez',
     routineEyebrow: 'Diagnostic de peau',
     routineTitle: 'Votre routine sur mesure en 2 clics',
-    routineSubtitle: 'Indiquez votre type de peau et votre préoccupation, nous vous proposons les soins adaptés.',
+    routineSubtitle: 'Indiquez votre type de peau et sélectionnez une ou plusieurs préoccupations.',
     routineSkin: 'Mon type de peau',
-    routineConcern: 'Ma préoccupation',
+    routineConcern: 'Mes préoccupations',
     routineCta: 'Voir ma routine',
     skin: { mixte: 'Mixte', normale: 'Normale', seche: 'Sèche', grasse: 'Grasse' },
     concern: {
@@ -181,6 +181,8 @@ export default {
     viewCart: 'Voir le panier',
   },
   checkout: {
+    transfer: 'Virement bancaire',
+    transferText: 'Notre équipe vous communiquera les coordonnées bancaires en confirmant votre commande.',
     title: 'Finaliser ma commande',
     contact: 'Vos coordonnées',
     delivery: 'Adresse de livraison',
@@ -209,6 +211,7 @@ export default {
     },
   },
   success: {
+    transferTotal: 'Montant à régler par virement',
     title: 'Merci pour votre commande !',
     text: 'Votre commande {{number}} a bien été enregistrée. Notre équipe vous appellera très bientôt pour la confirmer.',
     total: 'Montant à payer à la livraison',
@@ -243,7 +246,7 @@ export default {
     title: 'Questions fréquentes',
     items: [
       { q: 'Les produits sont-ils authentiques ?', a: 'Oui. Tous nos produits sont 100% originaux, importés de Corée du Sud auprès de distributeurs officiels.' },
-      { q: 'Comment payer ma commande ?', a: 'Le paiement se fait uniquement à la livraison, en espèces, directement au livreur.' },
+      { q: 'Comment payer ma commande ?', a: 'Payez en espèces à la livraison ou par virement bancaire. Notre équipe vous communiquera les coordonnées lors de la confirmation.' },
       { q: 'Combien coûte la livraison ?', a: 'La livraison coûte {{casa}} DH à Casablanca et {{other}} DH dans les autres villes du Maroc selon la ville (détail sur la page Livraison). Elle est gratuite pour toute commande de plus de {{count}} produits.' },
       { q: 'Quels sont les délais de livraison ?', a: 'Comptez 24 à 48h à Casablanca et 2 à 4 jours ouvrables pour les autres villes.' },
       { q: 'Comment choisir les produits adaptés à ma peau ?', a: 'Utilisez notre diagnostic « Votre routine sur mesure » sur la page d’accueil, ou écrivez-nous sur WhatsApp pour un conseil personnalisé.' },
@@ -268,6 +271,8 @@ export default {
     questions: 'Une question sur une commande ou vos données ? Notre équipe vous répond.',
   },
   packs: {
+    period: { morning: 'Routine du matin', night: 'Routine du soir', any: 'Matin et soir' },
+    partialMatch: "Aucune routine ciblée ne couvre certaines préoccupations. Voici les routines disponibles.",
     sectionEyebrow: 'Packs routine',
     title: 'Les packs de cette routine',
     subtitle: 'Toute la routine en un clic. Décochez un produit que vous avez déjà, le total s’ajuste.',
@@ -295,7 +300,7 @@ export default {
     delays: 'Délais',
     delaysText: '24 à 48h à Casablanca, 2 à 4 jours ouvrables ailleurs.',
     payment: 'Paiement',
-    paymentText: 'Paiement uniquement en espèces à la livraison. Aucune information bancaire n’est demandée.',
+    paymentText: 'Vous pouvez payer en espèces à la livraison ou par virement bancaire. Notre équipe vous communiquera les coordonnées bancaires lors de la confirmation.',
   },
   guides: {
     title: 'Conseils beauté coréenne',

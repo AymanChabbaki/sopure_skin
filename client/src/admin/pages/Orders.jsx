@@ -32,7 +32,7 @@ export default function Orders() {
     <>
       <PageTitle
         title="Commandes"
-        subtitle="Paiement à la livraison · confirmez chaque commande par téléphone"
+        subtitle="Paiement à la livraison ou par virement · confirmez chaque commande par téléphone"
         actions={
           <a href="/api/admin/orders/export.csv" className="btn-outline py-2.5">
             <Download className="size-4" /> Exporter CSV
@@ -98,6 +98,7 @@ export default function Orders() {
                       <td className="px-3 py-3">{o.itemsCount}</td>
                       <td className="px-3 py-3 font-medium whitespace-nowrap">
                         {money(o.total)}
+                        {o.paymentMethod === 'bank_transfer' && <p className="text-xs font-normal text-brand-700">Virement bancaire</p>}
                         {Number(o.shippingFee) === 0 && <p className="text-[11px] font-normal text-emerald-700">Livraison offerte</p>}
                       </td>
                       <td className="px-3 py-3">

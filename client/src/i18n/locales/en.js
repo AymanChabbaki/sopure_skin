@@ -82,9 +82,9 @@ export default {
     brandsTitle: 'The brands you love',
     routineEyebrow: 'Skin diagnosis',
     routineTitle: 'Your tailored routine in 2 clicks',
-    routineSubtitle: 'Tell us your skin type and main concern, we suggest the right products.',
+    routineSubtitle: 'Choose your skin type and select one or more concerns.',
     routineSkin: 'My skin type',
-    routineConcern: 'My concern',
+    routineConcern: 'My concerns',
     routineCta: 'See my routine',
     skin: { mixte: 'Combination', normale: 'Normal', seche: 'Dry', grasse: 'Oily' },
     concern: {
@@ -181,6 +181,8 @@ export default {
     viewCart: 'View cart',
   },
   checkout: {
+    transfer: 'Bank transfer',
+    transferText: 'Our team will send you the bank details when confirming your order.',
     title: 'Complete my order',
     contact: 'Your details',
     delivery: 'Delivery address',
@@ -209,6 +211,7 @@ export default {
     },
   },
   success: {
+    transferTotal: 'Amount due by bank transfer',
     title: 'Thank you for your order!',
     text: 'Your order {{number}} has been received. Our team will call you very soon to confirm it.',
     total: 'Amount to pay on delivery',
@@ -243,7 +246,7 @@ export default {
     title: 'Frequently asked questions',
     items: [
       { q: 'Are the products authentic?', a: 'Yes. All our products are 100% original, imported from South Korea through official distributors.' },
-      { q: 'How do I pay for my order?', a: 'Payment is cash on delivery only, directly to the courier.' },
+      { q: 'How do I pay for my order?', a: 'Pay in cash on delivery or by bank transfer. Our team provides the bank details when confirming your order.' },
       { q: 'How much is delivery?', a: 'Delivery costs {{casa}} MAD in Casablanca and {{other}} MAD in other Moroccan cities depending on the city (details on the Delivery page). It is free for any order of more than {{count}} products.' },
       { q: 'How long does delivery take?', a: '24 to 48h in Casablanca and 2 to 4 working days in other cities.' },
       { q: 'How do I choose products for my skin?', a: 'Use our “tailored routine” diagnosis on the home page, or message us on WhatsApp for personal advice.' },
@@ -268,6 +271,8 @@ export default {
     questions: 'A question about an order or your data? Our team is here to help.',
   },
   packs: {
+    period: { morning: 'Morning routine', night: 'Night routine', any: 'Morning and night' },
+    partialMatch: "Some concerns don't have a targeted routine. Here are the available routines.",
     sectionEyebrow: 'Routine packs',
     title: 'Packs for this routine',
     subtitle: 'The whole routine in one click. Untick a product you already have and the total updates.',
@@ -295,7 +300,7 @@ export default {
     delays: 'Delivery time',
     delaysText: '24 to 48h in Casablanca, 2 to 4 working days elsewhere.',
     payment: 'Payment',
-    paymentText: 'Cash on delivery only. No bank details are ever requested.',
+    paymentText: 'You can pay in cash on delivery or by bank transfer. Our team will send you the bank details when confirming your order.',
   },
   guides: {
     title: 'Korean beauty tips',

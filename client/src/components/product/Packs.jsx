@@ -56,6 +56,7 @@ function PackCard({ pack, index }) {
           <PackageCheck className="size-4" /> {t('packs.eyebrow', { count: pack.products.length })}
         </p>
         <h3 className="mt-2 font-display text-2xl leading-tight text-ink">{pack.name}</h3>
+        <p className="mt-1 text-xs font-semibold text-brand-700">{t(`packs.period.${pack.routinePeriod || 'any'}`)}</p>
         {pack.description && <p className="mt-1.5 text-sm text-muted">{pack.description}</p>}
       </header>
 

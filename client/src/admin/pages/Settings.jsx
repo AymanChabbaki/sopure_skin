@@ -133,7 +133,7 @@ function ShippingTab({ value, save }) {
             {z.label?.fr || '…'} : <strong>{z.fee} DH</strong> ·{' '}
           </span>
         ))}
-        Autres villes : <strong>{v.otherFee} DH</strong> · {v.freeAboveItems + 1} produits et plus : <strong>gratuit</strong>. Paiement à la livraison uniquement.
+        Autres villes : <strong>{v.otherFee} DH</strong> · {v.freeAboveItems + 1} produits et plus : <strong>gratuit</strong>. Paiement à la livraison ou par virement.
       </div>
       <div className="flex justify-end">
         <SaveButton mutation={save} onClick={() => valid && save.mutate(['shipping', v])} />

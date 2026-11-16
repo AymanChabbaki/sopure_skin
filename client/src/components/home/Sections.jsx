@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import {
   ArrowRight,
   Droplets,
@@ -129,22 +129,36 @@ const SKINS = [
 ];
 const CONCERNS = ['none', 'acne', 'taches', 'points-noirs', 'rougeurs'];
 
-/** `onChoose(slug)`: when given (routine page), the result is shown in place instead of opening the routine. */
+/** Sends matching routine slugs to the routine page or displays them in place. */
 export function RoutineFinder({ onChoose }) {
   const { t } = useTranslation();
   const lp = useLocalePath();
   const navigate = useNavigate();
   const { data: categories = [] } = useCategories();
   const [skin, setSkin] = useState('mixte');
-  const [concern, setConcern] = useState('none');
-  const slugs = useMemo(() => new Set(categories.map((c) => c.slug)), [categories]);
+  const [concerns, setConcerns] = useState([]);
+  const slugs = useMemo(() => new Set(categories.filter((c) => c.kind === 'routine').map((c) => c.slug)), [categories]);
+  const toggleConcern = (key) => setConcerns((prev) => key === 'none' ? [] : prev.includes(key) ? prev.filter((c) => c !== key) : [...prev, key]);
 
   const go = () => {
-    // Most specific routine that exists, then the general skin routine, then the whole shop
-    const candidates = [concern !== 'none' && `routine-${skin}-${concern}`, `routine-${skin}`].filter(Boolean);
-    const match = candidates.find((s) => slugs.has(s));
-    if (onChoose) return onChoose(match || null);
-    navigate(match ? lp(`/category/${match}`) : lp('/shop'));
+    const base = `routine-${skin}`;
+    let remaining = new Set(concerns);
+    const matches = [];
+    // Combined routines come first; add targeted results for any concerns they don't cover.
+    for (let size = concerns.length; size > 0; size -= 1) {
+      const keys = ['rougeurs', 'acne', 'taches', 'points-noirs'].filter((key) => remaining.has(key));
+      for (let mask = 1; mask < 2 ** keys.length; mask += 1) {
+        const subset = keys.filter((_, i) => mask & (1 << i));
+        if (subset.length !== size || !subset.some((key) => remaining.has(key))) continue;
+        const slug = `${base}-${subset.join('-')}`;
+        if (!slugs.has(slug)) continue;
+        matches.push(slug);
+        remaining = new Set([...remaining].filter((key) => !subset.includes(key)));
+      }
+    }
+    if ((!matches.length || remaining.size) && slugs.has(base)) matches.push(base);
+    if (onChoose) return onChoose(matches, Boolean(remaining.size));
+    navigate(lp('/routine'), { state: { matches, partial: Boolean(remaining.size) } });
   };
 
   const chip = (active) =>
@@ -180,13 +194,15 @@ export function RoutineFinder({ onChoose }) {
             <fieldset>
               <legend className="mb-3 text-xs font-medium tracking-widest text-brand-200 uppercase rtl:tracking-normal">{t('home.routineConcern')}</legend>
               <div className="flex flex-wrap gap-2">
-                {CONCERNS.map((key) => (
-                  <button key={key} type="button" onClick={() => setConcern(key)} className={chip(concern === key)} aria-pressed={concern === key}>
-                    {concern === key && <motion.span layoutId="concern-pill" className="absolute inset-0 rounded-full bg-brand-500" transition={{ type: 'spring', stiffness: 400, damping: 30 }} />}
-                    <AnimatePresence>{concern === key && <Check className="relative size-4" />}</AnimatePresence>
-                    <span className="relative">{t(`home.concern.${key}`)}</span>
-                  </button>
-                ))}
+                {CONCERNS.map((key) => {
+                  const active = key === 'none' ? !concerns.length : concerns.includes(key);
+                  return (
+                    <button key={key} type="button" onClick={() => toggleConcern(key)} className={cn(chip(active), active && 'bg-brand-500')} aria-pressed={active}>
+                      {active && <Check className="relative size-4" />}
+                      <span className="relative">{t(`home.concern.${key}`)}</span>
+                    </button>
+                  );
+                })}
               </div>
             </fieldset>
             <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="button" onClick={go} className="btn group bg-white px-8 py-4 text-brand-900 hover:bg-brand-50">

@@ -185,6 +185,7 @@ const orderSchema = z.object({
   address: z.string().trim().min(5).max(300),
   notes: z.string().trim().max(500).optional(),
   locale: z.enum(['fr', 'en', 'ar']).default('fr'),
+  paymentMethod: z.enum(['cod', 'bank_transfer']).default('cod'),
   items: z
     .array(z.object({ productId: z.number().int().positive(), quantity: z.number().int().min(1).max(50), size: z.string().trim().max(40).nullish() }))
     .min(1)
@@ -236,10 +237,10 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
     const { rows: [created] } = await db.query(
       `INSERT INTO orders (id, number, customer_name, phone, email, city, address, notes, locale,
                            items_count, subtotal, shipping_fee, total, payment_method)
-       VALUES ($13,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'cod')
+       VALUES ($13,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$14)
        RETURNING id, number, subtotal, shipping_fee, total, items_count, created_at`,
       [number, data.customerName, data.phone, data.email || null, data.city, data.address, data.notes || null,
-        data.locale, itemsCount, subtotal, shippingFee, total, id],
+        data.locale, itemsCount, subtotal, shippingFee, total, id, data.paymentMethod],
     );
 
     for (const l of lines) {
@@ -274,6 +275,7 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
     shippingFee: order.shipping_fee,
     total: order.total,
     createdAt: order.created_at,
+    paymentMethod: data.paymentMethod,
     googleReview: data.email ? {
       email: data.email,
       estimatedDeliveryDate: estimatedDeliveryDate(order.created_at, isCasablanca(data.city, settings.shipping)),
@@ -304,7 +306,7 @@ publicRouter.get('/packs', async (req, res) => {
   const locale = pickLocale(req.query.lang);
   const { category } = req.query;
   const { rows: packs } = await query(
-    `SELECT p.id, p.name, p.description,
+    `SELECT p.id, p.name, p.description, p.routine_period,
             COALESCE((SELECT json_agg(pi.product_id ORDER BY pi.position) FROM pack_items pi WHERE pi.pack_id = p.id), '[]') AS product_ids
        FROM packs p
       WHERE p.is_active ${category ? `AND EXISTS (SELECT 1 FROM pack_categories pc JOIN categories c ON c.id = pc.category_id
@@ -326,6 +328,7 @@ publicRouter.get('/packs', async (req, res) => {
         id: p.id,
         name: tr(p.name, locale),
         description: tr(p.description, locale),
+        routinePeriod: p.routine_period,
         // Inactive or deleted products silently drop out of the pack
         products: p.product_ids.map((id) => byId.get(id)).filter(Boolean),
       }))

@@ -58,6 +58,7 @@ export default function Checkout() {
           cityOther: z.string().optional(),
           address: z.string().trim().min(5, t('checkout.errors.address')),
           notes: z.string().max(500).optional(),
+          paymentMethod: z.enum(['cod', 'bank_transfer']),
         })
         .refine((v) => v.citySelect !== OTHER || (v.cityOther?.trim().length ?? 0) >= 2, {
           path: ['cityOther'],
@@ -73,7 +74,7 @@ export default function Checkout() {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { customerName: '', phone: '', email: '', citySelect: '', cityOther: '', address: '', notes: '' },
+    defaultValues: { customerName: '', phone: '', email: '', citySelect: '', cityOther: '', address: '', notes: '', paymentMethod: 'cod' },
   });
 
   const cityGroups = useMemo(() => {
@@ -104,6 +105,7 @@ export default function Checkout() {
           city: values.citySelect === OTHER ? values.cityOther.trim() : values.citySelect,
           address: values.address,
           notes: values.notes,
+          paymentMethod: values.paymentMethod,
           locale: i18n.language,
           items: items.map((i) => ({ productId: i.id, quantity: i.quantity, size: i.size || undefined })),
         },
@@ -189,16 +191,18 @@ export default function Checkout() {
             </motion.section>
 
             <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="card p-6 sm:p-8">
-              <h2 className="mb-5 text-lg font-medium">{t('checkout.payment')}</h2>
-              <div className="flex items-start gap-4 rounded-2xl border-2 border-brand-500 bg-brand-50/60 p-5">
-                <span className="grid size-11 shrink-0 place-items-center rounded-full bg-brand-500 text-white">
-                  <Banknote className="size-5" />
-                </span>
-                <div>
-                  <p className="font-medium">{t('checkout.cod')}</p>
-                  <p className="mt-1 text-sm text-muted">{t('checkout.codText')}</p>
-                </div>
-              </div>
+              <fieldset className="space-y-3">
+                <legend className="mb-5 flex items-center gap-2 text-lg font-medium"><Banknote className="size-5" />{t('checkout.payment')}</legend>
+                {[['cod', 'cod'], ['bank_transfer', 'transfer']].map(([value, label]) => (
+                  <label key={value} className="flex cursor-pointer items-start gap-3 rounded-2xl border border-line p-4 has-checked:border-brand-500 has-checked:bg-brand-50">
+                    <input type="radio" value={value} {...register('paymentMethod')} className="mt-1 accent-brand-600" />
+                    <span>
+                      <span className="block font-medium">{t(`checkout.${label}`)}</span>
+                      <span className="mt-1 block text-sm text-muted">{t(`checkout.${label}Text`)}</span>
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
             </motion.section>
           </div>
 

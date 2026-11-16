@@ -139,7 +139,7 @@ export function orderEmail(order, items) {
         <tr><td style="padding:6px 0;font-weight:bold;font-size:16px">Total à encaisser</td><td style="text-align:right;font-weight:bold;font-size:16px">${dh(order.total)}</td></tr>
       </table>
       <a href="${esc(adminUrl)}" style="display:block;margin-top:22px;background:#13282d;color:#fff;text-decoration:none;text-align:center;padding:14px;border-radius:999px;font-weight:bold">Voir la commande dans l'admin</a>
-      <p style="font-size:12px;color:#6b7c80;margin-top:16px;text-align:center">Paiement à la livraison · pensez à confirmer la commande par téléphone.</p>
+      <p style="font-size:12px;color:#6b7c80;margin-top:16px;text-align:center">${order.payment_method === 'bank_transfer' ? 'Virement bancaire · contactez la cliente pour lui communiquer les coordonnées.' : 'Paiement à la livraison · pensez à confirmer la commande par téléphone.'}</p>
     </div>
   </div></body></html>`;
 
@@ -153,6 +153,7 @@ export function orderEmail(order, items) {
     '',
     `Livraison : ${Number(order.shipping_fee) ? dh(order.shipping_fee) : 'offerte'}`,
     `Total : ${dh(order.total)}`,
+    order.payment_method === 'bank_transfer' ? 'Paiement : virement bancaire (coordonnées à communiquer à la cliente).' : 'Paiement : à la livraison.',
     '',
     adminUrl,
   ]

@@ -165,7 +165,7 @@ function organizationLd(settings) {
     address: { '@type': 'PostalAddress', addressLocality: c.city, addressCountry: 'MA' },
     areaServed: { '@type': 'Country', name: 'Morocco', identifier: 'MA' },
     currenciesAccepted: 'MAD',
-    paymentAccepted: 'Cash on delivery',
+    paymentAccepted: 'Cash on delivery, bank transfer',
     contactPoint: {
       '@type': 'ContactPoint',
       telephone: c.phone,
@@ -777,7 +777,7 @@ function llmsHeader(s) {
     `${BRAND} is an online shop based in ${s.contact.city}, Morocco, selling 100% authentic Korean skincare (K-beauty). Slogan: "Filter Insta kimshi, walakin skin care kib9a".`,
     '',
     '## Key facts',
-    '- Payment: cash on delivery only, everywhere in Morocco. No online payment.',
+    '- Payment: cash on delivery or bank transfer. The shop provides bank details when confirming an order.',
     `- Delivery fee by city: ${shippingTable(sh)}. Free for orders of more than ${sh.freeAboveItems} products. 24-48h in Casablanca, 2-4 working days elsewhere.`,
     '- Languages: French (/fr), English (/en), Arabic (/ar).',
     `- Contact: phone ${s.contact.phone}, WhatsApp +${s.contact.whatsapp}, email ${s.contact.email}.`,

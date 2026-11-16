@@ -49,9 +49,10 @@ export default function OrderSuccess() {
       </motion.h1>
       <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }} className="mt-4 max-w-lg text-muted">
         {t('success.text', { number: order.number })}
+        {order.paymentMethod === 'bank_transfer' && <> {t('checkout.transferText')}</>}
       </motion.p>
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }} className="card mt-8 w-full max-w-sm p-6">
-        <p className="text-sm text-muted">{t('success.total')}</p>
+        <p className="text-sm text-muted">{t(order.paymentMethod === 'bank_transfer' ? 'success.transferTotal' : 'success.total')}</p>
         <p className="mt-1 text-3xl font-semibold text-brand-700">{formatPrice(order.total)}</p>
         <p className="mt-2 text-xs text-muted">
           {t('cart.subtotal')} {formatPrice(order.subtotal)} · {t('cart.shipping')} {order.shippingFee ? formatPrice(order.shippingFee) : t('common.free')}

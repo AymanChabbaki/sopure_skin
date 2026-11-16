@@ -35,7 +35,7 @@ ordersRouter.get('/', async (req, res) => {
   const [list, count, counts] = await Promise.all([
     query(
       `SELECT id, number, customer_name AS "customerName", phone, city, items_count AS "itemsCount",
-              total, shipping_fee AS "shippingFee", status, created_at AS "createdAt"
+              total, shipping_fee AS "shippingFee", payment_method AS "paymentMethod", status, created_at AS "createdAt"
          FROM orders ${whereSql} ORDER BY created_at DESC LIMIT ${lim} OFFSET ${(pg - 1) * lim}`,
       params,
     ),
@@ -54,11 +54,11 @@ ordersRouter.get('/', async (req, res) => {
 
 ordersRouter.get('/export.csv', async (_req, res) => {
   const { rows } = await query(
-    `SELECT number, created_at, customer_name, phone, city, address, items_count, subtotal, shipping_fee, total, status
+    `SELECT number, created_at, customer_name, phone, city, address, items_count, subtotal, shipping_fee, total, status, payment_method
        FROM orders ORDER BY created_at DESC`,
   );
   const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const header = 'number,created_at,customer_name,phone,city,address,items_count,subtotal,shipping_fee,total,status';
+  const header = 'number,created_at,customer_name,phone,city,address,items_count,subtotal,shipping_fee,total,status,payment_method';
   const body = rows
     .map((r) => Object.values(r).map((v) => esc(v instanceof Date ? v.toISOString() : v)).join(','))
     .join('\n');
