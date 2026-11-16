@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'motion/react';
 import { Check, PackageCheck, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
-import { usePacks } from '../../hooks/useStore.js';
+import { useRoutinePacks } from '../../hooks/useStore.js';
 import { useLocalePath } from '../../hooks/useLocalePath.js';
 import { useCart } from '../../store/cart.js';
 import { SectionHeading, Skeleton } from '../ui/Primitives.jsx';
@@ -56,7 +56,9 @@ function PackCard({ pack, index }) {
           <PackageCheck className="size-4" /> {t('packs.eyebrow', { count: pack.products.length })}
         </p>
         <h3 className="mt-2 font-display text-2xl leading-tight text-ink">{pack.name}</h3>
-        <p className="mt-1 text-xs font-semibold text-brand-700">{t(`packs.period.${pack.routinePeriod || 'any'}`)}</p>
+        {pack.routinePeriod && pack.routinePeriod !== 'none' && (
+          <p className="mt-1 text-xs font-semibold text-brand-700">{t(`packs.period.${pack.routinePeriod}`)}</p>
+        )}
         {pack.description && <p className="mt-1.5 text-sm text-muted">{pack.description}</p>}
       </header>
 
@@ -128,10 +130,10 @@ function PackCard({ pack, index }) {
 }
 
 /** Packs of a routine (category slug). Renders nothing when the routine has no pack. */
-export function RoutinePacks({ category, title, subtitle, className }) {
+export function RoutinePacks({ category, categories, title, subtitle, className, emptyMessage }) {
   const { t } = useTranslation();
-  const { data: packs = [], isLoading } = usePacks(category, { enabled: Boolean(category) });
-  if (!category || (!isLoading && !packs.length)) return null;
+  const { packs, isLoading, isError } = useRoutinePacks(categories ?? (category ? [category] : []));
+  if (!isLoading && !packs.length && (isError || !emptyMessage)) return null;
   return (
     <section className={className}>
       <SectionHeading eyebrow={t('packs.sectionEyebrow')} title={title || t('packs.title')} subtitle={subtitle || t('packs.subtitle')} />
@@ -141,13 +143,13 @@ export function RoutinePacks({ category, title, subtitle, className }) {
             <Skeleton key={i} className="h-96 rounded-[2rem]" />
           ))}
         </div>
-      ) : (
+      ) : packs.length ? (
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {packs.map((pack, i) => (
             <PackCard key={pack.id} pack={pack} index={i} />
           ))}
         </div>
-      )}
+      ) : <p className="rounded-3xl bg-brand-50 p-6 text-center text-ink/80">{emptyMessage}</p>}
     </section>
   );
 }

@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'motion/react';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { RoutinePacks } from '../components/product/Packs.jsx';
-import { usePacks } from '../hooks/useStore.js';
 import { RoutineFinder, RitualSteps } from '../components/home/Sections.jsx';
 import { PageHeader, SectionHeading, Skeleton } from '../components/ui/Primitives.jsx';
 import { staggerContainer, staggerItem } from '../components/ui/Reveal.jsx';
@@ -34,18 +33,19 @@ function RoutineCard({ routine }) {
   );
 }
 
-function RoutineResult({ routine }) {
+function RoutineResult({ routines }) {
   const { t } = useTranslation();
   const lp = useLocalePath();
-  const { data: packs = [], isFetched } = usePacks(routine.slug);
+  const name = routines.length === 1 ? routines[0].name : t('packs.title');
   return (
     <div className="pb-10">
-      <RoutinePacks category={routine.slug} title={routine.name} subtitle={t('packs.routineSubtitle')} />
-      {isFetched && !packs.length && <p className="rounded-3xl bg-brand-50 p-6 text-center text-ink/80">{t('packs.none', { routine: routine.name })}</p>}
-      <div className="mt-6 flex justify-center">
-        <Link to={lp(`/category/${routine.slug}`)} className="btn-outline group">
-          {t('packs.allProducts', { routine: routine.name })} <ArrowRight className="size-4 transition group-hover:translate-x-1 rtl:-scale-x-100" />
-        </Link>
+      <RoutinePacks categories={routines.map((r) => r.slug)} title={name} subtitle={t('packs.routineSubtitle')} emptyMessage={t('packs.none', { routine: name })} />
+      <div className="mt-6 flex flex-wrap justify-center gap-3">
+        {routines.map((routine) => (
+          <Link key={routine.slug} to={lp(`/category/${routine.slug}`)} className="btn-outline group">
+            {t('packs.allProducts', { routine: routine.name })} <ArrowRight className="size-4 transition group-hover:translate-x-1 rtl:-scale-x-100" />
+          </Link>
+        ))}
       </div>
     </div>
   );
@@ -81,7 +81,7 @@ export default function RoutineBuilder() {
           {isLoading ? <Skeleton className="h-40 rounded-3xl" /> : chosenRoutines.length ? (
             <>
               {chosen.partial && <p className="mb-6 rounded-2xl bg-brand-50 p-4 text-center">{t('packs.partialMatch')}</p>}
-              {chosenRoutines.map((routine) => <RoutineResult key={routine.slug} routine={routine} />)}
+              <RoutineResult routines={chosenRoutines} />
             </>
           ) : (
             <div className="flex flex-col items-center gap-4 rounded-3xl bg-brand-50 p-8 text-center">

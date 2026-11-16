@@ -18,7 +18,7 @@ const packSchema = z.object({
   name: i18n.refine((v) => v.fr?.trim(), 'French name is required'),
   description: i18n.default({}),
   isActive: z.boolean().default(true),
-  routinePeriod: z.enum(['any', 'morning', 'night']).default('any'),
+  routinePeriod: z.enum(['none', 'any', 'morning', 'night']).default('none'),
   productIds: z.array(z.number().int().positive()).min(1, 'Choose at least one product').max(20),
   categoryIds: z.array(z.number().int().positive()).default([]),
 });

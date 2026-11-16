@@ -1,4 +1,4 @@
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQueries, useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { api } from '../lib/api.js';
 
@@ -92,14 +92,17 @@ export function shippingSummary(shipping) {
 }
 
 /** Packs offered for a routine (category slug). */
-export function usePacks(category, options = {}) {
+export function useRoutinePacks(categories) {
   const lang = useLang();
-  return useQuery({
-    queryKey: ['packs', lang, category],
-    queryFn: () => api('/packs', { params: { lang, category } }),
-    staleTime: 60_000,
-    ...options,
+  const results = useQueries({
+    queries: [...new Set(categories)].map((category) => ({
+      queryKey: ['packs', lang, category],
+      queryFn: () => api('/packs', { params: { lang, category } }),
+      staleTime: 60_000,
+    })),
   });
+  const unique = new Map(results.flatMap(({ data }) => (data ?? []).map((pack) => [pack.id, pack])));
+  return { packs: [...unique.values()], isLoading: results.some((r) => r.isLoading), isError: results.some((r) => r.isError) };
 }
 
 export function useVideos() {
