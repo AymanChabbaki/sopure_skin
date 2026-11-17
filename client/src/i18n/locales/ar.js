@@ -90,8 +90,16 @@ export default {
     routineSkin: 'نوع بشرتي',
     routineConcern: 'مشاكل بشرتي',
     routineCta: 'اكتشفي روتيني',
-    skin: { mixte: 'مختلطة', normale: 'عادية', seche: 'جافة', grasse: 'دهنية' },
+    skin: { mixte: 'مختلطة', normale: 'عادية', seche: 'جافة', grasse: 'دهنية', mature: 'ناضجة' },
+    routineEyes: 'محيط العين',
+    browseEyeCare: 'تصفّحي منتجات العناية بمحيط العين',
+    eyeConcern: {
+      'cernes-poches': 'الهالات السوداء والانتفاخ',
+      'rides-ridules': 'التجاعيد والخطوط الدقيقة',
+      hydratation: 'ترطيب محيط العين',
+    },
     concern: {
+      'rides-perte-de-fermete': 'التجاعيد وفقدان تماسك البشرة',
       none: 'لا شيء محدد',
       acne: 'حب الشباب',
       taches: 'البقع الداكنة',

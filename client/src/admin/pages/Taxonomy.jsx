@@ -20,7 +20,26 @@ const CONFIG = {
   },
 };
 
-function EditModal({ kind, item, onClose }) {
+const ROUTINE_PRESETS = [
+  ['routine-mature', 'Routine peau mature', 'Mature skin routine', 'روتين البشرة الناضجة'],
+  ...[
+    ['mixte', 'mixte', 'Combination', 'المختلطة'],
+    ['normale', 'normale', 'Normal', 'العادية'],
+    ['seche', 'sèche', 'Dry', 'الجافة'],
+    ['grasse', 'grasse', 'Oily', 'الدهنية'],
+    ['mature', 'mature', 'Mature', 'الناضجة'],
+  ].map(([slug, fr, en, ar]) => [
+    `routine-${slug}-rides-perte-de-fermete`,
+    `Rides & perte de fermeté · peau ${fr}`,
+    `Wrinkles & loss of firmness · ${en} skin`,
+    `التجاعيد وفقدان تماسك البشرة · البشرة ${ar}`,
+  ]),
+  ['routine-contour-des-yeux-cernes-poches', 'Contour des yeux · Cernes & poches', 'Eye area · Dark circles & puffiness', 'محيط العين · الهالات السوداء والانتفاخ'],
+  ['routine-contour-des-yeux-rides-ridules', 'Contour des yeux · Rides & ridules', 'Eye area · Wrinkles & fine lines', 'محيط العين · التجاعيد والخطوط الدقيقة'],
+  ['routine-contour-des-yeux-hydratation', 'Contour des yeux · Hydratation', 'Eye area · Hydration', 'محيط العين · الترطيب'],
+];
+
+function EditModal({ kind, item, existing, onClose }) {
   const cfg = CONFIG[kind];
   const [form, setForm] = useState({ ...cfg.empty, ...item });
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
@@ -55,6 +74,19 @@ function EditModal({ kind, item, onClose }) {
       <form id="tax-form" onSubmit={submit} className="space-y-5">
         {kind === 'categories' ? (
           <>
+            {!item?.id && (
+              <Field label="Modèle pour « Composer ma routine »" hint="Préremplit le nom et l’adresse utilisés par le questionnaire. Après enregistrement, liez la catégorie à un pack dans Packs.">
+                <select className="input" value={ROUTINE_PRESETS.some(([slug]) => slug === form.slug) ? form.slug : ''} onChange={(e) => {
+                  const preset = ROUTINE_PRESETS.find(([slug]) => slug === e.target.value);
+                  if (!preset) return;
+                  const [slug, fr, en, ar] = preset;
+                  setForm((f) => ({ ...f, kind: 'routine', slug, name: { fr, en, ar } }));
+                }}>
+                  <option value="" disabled>Choisir un modèle (facultatif)</option>
+                  {ROUTINE_PRESETS.map(([slug, fr]) => <option key={slug} value={slug} disabled={existing.some((c) => c.slug === slug)}>{fr}</option>)}
+                </select>
+              </Field>
+            )}
             <Field label="Type">
               <div className="flex gap-2">
                 {[
@@ -162,7 +194,7 @@ export default function Taxonomy({ kind }) {
           </section>
         ))
       )}
-      {editing && <EditModal kind={kind} item={editing} onClose={() => setEditing(null)} />}
+      {editing && <EditModal kind={kind} item={editing} existing={data} onClose={() => setEditing(null)} />}
       <ConfirmDialog
         open={Boolean(deleting)}
         onClose={() => setDeleting(null)}

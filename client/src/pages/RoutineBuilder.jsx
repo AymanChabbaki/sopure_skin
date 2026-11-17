@@ -60,8 +60,8 @@ export default function RoutineBuilder() {
   const chosen = selection ?? state;
   const resultRef = useRef(null);
   const chosenRoutines = (chosen?.matches || []).map((slug) => categories.find((c) => c.slug === slug)).filter(Boolean);
-  const choose = (matches, partial) => {
-    setSelection({ matches, partial });
+  const choose = (result) => {
+    setSelection(result);
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
   };
   const routines = categories.filter((c) => c.kind === 'routine' && c.productCount > 0);
@@ -88,6 +88,13 @@ export default function RoutineBuilder() {
               <p>{t('packs.noRoutine')}</p>
               <Link to={lp('/shop')} className="btn-primary">
                 {t('nav.allProducts')}
+              </Link>
+            </div>
+          )}
+          {!isLoading && chosen.eyeCategory && (
+            <div className="mt-5 flex justify-center">
+              <Link to={lp('/category/contour-des-yeux')} className="btn-outline">
+                {t('home.browseEyeCare')} <ArrowRight className="size-4 rtl:-scale-x-100" />
               </Link>
             </div>
           )}

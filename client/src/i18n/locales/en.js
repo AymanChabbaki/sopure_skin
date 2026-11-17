@@ -86,8 +86,16 @@ export default {
     routineSkin: 'My skin type',
     routineConcern: 'My concerns',
     routineCta: 'See my routine',
-    skin: { mixte: 'Combination', normale: 'Normal', seche: 'Dry', grasse: 'Oily' },
+    skin: { mixte: 'Combination', normale: 'Normal', seche: 'Dry', grasse: 'Oily', mature: 'Mature' },
+    routineEyes: 'Eye area',
+    browseEyeCare: 'Browse eye care',
+    eyeConcern: {
+      'cernes-poches': 'Dark circles & puffiness',
+      'rides-ridules': 'Wrinkles & fine lines',
+      hydratation: 'Eye area hydration',
+    },
     concern: {
+      'rides-perte-de-fermete': 'Wrinkles & loss of firmness',
       none: 'Nothing specific',
       acne: 'Acne',
       taches: 'Dark spots',

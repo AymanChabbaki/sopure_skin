@@ -8,6 +8,7 @@ import {
   Sun,
   Flame,
   Leaf,
+  Sparkles,
   Gift,
   Check,
   FlaskConical,
@@ -126,19 +127,24 @@ const SKINS = [
   ['normale', Leaf],
   ['seche', Sun],
   ['grasse', Flame],
+  ['mature', Sparkles],
 ];
-const CONCERNS = ['none', 'acne', 'taches', 'points-noirs', 'rougeurs'];
+const CONCERNS = ['none', 'acne', 'taches', 'points-noirs', 'rougeurs', 'rides-perte-de-fermete'];
+const FACE_SLUG_ORDER = ['rougeurs', 'acne', 'taches', 'points-noirs', 'rides-perte-de-fermete'];
+const EYE_CONCERNS = ['cernes-poches', 'rides-ridules', 'hydratation'];
+const toggleChoice = (values, key) => values.includes(key) ? values.filter((value) => value !== key) : [...values, key];
 
 /** Sends matching routine slugs to the routine page or displays them in place. */
 export function RoutineFinder({ onChoose }) {
   const { t } = useTranslation();
   const lp = useLocalePath();
   const navigate = useNavigate();
-  const { data: categories = [] } = useCategories();
+  const { data: categories = [], isLoading } = useCategories();
   const [skin, setSkin] = useState('mixte');
   const [concerns, setConcerns] = useState([]);
+  const [eyes, setEyes] = useState([]);
   const slugs = useMemo(() => new Set(categories.filter((c) => c.kind === 'routine').map((c) => c.slug)), [categories]);
-  const toggleConcern = (key) => setConcerns((prev) => key === 'none' ? [] : prev.includes(key) ? prev.filter((c) => c !== key) : [...prev, key]);
+  const toggleConcern = (key) => setConcerns((prev) => key === 'none' ? [] : toggleChoice(prev, key));
 
   const go = () => {
     const base = `routine-${skin}`;
@@ -146,7 +152,7 @@ export function RoutineFinder({ onChoose }) {
     const matches = [];
     // Combined routines come first; add targeted results for any concerns they don't cover.
     for (let size = concerns.length; size > 0; size -= 1) {
-      const keys = ['rougeurs', 'acne', 'taches', 'points-noirs'].filter((key) => remaining.has(key));
+      const keys = FACE_SLUG_ORDER.filter((key) => remaining.has(key));
       for (let mask = 1; mask < 2 ** keys.length; mask += 1) {
         const subset = keys.filter((_, i) => mask & (1 << i));
         if (subset.length !== size || !subset.some((key) => remaining.has(key))) continue;
@@ -156,9 +162,18 @@ export function RoutineFinder({ onChoose }) {
         remaining = new Set([...remaining].filter((key) => !subset.includes(key)));
       }
     }
+    const hasFaceMatch = matches.length > 0 || slugs.has(base);
     if ((!matches.length || remaining.size) && slugs.has(base)) matches.push(base);
-    if (onChoose) return onChoose(matches, Boolean(remaining.size));
-    navigate(lp('/routine'), { state: { matches, partial: Boolean(remaining.size) } });
+    const unmatchedEyes = eyes.filter((key) => {
+      const slug = `routine-contour-des-yeux-${key}`;
+      if (!slugs.has(slug)) return true;
+      matches.push(slug);
+      return false;
+    });
+    const eyeCategory = unmatchedEyes.length > 0 && categories.some((c) => c.slug === 'contour-des-yeux');
+    const result = { matches, partial: !hasFaceMatch || remaining.size > 0 || unmatchedEyes.length > 0, eyeCategory };
+    if (onChoose) return onChoose(result);
+    navigate(lp('/routine'), { state: result });
   };
 
   const chip = (active) =>
@@ -205,7 +220,21 @@ export function RoutineFinder({ onChoose }) {
                 })}
               </div>
             </fieldset>
-            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="button" onClick={go} className="btn group bg-white px-8 py-4 text-brand-900 hover:bg-brand-50">
+            <fieldset>
+              <legend className="mb-3 text-xs font-medium tracking-widest text-brand-200 uppercase rtl:tracking-normal">{t('home.routineEyes')}</legend>
+              <div className="flex flex-wrap gap-2">
+                {EYE_CONCERNS.map((key) => {
+                  const active = eyes.includes(key);
+                  return (
+                    <button key={key} type="button" onClick={() => setEyes((prev) => toggleChoice(prev, key))} className={cn(chip(active), active && 'bg-brand-500')} aria-pressed={active}>
+                      {active && <Check className="relative size-4" />}
+                      <span>{t(`home.eyeConcern.${key}`)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="button" onClick={go} disabled={isLoading} className="btn group bg-white px-8 py-4 text-brand-900 hover:bg-brand-50">
               {t('home.routineCta')}
               <ArrowRight className="size-4 transition-transform group-hover:translate-x-1 rtl:-scale-x-100" />
             </motion.button>
