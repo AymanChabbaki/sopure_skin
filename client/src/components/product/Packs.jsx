@@ -29,6 +29,11 @@ function PackCard({ pack, index }) {
   const priceOf = (p) => sizeOf(p)?.price ?? p.price;
   const chosen = pack.products.filter((p) => picked.has(p.id));
   const total = chosen.reduce((sum, p) => sum + priceOf(p), 0);
+  const periods = pack.itemPeriods ?? {};
+  const grouped = pack.products.some((p) => periods[p.id]);
+  const groups = grouped
+    ? ['morning', 'night'].map((slot) => [slot, pack.products.filter((p) => periods[p.id] === slot || periods[p.id] === 'both')])
+    : [['all', pack.products]];
 
   const toggle = (id) =>
     setPicked((prev) => {
@@ -62,8 +67,12 @@ function PackCard({ pack, index }) {
         {pack.description && <p className="mt-1.5 text-sm text-muted">{pack.description}</p>}
       </header>
 
-      <ul className="flex-1 divide-y divide-line px-4">
-        {pack.products.map((p) => {
+      <div className="flex-1 px-4">
+        {groups.filter(([, products]) => products.length).map(([slot, products]) => (
+          <div key={slot} className={cn(slot !== 'all' && 'mt-4')}>
+            {slot !== 'all' && <h4 className="rounded-xl bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-800">{t(`packs.period.${slot}`)}</h4>}
+            <ul className="divide-y divide-line">
+        {products.map((p) => {
           const on = picked.has(p.id);
           const canBuy = available(p);
           return (
@@ -111,7 +120,10 @@ function PackCard({ pack, index }) {
             </li>
           );
         })}
-      </ul>
+            </ul>
+          </div>
+        ))}
+      </div>
 
       <footer className="border-t border-line p-5">
         <div className="mb-3 flex items-baseline justify-between">

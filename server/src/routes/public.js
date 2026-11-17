@@ -307,7 +307,8 @@ publicRouter.get('/packs', async (req, res) => {
   const { category } = req.query;
   const { rows: packs } = await query(
     `SELECT p.id, p.name, p.description, p.routine_period,
-            COALESCE((SELECT json_agg(pi.product_id ORDER BY pi.position) FROM pack_items pi WHERE pi.pack_id = p.id), '[]') AS product_ids
+            COALESCE((SELECT json_agg(pi.product_id ORDER BY pi.position) FROM pack_items pi WHERE pi.pack_id = p.id), '[]') AS product_ids,
+            COALESCE((SELECT json_object_agg(pi.product_id, pi.routine_period) FROM pack_items pi WHERE pi.pack_id = p.id AND pi.routine_period IS NOT NULL), '{}') AS item_periods
        FROM packs p
       WHERE p.is_active ${category ? `AND EXISTS (SELECT 1 FROM pack_categories pc JOIN categories c ON c.id = pc.category_id
                                                    WHERE pc.pack_id = p.id AND c.slug = $1)` : ''}
@@ -329,6 +330,7 @@ publicRouter.get('/packs', async (req, res) => {
         name: tr(p.name, locale),
         description: tr(p.description, locale),
         routinePeriod: p.routine_period,
+        itemPeriods: p.item_periods,
         // Inactive or deleted products silently drop out of the pack
         products: p.product_ids.map((id) => byId.get(id)).filter(Boolean),
       }))

@@ -24,7 +24,7 @@ export function useAllProducts() {
 }
 
 const PERIODS = { none: 'Aucun moment précisé', any: 'Matin et soir', morning: 'Matin uniquement', night: 'Soir uniquement' };
-const EMPTY = { name: { fr: '', en: '', ar: '' }, description: {}, isActive: true, routinePeriod: 'none', productIds: [], categoryIds: [] };
+const EMPTY = { name: { fr: '', en: '', ar: '' }, description: {}, isActive: true, routinePeriod: 'none', productIds: [], itemPeriods: {}, categoryIds: [] };
 
 /** Product picker: browse by category, search, tick products. */
 function ProductPicker({ categories, selected, onToggle }) {
@@ -87,6 +87,8 @@ function ProductPicker({ categories, selected, onToggle }) {
 
 function PackEditor({ pack, categories, products, onClose }) {
   const [form, setForm] = useState(() => (pack ? { ...EMPTY, ...pack } : EMPTY));
+  const [split, setSplit] = useState(() => Boolean(Object.keys(pack?.itemPeriods || {}).length));
+  const [slot, setSlot] = useState('morning');
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
   const byId = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
   const routines = categories.filter((c) => c.kind === 'routine');
@@ -95,6 +97,27 @@ function PackEditor({ pack, categories, products, onClose }) {
   // Functional updates: several quick clicks must all count
   const toggleProduct = (id) =>
     setForm((f) => ({ ...f, productIds: f.productIds.includes(id) ? f.productIds.filter((x) => x !== id) : [...f.productIds, id] }));
+  const inSlot = (period, key) => period === 'both' || period === key;
+  const slotProducts = (key) => form.productIds.filter((id) => inSlot(form.itemPeriods[id], key));
+  const splitIncomplete = split && (!slotProducts('morning').length || !slotProducts('night').length);
+  const toggleSlotProduct = (id) => setForm((f) => {
+    const other = slot === 'morning' ? 'night' : 'morning';
+    const period = f.itemPeriods[id];
+    const next = inSlot(period, slot) ? (period === 'both' ? other : null) : (period === other ? 'both' : slot);
+    const itemPeriods = { ...f.itemPeriods };
+    if (next) itemPeriods[id] = next;
+    else delete itemPeriods[id];
+    const productIds = next ? [...new Set([...f.productIds, id])] : f.productIds.filter((x) => x !== id);
+    return { ...f, productIds, itemPeriods };
+  });
+  const changePeriod = (value) => {
+    setSplit(value === 'split');
+    setForm((f) => ({
+      ...f,
+      routinePeriod: value === 'split' ? 'any' : value,
+      itemPeriods: value === 'split' ? Object.fromEntries(f.productIds.map((id) => [id, 'both'])) : {},
+    }));
+  };
   const move = (i, d) =>
     setForm((f) => {
       const next = [...f.productIds];
@@ -118,7 +141,7 @@ function PackEditor({ pack, categories, products, onClose }) {
           <button type="button" onClick={onClose} className="btn-outline py-2.5">
             Annuler
           </button>
-          <button type="button" disabled={save.isPending || !form.name.fr?.trim() || !form.productIds.length} onClick={() => save.mutate(form)} className="btn-primary py-2.5 disabled:opacity-50">
+          <button type="button" disabled={save.isPending || !form.name.fr?.trim() || !form.productIds.length || splitIncomplete} onClick={() => save.mutate(form)} className="btn-primary py-2.5 disabled:opacity-50">
             {save.isPending && <Loader2 className="size-4 animate-spin" />} Enregistrer
           </button>
         </>
@@ -130,13 +153,27 @@ function PackEditor({ pack, categories, products, onClose }) {
           <I18nInput label="Description courte (optionnel)" value={form.description} onChange={set('description')} multiline rows={2} />
           <label className="block">
             <span className="label">Moment de la routine</span>
-            <select className="input" value={form.routinePeriod || 'none'} onChange={(e) => set('routinePeriod')(e.target.value)}>
+            <select className="input" value={split ? 'split' : form.routinePeriod || 'none'} onChange={(e) => changePeriod(e.target.value)}>
               {Object.entries(PERIODS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              <option value="split">Deux sous-packs : Matin et Soir</option>
             </select>
           </label>
           <div>
             <p className="label">Produits — choisissez par catégorie</p>
-            <ProductPicker categories={categories} selected={form.productIds} onToggle={toggleProduct} />
+            {split && (
+              <>
+                <div className="mb-2 flex gap-2">
+                  {[['morning', 'Matin'], ['night', 'Soir']].map(([key, label]) => (
+                    <button key={key} type="button" aria-pressed={slot === key} onClick={() => setSlot(key)} className={cn('rounded-full border px-4 py-2 text-sm font-medium', slot === key ? 'border-brand-500 bg-brand-50 text-brand-800' : 'border-line')}>
+                      {label} ({slotProducts(key).length})
+                    </button>
+                  ))}
+                </div>
+                <p className="mb-3 text-xs text-muted">Choisissez les produits de chaque sous-pack. Un produit commun aux deux compte une seule fois dans le total.</p>
+                {splitIncomplete && <p className="mb-3 text-xs text-amber-700">Ajoutez au moins un produit dans chaque sous-pack.</p>}
+              </>
+            )}
+            <ProductPicker categories={categories} selected={split ? slotProducts(slot) : form.productIds} onToggle={split ? toggleSlotProduct : toggleProduct} />
           </div>
         </div>
 
@@ -176,14 +213,21 @@ function PackEditor({ pack, categories, products, onClose }) {
                       <motion.li key={id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center gap-2 px-3 py-2">
                         <span className="w-4 text-xs text-muted">{i + 1}</span>
                         <span className="size-9 shrink-0 overflow-hidden rounded-lg bg-sand">{p?.image && <img src={p.image} alt="" className="size-full object-contain mix-blend-multiply" />}</span>
-                        <span className="line-clamp-2 min-w-0 flex-1 text-xs">{p?.name || `#${id}`}</span>
+                        <span className="min-w-0 flex-1 text-xs">
+                          <span className="line-clamp-2">{p?.name || `#${id}`}</span>
+                          {split && <span className="text-muted">{{ morning: 'Matin', night: 'Soir', both: 'Matin et soir' }[form.itemPeriods[id]]}</span>}
+                        </span>
                         <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="icon-btn size-7 disabled:opacity-30" aria-label="Monter">
                           <ArrowUp className="size-3.5" />
                         </button>
                         <button type="button" onClick={() => move(i, 1)} disabled={i === form.productIds.length - 1} className="icon-btn size-7 disabled:opacity-30" aria-label="Descendre">
                           <ArrowDown className="size-3.5" />
                         </button>
-                        <button type="button" onClick={() => toggleProduct(id)} className="icon-btn size-7 text-muted hover:text-rose-600" aria-label="Retirer">
+                        <button type="button" onClick={() => setForm((f) => {
+                          const itemPeriods = { ...f.itemPeriods };
+                          delete itemPeriods[id];
+                          return { ...f, itemPeriods, productIds: f.productIds.filter((x) => x !== id) };
+                        })} className="icon-btn size-7 text-muted hover:text-rose-600" aria-label="Retirer">
                           <X className="size-3.5" />
                         </button>
                       </motion.li>

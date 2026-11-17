@@ -20,13 +20,21 @@ const packSchema = z.object({
   isActive: z.boolean().default(true),
   routinePeriod: z.enum(['none', 'any', 'morning', 'night']).default('none'),
   productIds: z.array(z.number().int().positive()).min(1, 'Choose at least one product').max(20),
+  itemPeriods: z.record(z.string(), z.enum(['morning', 'night', 'both'])).default({}),
   categoryIds: z.array(z.number().int().positive()).default([]),
-});
+}).refine(({ productIds, routinePeriod, itemPeriods }) => {
+  if (!Object.keys(itemPeriods).length) return true;
+  const periods = productIds.map((id) => itemPeriods[id]);
+  return routinePeriod === 'any' && periods.every(Boolean)
+    && periods.some((period) => period === 'morning' || period === 'both')
+    && periods.some((period) => period === 'night' || period === 'both');
+}, { path: ['itemPeriods'], message: 'Chaque sous-pack doit contenir au moins un produit.' });
 
 packsRouter.get('/', async (_req, res) => {
   const { rows } = await query(
     `SELECT p.id, p.name, p.description, p.is_active AS "isActive", p.routine_period AS "routinePeriod", p.position,
             COALESCE((SELECT json_agg(pi.product_id ORDER BY pi.position) FROM pack_items pi WHERE pi.pack_id = p.id), '[]') AS "productIds",
+            COALESCE((SELECT json_object_agg(pi.product_id, pi.routine_period) FROM pack_items pi WHERE pi.pack_id = p.id AND pi.routine_period IS NOT NULL), '{}') AS "itemPeriods",
             COALESCE((SELECT json_agg(pc.category_id) FROM pack_categories pc WHERE pc.pack_id = p.id), '[]') AS "categoryIds",
             COALESCE((SELECT sum(pr.price) FROM pack_items pi JOIN products pr ON pr.id = pi.product_id WHERE pi.pack_id = p.id), 0) AS total
        FROM packs p ORDER BY p.position, p.id`,
@@ -36,9 +44,10 @@ packsRouter.get('/', async (_req, res) => {
 
 async function savePackRelations(db, id, d) {
   await db.query('DELETE FROM pack_items WHERE pack_id = $1', [id]);
+  const ids = [...new Set(d.productIds)];
   await db.query(
-    'INSERT INTO pack_items (pack_id, product_id, position) SELECT $1, x.id, x.ord FROM unnest($2::int[]) WITH ORDINALITY AS x(id, ord)',
-    [id, [...new Set(d.productIds)]],
+    'INSERT INTO pack_items (pack_id, product_id, position, routine_period) SELECT $1, x.id, x.ord, x.period FROM unnest($2::int[], $3::text[]) WITH ORDINALITY AS x(id, period, ord)',
+    [id, ids, ids.map((productId) => d.routinePeriod === 'any' ? d.itemPeriods[productId] ?? null : null)],
   );
   await db.query('DELETE FROM pack_categories WHERE pack_id = $1', [id]);
   if (d.categoryIds.length) {
