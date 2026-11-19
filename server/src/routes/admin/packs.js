@@ -13,6 +13,11 @@ const orderSchema = z.object({ ids: z.array(z.number().int().positive()).max(500
 /* ---------------------------------- Packs ---------------------------------- */
 
 export const packsRouter = Router();
+const EYE_ROUTINES = {
+  'cernes-poches': { fr: 'Contour des yeux · Cernes & poches', en: 'Eye area · Dark circles & puffiness', ar: 'محيط العين · الهالات السوداء والانتفاخ' },
+  'rides-ridules': { fr: 'Contour des yeux · Rides & ridules', en: 'Eye area · Wrinkles & fine lines', ar: 'محيط العين · التجاعيد والخطوط الدقيقة' },
+  hydratation: { fr: 'Contour des yeux · Hydratation', en: 'Eye area · Hydration', ar: 'محيط العين · الترطيب' },
+};
 
 const packSchema = z.object({
   name: i18n.refine((v) => v.fr?.trim(), 'French name is required'),
@@ -22,6 +27,7 @@ const packSchema = z.object({
   productIds: z.array(z.number().int().positive()).min(1, 'Choose at least one product').max(20),
   itemPeriods: z.record(z.string(), z.enum(['morning', 'night', 'both'])).default({}),
   categoryIds: z.array(z.number().int().positive()).default([]),
+  eyeConcerns: z.array(z.enum(['cernes-poches', 'rides-ridules', 'hydratation'])).default([]),
 }).refine(({ productIds, routinePeriod, itemPeriods }) => {
   if (!Object.keys(itemPeriods).length) return true;
   const periods = productIds.map((id) => itemPeriods[id]);
@@ -50,8 +56,17 @@ async function savePackRelations(db, id, d) {
     [id, ids, ids.map((productId) => d.routinePeriod === 'any' ? d.itemPeriods[productId] ?? null : null)],
   );
   await db.query('DELETE FROM pack_categories WHERE pack_id = $1', [id]);
-  if (d.categoryIds.length) {
-    await db.query('INSERT INTO pack_categories (pack_id, category_id) SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING', [id, d.categoryIds]);
+  const categoryIds = [...d.categoryIds];
+  for (const key of new Set(d.eyeConcerns)) {
+    const { rows: [category] } = await db.query(
+      `INSERT INTO categories (slug, kind, name) VALUES ($1, 'routine', $2)
+       ON CONFLICT (slug) DO UPDATE SET slug = EXCLUDED.slug RETURNING id`,
+      [`routine-contour-des-yeux-${key}`, EYE_ROUTINES[key]],
+    );
+    categoryIds.push(category.id);
+  }
+  if (categoryIds.length) {
+    await db.query('INSERT INTO pack_categories (pack_id, category_id) SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING', [id, categoryIds]);
   }
 }
 

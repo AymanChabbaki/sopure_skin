@@ -24,6 +24,7 @@ export function useAllProducts() {
 }
 
 const PERIODS = { none: 'Aucun moment précisé', any: 'Matin et soir', morning: 'Matin uniquement', night: 'Soir uniquement' };
+const EYE_CONCERNS = [['cernes-poches', 'Cernes & poches'], ['rides-ridules', 'Rides & ridules'], ['hydratation', 'Hydratation du contour des yeux']];
 const EMPTY = { name: { fr: '', en: '', ar: '' }, description: {}, isActive: true, routinePeriod: 'none', productIds: [], itemPeriods: {}, categoryIds: [] };
 
 /** Product picker: browse by category, search, tick products. */
@@ -86,12 +87,16 @@ function ProductPicker({ categories, selected, onToggle }) {
 }
 
 function PackEditor({ pack, categories, products, onClose }) {
-  const [form, setForm] = useState(() => (pack ? { ...EMPTY, ...pack } : EMPTY));
+  const [form, setForm] = useState(() => ({
+    ...EMPTY, ...pack,
+    eyeConcerns: EYE_CONCERNS.filter(([key]) => categories.some((c) => c.slug === `routine-contour-des-yeux-${key}` && pack?.categoryIds.includes(c.id))).map(([key]) => key),
+  }));
   const [split, setSplit] = useState(() => Boolean(Object.keys(pack?.itemPeriods || {}).length));
   const [slot, setSlot] = useState('morning');
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
   const byId = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
-  const routines = categories.filter((c) => c.kind === 'routine' || c.slug === 'contour-des-yeux');
+  const isEyeRoutine = (c) => EYE_CONCERNS.some(([key]) => c.slug === `routine-contour-des-yeux-${key}`);
+  const routines = categories.filter((c) => !isEyeRoutine(c) && (c.kind === 'routine' || c.slug === 'contour-des-yeux'));
   const total = form.productIds.reduce((s, id) => s + (byId.get(id)?.price || 0), 0);
 
   // Functional updates: several quick clicks must all count
@@ -125,7 +130,10 @@ function PackEditor({ pack, categories, products, onClose }) {
       return { ...f, productIds: next };
     });
 
-  const save = useAdminMutation((body) => adminApi(pack ? `/packs/${pack.id}` : '/packs', { method: pack ? 'PUT' : 'POST', body }), {
+  const save = useAdminMutation((body) => adminApi(pack ? `/packs/${pack.id}` : '/packs', {
+    method: pack ? 'PUT' : 'POST',
+    body: { ...body, categoryIds: body.categoryIds.filter((id) => !categories.some((c) => c.id === id && isEyeRoutine(c))) },
+  }), {
     success: pack ? 'Pack enregistré' : 'Pack créé',
     onSuccess: onClose,
   });
@@ -197,7 +205,21 @@ function PackEditor({ pack, categories, products, onClose }) {
                 );
               })}
             </div>
-            {!form.categoryIds.length && <p className="mt-2 text-xs text-amber-700">Choisissez au moins une routine pour que le pack apparaisse.</p>}
+            <fieldset className="mt-4">
+              <legend className="label">Contour des yeux — besoins ciblés</legend>
+              <div className="flex flex-wrap gap-1.5">
+                {EYE_CONCERNS.map(([key, label]) => {
+                  const active = form.eyeConcerns.includes(key);
+                  return (
+                    <button key={key} type="button" aria-pressed={active} onClick={() => setForm((f) => ({ ...f, eyeConcerns: active ? f.eyeConcerns.filter((v) => v !== key) : [...f.eyeConcerns, key] }))} className={cn('rounded-full border px-3 py-1.5 text-xs transition', active ? 'border-brand-500 bg-brand-500 text-white' : 'border-line hover:border-brand-300')}>
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-xs text-muted">Le pack apparaîtra pour les besoins cochés dans le questionnaire. Les catégories manquantes seront créées à l’enregistrement.</p>
+            </fieldset>
+            {!form.categoryIds.length && !form.eyeConcerns.length && <p className="mt-2 text-xs text-amber-700">Choisissez au moins une routine pour que le pack apparaisse.</p>}
           </div>
           <div className="rounded-2xl border border-line">
             <p className="flex items-center justify-between border-b border-line px-4 py-3 text-sm font-medium">

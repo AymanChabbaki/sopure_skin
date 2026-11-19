@@ -228,7 +228,7 @@ export function RoutineFinder({ onChoose }) {
                 {EYE_CONCERNS.map((key) => {
                   const active = eyes.includes(key);
                   return (
-                    <button key={key} type="button" onClick={() => setEyes((prev) => toggleChoice(prev, key))} className={cn(chip(active), active && 'bg-brand-500')} aria-pressed={active}>
+                    <button key={key} type="button" onClick={() => setEyes((prev) => prev.includes(key) ? [] : [key])} className={cn(chip(active), active && 'bg-brand-500')} aria-pressed={active}>
                       {active && <Check className="relative size-4" />}
                       <span>{t(`home.eyeConcern.${key}`)}</span>
                     </button>
