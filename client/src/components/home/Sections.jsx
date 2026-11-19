@@ -141,15 +141,19 @@ export function RoutineFinder({ onChoose }) {
   const lp = useLocalePath();
   const navigate = useNavigate();
   const { data: categories = [], isLoading } = useCategories();
-  const [skin, setSkin] = useState('mixte');
+  // Skin type is optional when an eye-area concern is chosen (eye routines do not depend on it)
+  const [skin, setSkin] = useState(null);
   const [concerns, setConcerns] = useState([]);
   const [eyes, setEyes] = useState([]);
   const slugs = useMemo(() => routineSlugMap(categories), [categories]);
   const toggleConcern = (key) => setConcerns((prev) => key === 'none' ? [] : toggleChoice(prev, key));
+  const canSubmit = Boolean(skin || eyes.length);
 
   const go = () => {
+    if (!canSubmit) return;
     const base = `routine-${skin}`;
-    let remaining = new Set(concerns);
+    // Face concerns need a skin type: without one, only the eye routine is searched
+    let remaining = new Set(skin ? concerns : []);
     const matches = [];
     // Combined routines come first; add targeted results for any concerns they don't cover.
     for (let size = concerns.length; size > 0; size -= 1) {
@@ -163,8 +167,8 @@ export function RoutineFinder({ onChoose }) {
         remaining = new Set([...remaining].filter((key) => !subset.includes(key)));
       }
     }
-    const hasFaceMatch = matches.length > 0 || slugs.has(base);
-    if ((!matches.length || remaining.size) && slugs.has(base)) matches.push(slugs.get(base));
+    const hasFaceMatch = !skin || matches.length > 0 || slugs.has(base);
+    if (skin && (!matches.length || remaining.size) && slugs.has(base)) matches.push(slugs.get(base));
     const unmatchedEyes = eyes.filter((key) => {
       const slug = `routine-contour-des-yeux-${key}`;
       if (!slugs.has(slug)) return true;
@@ -197,10 +201,13 @@ export function RoutineFinder({ onChoose }) {
           </div>
           <div className="space-y-7">
             <fieldset>
-              <legend className="mb-3 text-xs font-medium tracking-widest text-brand-200 uppercase rtl:tracking-normal">{t('home.routineSkin')}</legend>
+              <legend className="mb-3 text-xs font-medium tracking-widest text-brand-200 uppercase rtl:tracking-normal">
+                {t('home.routineSkin')}
+                {eyes.length > 0 && <span className="ms-1.5 normal-case tracking-normal text-white/50">({t('home.routineOptional')})</span>}
+              </legend>
               <div className="flex flex-wrap gap-2">
                 {SKINS.map(([key, Icon]) => (
-                  <button key={key} type="button" onClick={() => setSkin(key)} className={chip(skin === key)} aria-pressed={skin === key}>
+                  <button key={key} type="button" onClick={() => setSkin((prev) => (prev === key ? null : key))} className={chip(skin === key)} aria-pressed={skin === key}>
                     {skin === key && <motion.span layoutId="skin-pill" className="absolute inset-0 rounded-full bg-brand-500" transition={{ type: 'spring', stiffness: 400, damping: 30 }} />}
                     <Icon className="relative size-4" />
                     <span className="relative">{t(`home.skin.${key}`)}</span>
@@ -208,7 +215,7 @@ export function RoutineFinder({ onChoose }) {
                 ))}
               </div>
             </fieldset>
-            <fieldset>
+            <fieldset disabled={!skin} className={cn('transition-opacity', !skin && 'opacity-40')}>
               <legend className="mb-3 text-xs font-medium tracking-widest text-brand-200 uppercase rtl:tracking-normal">{t('home.routineConcern')}</legend>
               <div className="flex flex-wrap gap-2">
                 {CONCERNS.map((key) => {
@@ -236,7 +243,7 @@ export function RoutineFinder({ onChoose }) {
                 })}
               </div>
             </fieldset>
-            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="button" onClick={go} disabled={isLoading} className="btn group bg-white px-8 py-4 text-brand-900 hover:bg-brand-50">
+            <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="button" onClick={go} disabled={isLoading || !canSubmit} className="btn group bg-white px-8 py-4 text-brand-900 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50">
               {t('home.routineCta')}
               <ArrowRight className="size-4 transition-transform group-hover:translate-x-1 rtl:-scale-x-100" />
             </motion.button>

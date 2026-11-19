@@ -84,6 +84,7 @@ export default {
     routineTitle: 'Your tailored routine in 2 clicks',
     routineSubtitle: 'Choose your skin type and select one or more concerns.',
     routineSkin: 'My skin type',
+    routineOptional: 'optional',
     routineConcern: 'My concerns',
     routineCta: 'See my routine',
     skin: { mixte: 'Combination', normale: 'Normal', seche: 'Dry', grasse: 'Oily', mature: 'Mature' },

@@ -88,6 +88,7 @@ export default {
     routineTitle: 'روتينك المخصص بنقرتين',
     routineSubtitle: 'اختاري نوع بشرتك وحددي مشكلة واحدة أو أكثر.',
     routineSkin: 'نوع بشرتي',
+    routineOptional: 'اختياري',
     routineConcern: 'مشاكل بشرتي',
     routineCta: 'اكتشفي روتيني',
     skin: { mixte: 'مختلطة', normale: 'عادية', seche: 'جافة', grasse: 'دهنية', mature: 'ناضجة' },

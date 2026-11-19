@@ -84,6 +84,7 @@ export default {
     routineTitle: 'Votre routine sur mesure en 2 clics',
     routineSubtitle: 'Indiquez votre type de peau et sélectionnez une ou plusieurs préoccupations.',
     routineSkin: 'Mon type de peau',
+    routineOptional: 'optionnel',
     routineConcern: 'Mes préoccupations',
     routineCta: 'Voir ma routine',
     skin: { mixte: 'Mixte', normale: 'Normale', seche: 'Sèche', grasse: 'Grasse', mature: 'Mature' },
