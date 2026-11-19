@@ -91,7 +91,7 @@ function PackEditor({ pack, categories, products, onClose }) {
   const [slot, setSlot] = useState('morning');
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
   const byId = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
-  const routines = categories.filter((c) => c.kind === 'routine');
+  const routines = categories.filter((c) => c.kind === 'routine' || c.slug === 'contour-des-yeux');
   const total = form.productIds.reduce((s, id) => s + (byId.get(id)?.price || 0), 0);
 
   // Functional updates: several quick clicks must all count
@@ -181,6 +181,7 @@ function PackEditor({ pack, categories, products, onClose }) {
           <Switch checked={form.isActive} onChange={set('isActive')} label="Visible sur le site" description="Dans « Composer ma routine » et les pages routine" />
           <div>
             <p className="label">Routines où afficher ce pack</p>
+            <p className="mb-2 text-xs text-muted">Pour un pack yeux, choisissez « Contour des yeux » ou une routine yeux ciblée.</p>
             <div className="flex max-h-52 flex-wrap gap-1.5 overflow-y-auto">
               {routines.map((c) => {
                 const on = form.categoryIds.includes(c.id);

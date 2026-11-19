@@ -9,6 +9,7 @@
 export const SNAPSHOT_PREFIXES = ['/settings', '/categories', '/brands', '/articles', '/videos', '/products', '/packs', '/seo'];
 
 export const isSnapshotted = (path, searchParams) =>
+  !['/categories', '/packs'].includes(path) &&
   SNAPSHOT_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`)) &&
   !['q', 'minPrice', 'maxPrice'].some((k) => searchParams.has(k));
 

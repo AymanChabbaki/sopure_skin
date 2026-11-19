@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { routineSlugMap } from '../../lib/routines.js';
 import { Link, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'motion/react';
@@ -143,7 +144,7 @@ export function RoutineFinder({ onChoose }) {
   const [skin, setSkin] = useState('mixte');
   const [concerns, setConcerns] = useState([]);
   const [eyes, setEyes] = useState([]);
-  const slugs = useMemo(() => new Set(categories.filter((c) => c.kind === 'routine').map((c) => c.slug)), [categories]);
+  const slugs = useMemo(() => routineSlugMap(categories), [categories]);
   const toggleConcern = (key) => setConcerns((prev) => key === 'none' ? [] : toggleChoice(prev, key));
 
   const go = () => {
@@ -158,19 +159,20 @@ export function RoutineFinder({ onChoose }) {
         if (subset.length !== size || !subset.some((key) => remaining.has(key))) continue;
         const slug = `${base}-${subset.join('-')}`;
         if (!slugs.has(slug)) continue;
-        matches.push(slug);
+        matches.push(slugs.get(slug));
         remaining = new Set([...remaining].filter((key) => !subset.includes(key)));
       }
     }
     const hasFaceMatch = matches.length > 0 || slugs.has(base);
-    if ((!matches.length || remaining.size) && slugs.has(base)) matches.push(base);
+    if ((!matches.length || remaining.size) && slugs.has(base)) matches.push(slugs.get(base));
     const unmatchedEyes = eyes.filter((key) => {
       const slug = `routine-contour-des-yeux-${key}`;
       if (!slugs.has(slug)) return true;
-      matches.push(slug);
+      matches.push(slugs.get(slug));
       return false;
     });
     const eyeCategory = unmatchedEyes.length > 0 && categories.some((c) => c.slug === 'contour-des-yeux');
+    if (eyeCategory) matches.push('contour-des-yeux');
     const result = { matches, partial: !hasFaceMatch || remaining.size > 0 || unmatchedEyes.length > 0, eyeCategory };
     if (onChoose) return onChoose(result);
     navigate(lp('/routine'), { state: result });

@@ -202,7 +202,7 @@ export default function Shop() {
       </PageHeader>
 
       {/* Routine pages: the ready-made packs first */}
-      {category?.kind === 'routine' && <RoutinePacks category={category.slug} className="container-x pb-12" />}
+      {(category?.kind === 'routine' || category?.slug === 'contour-des-yeux') && <RoutinePacks category={category.slug} className="container-x pb-12" />}
 
       <div className="container-x pb-20">
         {/* Toolbar */}

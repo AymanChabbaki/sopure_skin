@@ -55,6 +55,10 @@ publicRouter.get('/categories', async (req, res) => {
     `SELECT c.id, c.slug, c.kind, c.name, c.description, c.image_url,
             (SELECT count(*) FROM product_categories pc JOIN products p ON p.id = pc.product_id
               WHERE pc.category_id = c.id AND p.is_active) AS product_count,
+            (SELECT count(*) FROM pack_categories pc JOIN packs p ON p.id = pc.pack_id
+              WHERE pc.category_id = c.id AND p.is_active AND EXISTS (
+                SELECT 1 FROM pack_items pi JOIN products pr ON pr.id = pi.product_id
+                WHERE pi.pack_id = p.id AND pr.is_active)) AS pack_count,
             (SELECT i.thumb_url FROM product_categories pc JOIN product_images i ON i.product_id = pc.product_id
               WHERE pc.category_id = c.id ORDER BY i.position LIMIT 1) AS fallback_image
        FROM categories c WHERE c.is_visible ORDER BY c.kind, c.position, c.id`,
@@ -68,6 +72,7 @@ publicRouter.get('/categories', async (req, res) => {
       description: tr(c.description, req.locale),
       image: c.image_url || c.fallback_image,
       productCount: c.product_count,
+      packCount: c.pack_count,
     })),
   );
 });

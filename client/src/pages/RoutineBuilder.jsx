@@ -9,6 +9,7 @@ import { PageHeader, SectionHeading, Skeleton } from '../components/ui/Primitive
 import { staggerContainer, staggerItem } from '../components/ui/Reveal.jsx';
 import { useCategories } from '../hooks/useStore.js';
 import { useLocalePath } from '../hooks/useLocalePath.js';
+import { canonicalRoutineSlug } from '../lib/routines.js';
 
 /** Routine card: skin-type routine with its product count. */
 function RoutineCard({ routine }) {
@@ -64,10 +65,10 @@ export default function RoutineBuilder() {
     setSelection(result);
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
   };
-  const routines = categories.filter((c) => c.kind === 'routine' && c.productCount > 0);
+  const routines = categories.filter((c) => c.kind === 'routine' && (c.productCount > 0 || c.packCount > 0));
   // "routine-mixte" = general routine for a skin type; "routine-mixte-acne" = targeted routine
-  const general = routines.filter((r) => r.slug.split('-').length === 2);
-  const targeted = routines.filter((r) => r.slug.split('-').length > 2);
+  const general = routines.filter((r) => canonicalRoutineSlug(r.slug).split('-').length === 2);
+  const targeted = routines.filter((r) => canonicalRoutineSlug(r.slug).split('-').length > 2);
 
   return (
     <>

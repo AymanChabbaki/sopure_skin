@@ -12,7 +12,7 @@ export function useSettings() {
 
 export function useCategories() {
   const lang = useLang();
-  return useQuery({ queryKey: ['categories', lang], queryFn: () => api('/categories', { params: { lang } }), staleTime: 10 * 60_000 });
+  return useQuery({ queryKey: ['categories', lang], queryFn: () => api('/categories', { params: { lang } }), staleTime: 30_000 });
 }
 
 export function useBrands() {
