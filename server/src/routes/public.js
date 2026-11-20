@@ -8,6 +8,7 @@ import { pickLocale, tr, HttpError } from '../lib/utils.js';
 import { validate } from '../middleware/errors.js';
 import { adjustSize, publicSizes, sizesStock } from '../lib/sizes.js';
 import { notifyNewOrder } from '../lib/mailer.js';
+import { purchaseEvent, sendMetaEvents } from '../lib/metaCapi.js';
 import { markChanged } from '../lib/publish.js';
 import { estimatedDeliveryDate } from '../lib/delivery.js';
 import { CDN_API } from '../lib/cache.js';
@@ -267,6 +268,8 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
 
   // Email alert to the shop (awaited so serverless hosts don't cut it off; it never fails the order)
   await notifyNewOrder(order.id);
+  // Meta Conversions API: same Purchase as the browser Pixel (deduplicated by event_id)
+  await sendMetaEvents([purchaseEvent(req, data, order)]);
   // Stock changed: the static product pages are rebuilt on the next admin visit (lib/publish.js)
   await markChanged().catch(() => null);
 
