@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { track } from '../lib/pixel.js';
 
 const lineKey = (id, size) => (size ? `${id}|${size}` : String(id));
 
@@ -14,8 +15,14 @@ export const useCart = create(
       open: () => set({ isOpen: true }),
       close: () => set({ isOpen: false }),
       /** `size` ({ label, price }) is required for products with sizes; each size is its own cart line. */
-      add: (product, quantity = 1, size = null) =>
-        set((state) => {
+      add: (product, quantity = 1, size = null) => {
+        track('AddToCart', {
+          content_ids: [String(product.id)],
+          content_type: 'product',
+          content_name: typeof product.name === 'string' ? product.name : undefined,
+          value: Number(size?.price ?? product.price) * quantity || 0,
+        });
+        return set((state) => {
           const key = lineKey(product.id, size?.label);
           const existing = state.items.find((i) => i.key === key);
           const items = existing
@@ -36,7 +43,8 @@ export const useCart = create(
                 },
               ];
           return { items, isOpen: true };
-        }),
+        });
+      },
       setQuantity: (key, quantity) =>
         set((state) => ({
           items: quantity <= 0 ? state.items.filter((i) => i.key !== key) : state.items.map((i) => (i.key === key ? { ...i, quantity } : i)),

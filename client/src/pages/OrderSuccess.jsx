@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link, Navigate, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'motion/react';
@@ -8,12 +9,18 @@ import { useLocalePath } from '../hooks/useLocalePath.js';
 import { formatPrice } from '../lib/format.js';
 import { GoogleReviewOptIn } from '../components/GoogleCustomerReviews.jsx';
 import { TrustpilotInvite } from '../components/TrustpilotInvite.jsx';
+import { trackPurchase } from '../lib/pixel.js';
 
 export default function OrderSuccess() {
   const { t } = useTranslation();
   const lp = useLocalePath();
   const { state: order } = useLocation();
   const { data: settings } = useSettings();
+
+  // Meta Pixel: the order is placed (cash on delivery counts as a purchase intent confirmed by the customer)
+  useEffect(() => {
+    if (order?.number) trackPurchase(order);
+  }, [order]);
 
   if (!order?.number) return <Navigate to={lp('/')} replace />;
   const wa = settings?.contact?.whatsapp;

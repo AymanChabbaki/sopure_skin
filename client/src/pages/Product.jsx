@@ -14,6 +14,7 @@ import { useLocalePath } from '../hooks/useLocalePath.js';
 import { useCart } from '../store/cart.js';
 import { useWishlist } from '../store/wishlist.js';
 import { cn, discountPercent, formatPrice } from '../lib/format.js';
+import { track } from '../lib/pixel.js';
 
 function Gallery({ images, name }) {
   const { i18n } = useTranslation();
@@ -153,6 +154,12 @@ export default function Product() {
     setQty(1);
     setSizeLabel(null);
   }, [slug]);
+
+  // Meta Pixel: product viewed
+  useEffect(() => {
+    if (!product?.id) return;
+    track('ViewContent', { content_ids: [String(product.id)], content_type: 'product', content_name: typeof product.name === 'string' ? product.name : undefined, value: Number(product.price) || 0 });
+  }, [product?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) {
     return (

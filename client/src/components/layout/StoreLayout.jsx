@@ -1,4 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { useLocation } from 'react-router';
+import { track } from '../../lib/pixel.js';
 import { Outlet, ScrollRestoration } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { AnnouncementBar } from './AnnouncementBar.jsx';
@@ -18,6 +20,26 @@ export function StoreLayout({ lang }) {
   useEffect(() => {
     if (i18n.language !== lang) i18n.changeLanguage(lang);
   }, [lang, i18n]);
+
+  // Meta Pixel: PageView on each SPA navigation (the first one is sent by index.html)
+  const { pathname } = useLocation();
+  const firstView = useRef(true);
+  useEffect(() => {
+    if (firstView.current) {
+      firstView.current = false;
+      return;
+    }
+    track('PageView');
+  }, [pathname]);
+
+  // Meta Pixel: any WhatsApp link click counts as a Contact
+  useEffect(() => {
+    const onClick = (e) => {
+      if (e.target.closest?.('a[href*="wa.me"]')) track('Contact', { content_name: 'WhatsApp' });
+    };
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+  }, []);
 
   return (
     <>

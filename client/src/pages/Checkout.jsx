@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useForm, useWatch } from 'react-hook-form';
@@ -14,6 +14,7 @@ import { useLocalePath } from '../hooks/useLocalePath.js';
 import { api } from '../lib/api.js';
 import { CITIES } from '../lib/cities.js';
 import { cn, formatPrice } from '../lib/format.js';
+import { track } from '../lib/pixel.js';
 
 const OTHER = '__other__';
 const PHONE_RE = /^(\+212|0)[\s.-]?[5-7](?:[\s.-]?\d){8}$/;
@@ -44,6 +45,14 @@ export default function Checkout() {
   const clear = useCart((s) => s.clear);
   const count = useCartCount();
   const subtotal = useCartSubtotal();
+
+  // Meta Pixel: checkout started (once per visit of the page)
+  const checkoutTracked = useRef(false);
+  useEffect(() => {
+    if (checkoutTracked.current || !items.length) return;
+    checkoutTracked.current = true;
+    track('InitiateCheckout', { content_ids: [...new Set(items.map((i) => String(i.id)))], content_type: 'product', num_items: count, value: subtotal });
+  }, [items, count, subtotal]);
   const { data: settings } = useSettings();
   // Set before the cart is cleared so the empty-cart guard does not redirect to /cart
   const placed = useRef(false);
