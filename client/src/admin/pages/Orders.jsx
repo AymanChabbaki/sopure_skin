@@ -1,6 +1,6 @@
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
-import { Download, Phone } from 'lucide-react';
+import { Download, Phone, Repeat } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa6';
 import { Card, PageTitle, Pagination, SearchInput, StatusBadge, ORDER_STATUSES, useAdminQuery, money, dateTime } from '../ui.jsx';
 import { Skeleton } from '../../components/ui/Primitives.jsx';
@@ -8,6 +8,28 @@ import { cn } from '../../lib/format.js';
 
 /** "06 12.." -> "212612.." for wa.me links */
 export const waNumber = (phone) => phone.replace(/\D/g, '').replace(/^0/, '212');
+
+const plural = (n, word) => `${n} ${word}${n > 1 ? 's' : ''}`;
+
+/** "Déjà client" hint: what happened to this customer's earlier orders (matched by phone). */
+export function ClientHistory({ history }) {
+  if (!history?.total) return null;
+  const { total, delivered, returned, cancelled } = history;
+  const inProgress = total - delivered - returned - cancelled;
+  const bad = returned + cancelled;
+  const parts = [
+    delivered && plural(delivered, 'livrée'),
+    returned && plural(returned, 'retournée'),
+    cancelled && plural(cancelled, 'annulée'),
+    inProgress && `${inProgress} en cours`,
+  ].filter(Boolean);
+  const tone = !bad ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : delivered ? 'bg-amber-50 text-amber-800 ring-amber-200' : 'bg-rose-50 text-rose-700 ring-rose-200';
+  return (
+    <span className={cn('mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset', tone)} title="Commandes précédentes avec le même numéro de téléphone">
+      <Repeat className="size-3" /> Déjà commandé {total}× · {parts.join(', ')}
+    </span>
+  );
+}
 
 export default function Orders() {
   const [params, setParams] = useSearchParams();
@@ -93,6 +115,7 @@ export default function Orders() {
                       <td className="px-3 py-3">
                         {o.customerName}
                         <p className="text-xs text-muted">{o.phone}</p>
+                        <ClientHistory history={o.history} />
                       </td>
                       <td className="px-3 py-3">{o.city}</td>
                       <td className="px-3 py-3">{o.itemsCount}</td>

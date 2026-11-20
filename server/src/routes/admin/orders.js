@@ -10,6 +10,8 @@ export const ordersRouter = Router();
 const STATUSES = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled', 'returned'];
 // Statuses where the goods are back in (or never left) the shop
 const RESTOCKED = new Set(['cancelled', 'returned']);
+// Same customer = same phone, compared on the last 9 digits ("06 12…", "+212 6 12…" and "2126 12…" match)
+const phoneKey = (col) => `right(regexp_replace(${col}, '[^0-9]', '', 'g'), 9)`;
 
 ordersRouter.get('/', async (req, res) => {
   const { q, status, city, from, to, page = 1, limit = 20 } = req.query;
@@ -35,8 +37,15 @@ ordersRouter.get('/', async (req, res) => {
   const [list, count, counts] = await Promise.all([
     query(
       `SELECT id, number, customer_name AS "customerName", phone, city, items_count AS "itemsCount",
-              total, shipping_fee AS "shippingFee", payment_method AS "paymentMethod", status, created_at AS "createdAt"
-         FROM orders ${whereSql} ORDER BY created_at DESC LIMIT ${lim} OFFSET ${(pg - 1) * lim}`,
+              total, shipping_fee AS "shippingFee", payment_method AS "paymentMethod", status, created_at AS "createdAt",
+              (SELECT json_build_object(
+                        'total', count(*),
+                        'delivered', count(*) FILTER (WHERE p.status = 'delivered'),
+                        'returned', count(*) FILTER (WHERE p.status = 'returned'),
+                        'cancelled', count(*) FILTER (WHERE p.status = 'cancelled'))
+                 FROM orders p
+                WHERE p.id <> o.id AND p.created_at < o.created_at AND ${phoneKey('p.phone')} = ${phoneKey('o.phone')}) AS history
+         FROM orders o ${whereSql} ORDER BY created_at DESC LIMIT ${lim} OFFSET ${(pg - 1) * lim}`,
       params,
     ),
     query(`SELECT count(*) FROM orders ${whereSql}`, params),
@@ -74,7 +83,13 @@ ordersRouter.get('/:id', async (req, res) => {
     `SELECT oi.*, p.slug FROM order_items oi LEFT JOIN products p ON p.id = oi.product_id WHERE order_id = $1 ORDER BY oi.id`,
     [order.id],
   );
-  res.json({ ...order, items });
+  // Every other order from the same customer, newest first
+  const { rows: history } = await query(
+    `SELECT id, number, status, total, items_count AS "itemsCount", created_at AS "createdAt"
+       FROM orders WHERE id <> $1 AND ${phoneKey('phone')} = ${phoneKey('$2')} ORDER BY created_at DESC LIMIT 20`,
+    [order.id, order.phone],
+  );
+  res.json({ ...order, items, history });
 });
 
 ordersRouter.patch(

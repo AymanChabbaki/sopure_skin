@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
-import { ArrowLeft, Phone, MapPin, Mail, Printer, Trash2, Check, StickyNote, Star } from 'lucide-react';
+import { ArrowLeft, Phone, MapPin, Mail, Printer, Trash2, Check, StickyNote, Star, Repeat } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa6';
 import { Card, ConfirmDialog, StatusBadge, ORDER_STATUSES, adminApi, patchCache, useAdminMutation, useAdminQuery, money, dateTime } from '../ui.jsx';
 import { Skeleton } from '../../components/ui/Primitives.jsx';
@@ -208,6 +208,36 @@ export default function OrderDetail() {
               )}
             </div>
             <p className="mt-3 text-xs text-muted">Langue du client : {order.locale.toUpperCase()}</p>
+          </Card>
+
+          <Card className="p-5 sm:p-6 print:hidden">
+            <h2 className="mb-1 flex items-center gap-2 font-semibold">
+              <Repeat className="size-4 text-muted" /> Historique du client
+            </h2>
+            {order.history?.length ? (
+              <>
+                <p className="mb-3 text-xs text-muted">
+                  {order.history.length} autre{order.history.length > 1 ? 's' : ''} commande{order.history.length > 1 ? 's' : ''} avec ce numéro
+                </p>
+                <ul className="divide-y divide-line">
+                  {order.history.map((h) => (
+                    <li key={h.id}>
+                      <Link to={`/admin/orders/${h.id}`} className="flex items-center justify-between gap-3 py-2.5 text-sm hover:text-brand-700">
+                        <span className="min-w-0">
+                          <span className="block font-medium">{h.number}</span>
+                          <span className="text-xs text-muted">
+                            {dateTime(h.createdAt)} · {money(h.total)}
+                          </span>
+                        </span>
+                        <StatusBadge status={h.status} />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p className="text-sm text-muted">Première commande de ce client.</p>
+            )}
           </Card>
 
           <Card className="p-5 sm:p-6 print:hidden">
