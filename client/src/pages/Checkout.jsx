@@ -18,11 +18,12 @@ import { cn, formatPrice } from '../lib/format.js';
 const OTHER = '__other__';
 const PHONE_RE = /^(\+212|0)[\s.-]?[5-7](?:[\s.-]?\d){8}$/;
 
-function Field({ label, error, children, className }) {
+function Field({ label, error, hint, children, className }) {
   return (
     <div className={className}>
       <label className="label">{label}</label>
       {children}
+      {hint && !error && <p className="mt-1.5 text-xs text-muted">{hint}</p>}
       <AnimatePresence>
         {error && (
           <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-1.5 text-xs text-red-600" role="alert">
@@ -142,7 +143,7 @@ export default function Checkout() {
                 <Field label={t('checkout.phone')} error={errors.phone?.message}>
                   <input {...register('phone')} type="tel" inputMode="tel" autoComplete="tel" dir="ltr" placeholder="06 12 34 56 78" className={cn('input', errors.phone && 'border-red-300')} />
                 </Field>
-                <Field label={t('checkout.email')} error={errors.email?.message}>
+                <Field label={t('checkout.email')} error={errors.email?.message} hint={t('checkout.emailHint')}>
                   <input {...register('email')} type="email" autoComplete="email" dir="ltr" className="input" />
                 </Field>
               </div>

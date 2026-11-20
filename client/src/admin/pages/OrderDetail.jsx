@@ -21,6 +21,27 @@ const REVIEW_MESSAGE = {
     `مرحباً ${name}، شكراً على طلبك من So Pure Skin! رأيك يهمنا كثيراً: هل يمكنك ترك تقييم ${links.length > 1 ? 'للمنتجات' : 'للمنتج'}؟\n\n${links.join('\n')}\n\nشكراً ✨`,
 };
 
+// Trustpilot review page of the shop: sent to every delivered customer (Trustpilot forbids inviting only happy customers or rewarding reviews)
+const TRUSTPILOT_REVIEW_URL = 'https://www.trustpilot.com/evaluate/sopureskin.com';
+const TRUSTPILOT_MESSAGE = {
+  fr: (name) => `Bonjour ${name}, merci encore pour votre commande chez So Pure Skin ! Si vous avez 1 minute, votre avis sur Trustpilot nous aiderait beaucoup :
+
+${TRUSTPILOT_REVIEW_URL}
+
+Merci ✨`,
+  en: (name) => `Hello ${name}, thank you again for your So Pure Skin order! If you have a minute, a review on Trustpilot would help us a lot:
+
+${TRUSTPILOT_REVIEW_URL}
+
+Thank you ✨`,
+  ar: (name) => `مرحباً ${name}، شكراً مرة أخرى على طلبك من So Pure Skin! إذا كان لديك دقيقة، تقييمك على Trustpilot سيساعدنا كثيراً:
+
+${TRUSTPILOT_REVIEW_URL}
+
+شكراً ✨`,
+};
+const trustpilotText = (order) => encodeURIComponent((TRUSTPILOT_MESSAGE[order.locale] || TRUSTPILOT_MESSAGE.fr)(order.customer_name));
+
 function reviewRequestText(order) {
   const locale = REVIEW_MESSAGE[order.locale] ? order.locale : 'fr';
   const slugs = [...new Set(order.items.map((i) => i.slug).filter(Boolean))];
@@ -204,6 +225,17 @@ export default function OrderDetail() {
                   title="Envoie au client un lien vers l'avis de chaque produit commandé"
                 >
                   <Star className="size-4 text-amber-400" /> Demander un avis
+                </a>
+              )}
+              {order.status === 'delivered' && (
+                <a
+                  href={`https://wa.me/${waNumber(order.phone)}?text=${trustpilotText(order)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-outline col-span-2 py-2.5 text-sm"
+                  title="Envoie le lien d'avis Trustpilot. À envoyer à tous les clients livrés, sans cadeau en échange."
+                >
+                  <Star className="size-4 fill-[#00b67a] text-[#00b67a]" /> Avis Trustpilot
                 </a>
               )}
             </div>
