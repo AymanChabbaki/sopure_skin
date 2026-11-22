@@ -147,6 +147,12 @@ export function Footer() {
             © {new Date().getFullYear()} So Pure Skin. {t('footer.rights')}
           </p>
           <p>{t('hero.trust2')} · {t('hero.trust3')}</p>
+          <p>
+            Developed by{' '}
+            <a href="https://chabbaki.techermanos.org" target="_blank" rel="noopener" className="font-medium text-white/80 underline-offset-4 transition hover:text-white hover:underline">
+              Ayman Chabbaki
+            </a>
+          </p>
         </div>
       </div>
     </footer>
