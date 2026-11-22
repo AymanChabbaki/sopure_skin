@@ -226,6 +226,9 @@ export default {
     text: 'Votre commande {{number}} a bien été enregistrée. Notre équipe vous appellera très bientôt pour la confirmer.',
     total: 'Montant à payer à la livraison',
     whatsapp: 'Nous écrire sur WhatsApp',
+    reviewTitle: 'Comment s’est passée votre commande ?',
+    reviewText: 'Votre avis nous aide beaucoup. Cela ne prend qu’une minute.',
+    reviewCta: 'Donner mon avis sur Trustpilot',
   },
   wishlist: {
     title: 'Mes favoris',

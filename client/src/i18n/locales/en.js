@@ -226,6 +226,9 @@ export default {
     text: 'Your order {{number}} has been received. Our team will call you very soon to confirm it.',
     total: 'Amount to pay on delivery',
     whatsapp: 'Message us on WhatsApp',
+    reviewTitle: 'How was your order?',
+    reviewText: 'Your review helps us a lot. It only takes a minute.',
+    reviewCta: 'Review us on Trustpilot',
   },
   wishlist: {
     title: 'My wishlist',

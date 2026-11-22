@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Link, Navigate, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'motion/react';
-import { Check } from 'lucide-react';
+import { Check, Star } from 'lucide-react';
 import { FaWhatsapp } from 'react-icons/fa6';
 import { useSettings } from '../hooks/useStore.js';
 import { useLocalePath } from '../hooks/useLocalePath.js';
@@ -75,6 +75,21 @@ export default function OrderSuccess() {
           {t('common.continueShopping')}
         </Link>
       </div>
+      {/* Trustpilot review right after ordering: reaches every customer, with or without an email */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }} className="card mt-8 w-full max-w-sm p-6">
+        <div className="flex justify-center gap-1" aria-hidden>
+          {Array.from({ length: 5 }, (_, i) => (
+            <span key={i} className="grid size-7 place-items-center bg-[#00b67a]">
+              <Star className="size-4 fill-white text-white" />
+            </span>
+          ))}
+        </div>
+        <p className="mt-3 font-medium">{t('success.reviewTitle')}</p>
+        <p className="mt-1 text-sm text-muted">{t('success.reviewText')}</p>
+        <a href="https://www.trustpilot.com/evaluate/sopureskin.com" target="_blank" rel="noreferrer" className="btn mt-4 w-full bg-[#00b67a] text-white hover:brightness-95">
+          {t('success.reviewCta')}
+        </a>
+      </motion.div>
     </div>
   );
 }
