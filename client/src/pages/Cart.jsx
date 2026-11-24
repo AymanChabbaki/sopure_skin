@@ -5,7 +5,7 @@ import { ShoppingBag, ArrowRight } from 'lucide-react';
 import { CartLine, FreeShippingProgress } from '../components/layout/CartDrawer.jsx';
 import { PageHeader } from '../components/ui/Primitives.jsx';
 import { useCart, useCartCount, useCartSubtotal } from '../store/cart.js';
-import { useSettings, shippingSummary } from '../hooks/useStore.js';
+import { useSettings, shippingSummary, isFreeShipping } from '../hooks/useStore.js';
 import { useLocalePath } from '../hooks/useLocalePath.js';
 import { formatPrice } from '../lib/format.js';
 import { promoDiscount } from '../lib/promo.js';
@@ -60,7 +60,7 @@ export default function Cart() {
                 <div className="flex justify-between gap-4">
                   <dt className="text-muted">{t('cart.shipping')}</dt>
                   <dd className="text-end">
-                    {s && count > s.freeAboveItems ? (
+                    {isFreeShipping(s, count, subtotal) ? (
                       <span className="font-medium text-emerald-700">{t('common.free')}</span>
                     ) : (
                       <span className="text-xs text-muted">

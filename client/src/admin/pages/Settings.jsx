@@ -125,6 +125,9 @@ function ShippingTab({ value, save }) {
         <Field label="Gratuite pour plus de… (produits)" hint={`Gratuite à partir de ${v.freeAboveItems + 1} produits dans le panier`}>
           <input type="number" min="0" value={v.freeAboveItems} onChange={(e) => setV({ ...v, freeAboveItems: Number(e.target.value) })} className="input" />
         </Field>
+        <Field label="Ou gratuite dès… (DH d’achat)" hint="Total des produits, hors livraison. 0 = désactivé.">
+          <input type="number" min="0" value={v.freeAboveAmount ?? 0} onChange={(e) => setV({ ...v, freeAboveAmount: Number(e.target.value) })} className="input" />
+        </Field>
       </div>
 
       <div className="rounded-2xl bg-brand-50 p-4 text-sm text-brand-900">
@@ -133,7 +136,7 @@ function ShippingTab({ value, save }) {
             {z.label?.fr || '…'} : <strong>{z.fee} DH</strong> ·{' '}
           </span>
         ))}
-        Autres villes : <strong>{v.otherFee} DH</strong> · {v.freeAboveItems + 1} produits et plus : <strong>gratuit</strong>. Paiement à la livraison ou par virement.
+        Autres villes : <strong>{v.otherFee} DH</strong> · {v.freeAboveItems + 1} produits et plus{v.freeAboveAmount > 0 && <> ou dès {v.freeAboveAmount} DH</>} : <strong>gratuit</strong>. Paiement à la livraison ou par virement.
       </div>
       <div className="flex justify-end">
         <SaveButton mutation={save} onClick={() => valid && save.mutate(['shipping', v])} />

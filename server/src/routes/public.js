@@ -234,7 +234,7 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
 
     const itemsCount = lines.reduce((s, l) => s + l.quantity, 0);
     const subtotal = lines.reduce((s, l) => s + l.lineTotal, 0);
-    const shippingFee = computeShipping({ city: data.city, itemsCount }, settings.shipping);
+    const shippingFee = computeShipping({ city: data.city, itemsCount, subtotal }, settings.shipping);
     // "casa", "الدار البيضاء"… are stored as one city so stats group correctly
     data.city = canonicalCity(data.city, settings.shipping);
     // Promo code: re-checked here (and locked, so a limited code cannot be used twice at the same time)

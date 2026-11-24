@@ -1,6 +1,6 @@
 import { Truck, HandCoins, MapPin, BadgeCheck, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useSettings, shippingSummary } from '../../hooks/useStore.js';
+import { useSettings, shippingSummary, freeShippingParams } from '../../hooks/useStore.js';
 
 const ICONS = [Truck, HandCoins, MapPin, BadgeCheck, Sparkles];
 
@@ -16,7 +16,7 @@ export function AnnouncementBar() {
   const messages = data?.announcements?.length
     ? data.announcements
     : [
-        t('product.freeInfo', { count: s?.freeAboveItems ?? 5 }),
+        t('product.freeInfo', freeShippingParams(s, t)),
         t('product.codInfo'),
         t('product.deliveryInfo', shippingSummary(s)),
       ];

@@ -10,7 +10,7 @@ import { Reveal, staggerContainer, staggerItem } from '../components/ui/Reveal.j
 import { LogoMark } from '../components/ui/Logo.jsx';
 import { BrandLogo } from '../components/ui/BrandLogo.jsx';
 import { Seo } from '../components/ui/Seo.jsx';
-import { useBrands, useProducts, useSettings, shippingSummary } from '../hooks/useStore.js';
+import { useBrands, useProducts, useSettings, shippingSummary, freeShippingParams } from '../hooks/useStore.js';
 import { useLocalePath } from '../hooks/useLocalePath.js';
 import { useWishlist } from '../store/wishlist.js';
 import { cn } from '../lib/format.js';
@@ -142,7 +142,7 @@ export function Faq() {
   const lp = useLocalePath();
   const { data } = useSettings();
   const s = data?.shipping;
-  const items = t('faq.items', { returnObjects: true, ...shippingSummary(s), count: s?.freeAboveItems ?? 5 });
+  const items = t('faq.items', { returnObjects: true, ...shippingSummary(s), ...freeShippingParams(s, t) });
   const [open, setOpen] = useState(0);
 
   return (
@@ -251,7 +251,7 @@ export function ShippingInfo() {
       towns: z.id === 'casablanca' ? [] : z.cities,
     })),
     { key: 'other', Icon: Truck, label: t('shippingPage.other'), price: `${s?.otherFee ?? 40} ${t('common.currency')}`, towns: [] },
-    { key: 'free', Icon: Gift, label: t('shippingPage.free', { count: s?.freeAboveItems ?? 5 }), price: t('common.free'), towns: [], highlight: true },
+    { key: 'free', Icon: Gift, label: t('shippingPage.free', freeShippingParams(s, t)), price: t('common.free'), towns: [], highlight: true },
   ];
   return (
     <>
@@ -297,6 +297,7 @@ export function Policies() {
   const sections = POLICY_SECTIONS[lang]({
     ...shippingSummary(data?.shipping),
     free: data?.shipping?.freeAboveItems ?? 5,
+    amount: data?.shipping?.freeAboveAmount ?? 0,
     days: data?.returns?.days ?? 7,
     email: c?.email || 'so.pure.skin1@gmail.com',
     phone: c?.phone || '+212 6 25 37 08 41',

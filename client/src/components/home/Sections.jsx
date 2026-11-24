@@ -15,7 +15,7 @@ import {
   FlaskConical,
   ShieldCheck,
 } from 'lucide-react';
-import { useBrands, useCategories, useSettings } from '../../hooks/useStore.js';
+import { useBrands, useCategories, useSettings, freeShippingParams } from '../../hooks/useStore.js';
 import { useLocalePath } from '../../hooks/useLocalePath.js';
 import { Reveal, staggerContainer, staggerItem } from '../ui/Reveal.jsx';
 import { SectionHeading, Skeleton } from '../ui/Primitives.jsx';
@@ -260,14 +260,13 @@ export function PromoBanner() {
   const { t } = useTranslation();
   const lp = useLocalePath();
   const { data } = useSettings();
-  const n = data?.shipping?.freeAboveItems ?? 5;
 
   return (
     <section className="container-x py-8">
       <Reveal className="relative grid overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-sand to-brand-50 md:grid-cols-5">
         <div className="relative z-10 p-8 sm:p-12 md:col-span-3">
           <p className="eyebrow">{t('home.promoEyebrow')}</p>
-          <h2 className="mt-3 font-display text-4xl leading-tight text-ink sm:text-5xl">{t('home.promoTitle', { count: n })}</h2>
+          <h2 className="mt-3 font-display text-4xl leading-tight text-ink sm:text-5xl">{t('home.promoTitle', freeShippingParams(data?.shipping, t))}</h2>
           <p className="mt-4 max-w-lg text-muted">{t('home.promoText')}</p>
           <Link to={lp('/shop')} className="btn-dark group mt-8 px-8 py-4">
             {t('common.discover')} <ArrowRight className="size-4 transition group-hover:translate-x-1 rtl:-scale-x-100" />

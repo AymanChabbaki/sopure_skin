@@ -105,7 +105,7 @@ export default function Checkout() {
   const citySelect = useWatch({ control, name: 'citySelect' });
   const cityOther = useWatch({ control, name: 'cityOther' });
   const city = citySelect === OTHER ? cityOther : citySelect;
-  const shipping = computeShipping(settings?.shipping, city, count);
+  const shipping = computeShipping(settings?.shipping, city, count, subtotal);
   const { discount, below } = promoDiscount(promo, subtotal, shipping);
   const total = subtotal + (shipping ?? 0) - discount;
 

@@ -23,6 +23,7 @@ settingsRouter.get('/', async (_req, res) => {
 
 const shippingSchema = z.object({
   freeAboveItems: z.number().int().min(0),
+  freeAboveAmount: z.number().min(0).default(0),
   otherFee: z.number().min(0),
   zones: z
     .array(

@@ -114,7 +114,7 @@ function shippingService(settings) {
     '@type': 'ShippingService',
     '@id': `${SITE}/#shipping`,
     name: 'Livraison Maroc / Delivery Morocco',
-    description: `${shippingTable(s)}; free for more than ${s.freeAboveItems} products. Cash on delivery.`,
+    description: `${shippingTable(s)}; free for more than ${s.freeAboveItems} products${s.freeAboveAmount ? ` or from ${s.freeAboveAmount} MAD` : ''}. Cash on delivery.`,
     fulfillmentType: 'FulfillmentTypeDelivery',
     handlingTime: { '@type': 'ServicePeriod', duration: days(0, 1) },
     shippingConditions: [
@@ -541,9 +541,9 @@ export async function buildPage(pathname, search = '') {
       const s = settings.shipping;
       const f = shippingSummary(s);
       page.description = {
-        fr: `Paiement à la livraison partout au Maroc. Livraison ${f.casa} DH à Casablanca, ${f.other} DH ailleurs selon la ville, gratuite pour plus de ${s.freeAboveItems} produits.`,
-        en: `Cash on delivery across Morocco. Delivery ${f.casa} MAD in Casablanca, ${f.other} MAD elsewhere depending on the city, free for more than ${s.freeAboveItems} products.`,
-        ar: `الدفع عند الاستلام في جميع أنحاء المغرب. التوصيل ${f.casa} درهم في الدار البيضاء و${f.other} درهم لباقي المدن حسب المدينة، ومجاني عند شراء أكثر من ${s.freeAboveItems} منتجات.`,
+        fr: `Paiement à la livraison partout au Maroc. Livraison ${f.casa} DH à Casablanca, ${f.other} DH ailleurs selon la ville, gratuite pour plus de ${s.freeAboveItems} produits${s.freeAboveAmount ? ` ou dès ${s.freeAboveAmount} DH d’achat` : ''}.`,
+        en: `Cash on delivery across Morocco. Delivery ${f.casa} MAD in Casablanca, ${f.other} MAD elsewhere depending on the city, free for more than ${s.freeAboveItems} products${s.freeAboveAmount ? ` or from ${s.freeAboveAmount} MAD` : ''}.`,
+        ar: `الدفع عند الاستلام في جميع أنحاء المغرب. التوصيل ${f.casa} درهم في الدار البيضاء و${f.other} درهم لباقي المدن حسب المدينة، ومجاني عند شراء أكثر من ${s.freeAboveItems} منتجات${s.freeAboveAmount ? ` أو ابتداءً من ${s.freeAboveAmount} درهم` : ''}.`,
       }[locale];
     }
   } else if (NOINDEX_PAGES[section]) {
@@ -787,7 +787,7 @@ function llmsHeader(s) {
     '',
     '## Key facts',
     '- Payment: cash on delivery or bank transfer. The shop provides bank details when confirming an order.',
-    `- Delivery fee by city: ${shippingTable(sh)}. Free for orders of more than ${sh.freeAboveItems} products. 24-48h in Casablanca, 2-4 working days elsewhere.`,
+    `- Delivery fee by city: ${shippingTable(sh)}. Free for orders of more than ${sh.freeAboveItems} products${sh.freeAboveAmount ? ` or of ${sh.freeAboveAmount} MAD or more` : ''}. 24-48h in Casablanca, 2-4 working days elsewhere.`,
     '- Languages: French (/fr), English (/en), Arabic (/ar).',
     `- Contact: phone ${s.contact.phone}, WhatsApp +${s.contact.whatsapp}, email ${s.contact.email}.`,
     `- Online shop: ${SITE}/fr/shop · Routine builder (free skin diagnosis): ${SITE}/fr/routine · Shipping & payment: ${SITE}/fr/shipping · FAQ: ${SITE}/fr/faq`,

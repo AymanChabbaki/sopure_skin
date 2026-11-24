@@ -13,9 +13,12 @@ import { formatPrice } from '../../lib/format.js';
 export function FreeShippingProgress({ count }) {
   const { t } = useTranslation();
   const { data } = useSettings();
+  const subtotal = useCartSubtotal();
   const threshold = (data?.shipping?.freeAboveItems ?? 5) + 1;
-  const remaining = Math.max(threshold - count, 0);
-  const pct = Math.min((count / threshold) * 100, 100);
+  const amount = data?.shipping?.freeAboveAmount ?? 0;
+  const unlocked = count >= threshold || (amount > 0 && subtotal >= amount);
+  const remaining = unlocked ? 0 : threshold - count;
+  const pct = Math.min(Math.max(count / threshold, amount ? subtotal / amount : 0) * 100, 100);
 
   return (
     <div className="rounded-2xl bg-brand-50 p-4">
@@ -23,6 +26,7 @@ export function FreeShippingProgress({ count }) {
         {remaining === 0 ? <PartyPopper className="size-4 shrink-0 text-brand-600" /> : <Truck className="size-4 shrink-0 text-brand-600" />}
         {remaining === 0 ? t('cart.freeUnlocked') : t('cart.freeProgress', { count: remaining })}
       </p>
+      {remaining > 0 && amount > 0 && <p className="mt-0.5 ps-6 text-xs text-brand-800/80">{t('cart.freeOrAmount', { amount: formatPrice(amount - subtotal) })}</p>}
       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white">
         <motion.div
           className="h-full origin-left rounded-full bg-gradient-to-r from-brand-400 to-brand-600 rtl:origin-right"

@@ -74,9 +74,19 @@ export function shippingZone(shipping, city) {
 }
 
 /** Shipping fee preview for the checkout. */
-export function computeShipping(shipping, city, itemsCount) {
+/** Free delivery: more than N products, or products worth at least freeAboveAmount DH (same rule as the server). */
+export const isFreeShipping = (shipping, itemsCount, subtotal = 0) =>
+  Boolean(shipping) && (itemsCount > shipping.freeAboveItems || (shipping.freeAboveAmount > 0 && subtotal >= shipping.freeAboveAmount));
+
+/** Values for the free-delivery texts: {{count}} products and {{orAmount}} (" ou dès 1 000 DH d'achat", or nothing). */
+export function freeShippingParams(shipping, t) {
+  const amount = shipping?.freeAboveAmount ?? 0;
+  return { count: shipping?.freeAboveItems ?? 5, amount, orAmount: amount ? t('common.orAmount', { amount: amount.toLocaleString('fr-MA') }) : '' };
+}
+
+export function computeShipping(shipping, city, itemsCount, subtotal = 0) {
   if (!shipping) return null;
-  if (itemsCount > shipping.freeAboveItems) return 0;
+  if (isFreeShipping(shipping, itemsCount, subtotal)) return 0;
   if (!city) return null;
   return shippingZone(shipping, city)?.fee ?? shipping.otherFee;
 }

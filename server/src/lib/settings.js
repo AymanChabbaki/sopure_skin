@@ -4,6 +4,8 @@ export const DEFAULT_SETTINGS = {
   shipping: {
     // Free delivery when the cart holds MORE than this number of products
     freeAboveItems: 5,
+    // ...or when the products reach this amount in DH (0 = rule off)
+    freeAboveAmount: 1000,
     // Fee by zone. `cities` are shown to customers, `aliases` are other spellings (Arabic, variants).
     // Matching ignores case, accents and dashes; orders store the listed name ("casa" -> "Casablanca").
     zones: [
@@ -181,8 +183,12 @@ export function shippingZone(city, shipping) {
 
 export const isCasablanca = (city, shipping) => shippingZone(city, shipping)?.id === 'casablanca';
 
-export function computeShipping({ city, itemsCount }, shipping) {
-  if (itemsCount > shipping.freeAboveItems) return 0;
+/** Free delivery: more than N products, or products worth at least freeAboveAmount DH. */
+export const isFreeShipping = (shipping, itemsCount, subtotal) =>
+  itemsCount > shipping.freeAboveItems || (shipping.freeAboveAmount > 0 && subtotal >= shipping.freeAboveAmount);
+
+export function computeShipping({ city, itemsCount, subtotal = 0 }, shipping) {
+  if (isFreeShipping(shipping, itemsCount, subtotal)) return 0;
   return shippingZone(city, shipping)?.fee ?? shipping.otherFee;
 }
 
