@@ -122,7 +122,7 @@ function ShippingTab({ value, save }) {
         <Field label="Autres villes (DH)" hint="Toute ville qui n’est dans aucune zone">
           <input type="number" min="0" value={v.otherFee} onChange={(e) => setV({ ...v, otherFee: Number(e.target.value) })} className="input" />
         </Field>
-        <Field label="Gratuite pour plus de… (produits)" hint={`Gratuite à partir de ${v.freeAboveItems + 1} produits dans le panier`}>
+        <Field label="Gratuite pour plus de… (produits)" hint={v.freeAboveItems > 0 ? `Gratuite à partir de ${v.freeAboveItems + 1} produits dans le panier. 0 = désactivé.` : 'Désactivé (0). Mettez un nombre pour l’activer.'}>
           <input type="number" min="0" value={v.freeAboveItems} onChange={(e) => setV({ ...v, freeAboveItems: Number(e.target.value) })} className="input" />
         </Field>
         <Field label="Ou gratuite dès… (DH d’achat)" hint="Total des produits, hors livraison. 0 = désactivé.">
@@ -136,7 +136,7 @@ function ShippingTab({ value, save }) {
             {z.label?.fr || '…'} : <strong>{z.fee} DH</strong> ·{' '}
           </span>
         ))}
-        Autres villes : <strong>{v.otherFee} DH</strong> · {v.freeAboveItems + 1} produits et plus{v.freeAboveAmount > 0 && <> ou dès {v.freeAboveAmount} DH</>} : <strong>gratuit</strong>. Paiement à la livraison ou par virement.
+        Autres villes : <strong>{v.otherFee} DH</strong> · {[v.freeAboveItems > 0 && `${v.freeAboveItems + 1} produits et plus`, v.freeAboveAmount > 0 && `dès ${v.freeAboveAmount} DH`].filter(Boolean).join(' ou ') || 'Pas de livraison gratuite'}{(v.freeAboveItems > 0 || v.freeAboveAmount > 0) && <> : <strong>gratuit</strong></>}. Paiement à la livraison ou par virement.
       </div>
       <div className="flex justify-end">
         <SaveButton mutation={save} onClick={() => valid && save.mutate(['shipping', v])} />

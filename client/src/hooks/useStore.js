@@ -76,12 +76,19 @@ export function shippingZone(shipping, city) {
 /** Shipping fee preview for the checkout. */
 /** Free delivery: more than N products, or products worth at least freeAboveAmount DH (same rule as the server). */
 export const isFreeShipping = (shipping, itemsCount, subtotal = 0) =>
-  Boolean(shipping) && (itemsCount > shipping.freeAboveItems || (shipping.freeAboveAmount > 0 && subtotal >= shipping.freeAboveAmount));
+  Boolean(shipping) &&
+  ((shipping.freeAboveItems > 0 && itemsCount > shipping.freeAboveItems) || (shipping.freeAboveAmount > 0 && subtotal >= shipping.freeAboveAmount));
 
-/** Values for the free-delivery texts: {{count}} products and {{orAmount}} (" ou dès 1 000 DH d'achat", or nothing). */
+/**
+ * Values for the free-delivery texts, with only the rules that are on (0 = off in the admin):
+ * {{rule}} = "dès 1 000 DH d'achat" / "pour plus de 5 produits" / both, {{ruleTitle}} = the same as a heading.
+ */
 export function freeShippingParams(shipping, t) {
+  const items = shipping?.freeAboveItems ?? 5;
   const amount = shipping?.freeAboveAmount ?? 0;
-  return { count: shipping?.freeAboveItems ?? 5, amount, orAmount: amount ? t('common.orAmount', { amount: amount.toLocaleString('fr-MA') }) : '' };
+  const kind = items > 0 && amount > 0 ? 'both' : amount > 0 ? 'amount' : 'items';
+  const p = { n: items, amount: amount.toLocaleString('fr-MA') };
+  return { ...p, rule: t(`common.freeRule.${kind}`, p), ruleTitle: t(`common.freeRuleTitle.${kind}`, p) };
 }
 
 export function computeShipping(shipping, city, itemsCount, subtotal = 0) {

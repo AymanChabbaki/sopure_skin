@@ -298,6 +298,7 @@ export function Policies() {
     ...shippingSummary(data?.shipping),
     free: data?.shipping?.freeAboveItems ?? 5,
     amount: data?.shipping?.freeAboveAmount ?? 0,
+    freeRule: freeShippingParams(data?.shipping, t).rule,
     days: data?.returns?.days ?? 7,
     email: c?.email || 'so.pure.skin1@gmail.com',
     phone: c?.phone || '+212 6 25 37 08 41',

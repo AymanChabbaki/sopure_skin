@@ -9,24 +9,26 @@ import { useSettings } from '../../hooks/useStore.js';
 import { useLocalePath } from '../../hooks/useLocalePath.js';
 import { formatPrice } from '../../lib/format.js';
 
-/** "Free delivery for more than N products" progress, shared by drawer and cart page. */
+/** Progress towards free delivery (products and/or amount rule), shared by drawer and cart page. */
 export function FreeShippingProgress({ count }) {
   const { t } = useTranslation();
   const { data } = useSettings();
   const subtotal = useCartSubtotal();
-  const threshold = (data?.shipping?.freeAboveItems ?? 5) + 1;
+  const items = data?.shipping?.freeAboveItems ?? 5;
   const amount = data?.shipping?.freeAboveAmount ?? 0;
-  const unlocked = count >= threshold || (amount > 0 && subtotal >= amount);
-  const remaining = unlocked ? 0 : threshold - count;
-  const pct = Math.min(Math.max(count / threshold, amount ? subtotal / amount : 0) * 100, 100);
+  const threshold = items + 1;
+  const unlocked = (items > 0 && count >= threshold) || (amount > 0 && subtotal >= amount);
+  const pct = Math.min(Math.max(items > 0 ? count / threshold : 0, amount ? subtotal / amount : 0) * 100, 100);
+  if (!(items > 0) && !(amount > 0)) return null;
+  const left = formatPrice(amount - subtotal);
 
   return (
     <div className="rounded-2xl bg-brand-50 p-4">
       <p className="flex items-center gap-2 text-sm text-brand-900">
-        {remaining === 0 ? <PartyPopper className="size-4 shrink-0 text-brand-600" /> : <Truck className="size-4 shrink-0 text-brand-600" />}
-        {remaining === 0 ? t('cart.freeUnlocked') : t('cart.freeProgress', { count: remaining })}
+        {unlocked ? <PartyPopper className="size-4 shrink-0 text-brand-600" /> : <Truck className="size-4 shrink-0 text-brand-600" />}
+        {unlocked ? t('cart.freeUnlocked') : items > 0 ? t('cart.freeProgress', { count: threshold - count }) : t('cart.freeProgressAmount', { amount: left })}
       </p>
-      {remaining > 0 && amount > 0 && <p className="mt-0.5 ps-6 text-xs text-brand-800/80">{t('cart.freeOrAmount', { amount: formatPrice(amount - subtotal) })}</p>}
+      {!unlocked && items > 0 && amount > 0 && <p className="mt-0.5 ps-6 text-xs text-brand-800/80">{t('cart.freeOrAmount', { amount: left })}</p>}
       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white">
         <motion.div
           className="h-full origin-left rounded-full bg-gradient-to-r from-brand-400 to-brand-600 rtl:origin-right"

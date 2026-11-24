@@ -2,7 +2,7 @@ import { query } from '../db/pool.js';
 
 export const DEFAULT_SETTINGS = {
   shipping: {
-    // Free delivery when the cart holds MORE than this number of products
+    // Free delivery when the cart holds MORE than this number of products (0 = rule off)
     freeAboveItems: 5,
     // ...or when the products reach this amount in DH (0 = rule off)
     freeAboveAmount: 1000,
@@ -185,7 +185,19 @@ export const isCasablanca = (city, shipping) => shippingZone(city, shipping)?.id
 
 /** Free delivery: more than N products, or products worth at least freeAboveAmount DH. */
 export const isFreeShipping = (shipping, itemsCount, subtotal) =>
-  itemsCount > shipping.freeAboveItems || (shipping.freeAboveAmount > 0 && subtotal >= shipping.freeAboveAmount);
+  (shipping.freeAboveItems > 0 && itemsCount > shipping.freeAboveItems) || (shipping.freeAboveAmount > 0 && subtotal >= shipping.freeAboveAmount);
+
+/** "for more than 5 products or from 1000 MAD", in the active rules only (texts for crawlers, the chat, emails). */
+export function freeRuleText(shipping, lang = 'en') {
+  const n = shipping.freeAboveItems > 0 ? shipping.freeAboveItems : 0;
+  const a = shipping.freeAboveAmount > 0 ? shipping.freeAboveAmount : 0;
+  const parts = {
+    fr: [n && `pour plus de ${n} produits`, a && `dès ${a} DH d’achat`, 'ou'],
+    en: [n && `for more than ${n} products`, a && `from ${a} MAD of products`, 'or'],
+    ar: [n && `عند شراء أكثر من ${n} منتجات`, a && `ابتداءً من ${a} درهم من المشتريات`, 'أو'],
+  }[lang];
+  return [parts[0], parts[1]].filter(Boolean).join(` ${parts[2]} `);
+}
 
 export function computeShipping({ city, itemsCount, subtotal = 0 }, shipping) {
   if (isFreeShipping(shipping, itemsCount, subtotal)) return 0;
