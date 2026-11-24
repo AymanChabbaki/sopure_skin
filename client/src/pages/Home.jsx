@@ -4,6 +4,7 @@ import { SloganBand, CategoryRail, RoutineFinder, PromoBanner, BrandMarquee, Rit
 import { Testimonials } from '../components/home/Testimonials.jsx';
 import { VideoSection } from '../components/home/Videos.jsx';
 import { ProductCarousel, ProductGrid } from '../components/product/ProductGrid.jsx';
+import { PacksRail } from '../components/product/Packs.jsx';
 import { SectionHeading } from '../components/ui/Primitives.jsx';
 import { useProducts } from '../hooks/useStore.js';
 import { useLocalePath } from '../hooks/useLocalePath.js';
@@ -31,6 +32,8 @@ export default function Home() {
       )}
 
       <RoutineFinder />
+
+      <PacksRail className="container-x pt-16 sm:pt-24" />
 
       <section className="container-x py-16 sm:py-24">
         <SectionHeading title={t('home.newTitle')} subtitle={t('home.newSubtitle')} link={lp('/shop?sort=newest')} linkLabel={t('nav.viewAll')} />

@@ -9,7 +9,8 @@
 export const SNAPSHOT_PREFIXES = ['/settings', '/categories', '/brands', '/articles', '/videos', '/products', '/packs', '/seo'];
 
 export const isSnapshotted = (path, searchParams) =>
-  !['/categories', '/packs'].includes(path) &&
+  // Categories and routine packs stay live; the full pack list (home page, /packs) is snapshotted
+  path !== '/categories' && !(path === '/packs' && searchParams.has('category')) &&
   SNAPSHOT_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`)) &&
   !['q', 'minPrice', 'maxPrice'].some((k) => searchParams.has(k));
 

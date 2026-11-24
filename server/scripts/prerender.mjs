@@ -65,6 +65,7 @@ async function snapshotApi(pages) {
 
   for (const lang of LANGS) {
     for (const p of ['/settings', '/categories', '/brands', '/articles', '/videos']) add(p, { lang });
+    add('/packs', { lang });
     add('/products', { bestSeller: true, sort: 'popular', limit: 10, lang });
     add('/products', { sort: 'newest', limit: 8, lang });
     add('/products', { onSale: true, sort: 'popular', limit: 10, lang });

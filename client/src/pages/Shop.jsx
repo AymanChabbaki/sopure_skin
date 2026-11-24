@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { SlidersHorizontal, X, ChevronDown, ChevronLeft, ChevronRight, PackageSearch, Check } from 'lucide-react';
 import { ProductGrid } from '../components/product/ProductGrid.jsx';
 import { PageHeader } from '../components/ui/Primitives.jsx';
-import { RoutinePacks } from '../components/product/Packs.jsx';
+import { PacksRail, RoutinePacks } from '../components/product/Packs.jsx';
 import { Drawer } from '../components/ui/Drawer.jsx';
 import { BrandLogo } from '../components/ui/BrandLogo.jsx';
 import { useBrands, useCategories, useProducts } from '../hooks/useStore.js';
@@ -203,6 +203,8 @@ export default function Shop() {
 
       {/* Routine pages: the ready-made packs first */}
       {(category?.kind === 'routine' || category?.slug === 'contour-des-yeux') && <RoutinePacks category={category.slug} className="container-x pb-12" />}
+      {/* Main shop: the routine packs above the catalog */}
+      {!fixed && page === 1 && activeChips.length === 0 && <PacksRail className="container-x pb-12" limit={8} />}
 
       <div className="container-x pb-20">
         {/* Toolbar */}

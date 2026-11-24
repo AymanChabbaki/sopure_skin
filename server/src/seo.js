@@ -79,6 +79,7 @@ const STATIC_PAGES = {
   contact: { fr: 'Contact', en: 'Contact', ar: 'اتصل بنا' },
   shipping: { fr: 'Livraison & paiement', en: 'Shipping & payment', ar: 'التوصيل والدفع' },
   policies: { fr: 'Conditions de vente, retours & confidentialité', en: 'Terms of sale, returns & privacy', ar: 'شروط البيع والإرجاع والخصوصية' },
+  packs: { fr: 'Packs routine de soin coréenne', en: 'Korean skincare routine packs', ar: 'باقات روتين العناية الكوري' },
   routine: { fr: 'Composer ma routine de soin coréenne', en: 'Build my Korean skincare routine', ar: 'كوّني روتين العناية الكوري الخاص بك' },
   guides: { fr: 'Conseils beauté coréenne', en: 'Korean beauty tips', ar: 'نصائح الجمال الكوري' },
 };
@@ -529,6 +530,13 @@ export async function buildPage(pathname, search = '') {
         ar: 'تشخيص مجاني للبشرة: اختاري نوع بشرتك ومشكلتك (حب الشباب، البقع، الاحمرار، الرؤوس السوداء) واكتشفي الروتين الكوري المناسب.',
       }[locale];
     }
+    if (section === 'packs') {
+      page.description = {
+        fr: 'Packs de soins coréens prêts à l’emploi par type de peau : achetez toute la routine en un clic ou retirez les produits que vous avez déjà. Paiement à la livraison au Maroc.',
+        en: 'Ready-made Korean skincare packs by skin type: buy the whole routine in one click or remove what you already have. Cash on delivery in Morocco.',
+        ar: 'باقات عناية كورية جاهزة حسب نوع البشرة: اشتري الروتين كاملًا بنقرة واحدة أو احذفي المنتجات التي لديك. الدفع عند الاستلام في المغرب.',
+      }[locale];
+    }
     if (section === 'shipping' || section === 'faq') {
       const s = settings.shipping;
       const f = shippingSummary(s);
@@ -727,6 +735,7 @@ seoRouter.get('/sitemap.xml', async (_req, res) => {
     urlEntry('/shop', latest),
     urlEntry('/brands', latest),
     urlEntry('/routine', latest),
+    urlEntry('/packs', latest),
     urlEntry('/policies', null),
     urlEntry('/about', null),
     urlEntry('/faq', null),

@@ -284,6 +284,11 @@ export default {
     questions: 'A question about an order or your data? Our team is here to help.',
   },
   packs: {
+    railTitle: 'Our routine packs',
+    pageTitle: 'All our routine packs',
+    viewAll: 'See all {{count}} packs',
+    findMine: 'Find the pack for my skin',
+    empty: 'Our packs are coming soon. Meanwhile, browse the whole shop.',
     period: { morning: 'Morning routine', night: 'Night routine', any: 'Morning and night' },
     partialMatch: "Some concerns don't have a targeted routine. Here are the available routines.",
     sectionEyebrow: 'Routine packs',

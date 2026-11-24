@@ -91,6 +91,12 @@ export function shippingSummary(shipping) {
   return { casa, min, max, other: min === max ? `${min}` : `${min}–${max}` };
 }
 
+/** Every active pack (home page rail, shop, /packs page). */
+export function useAllPacks() {
+  const lang = useLang();
+  return useQuery({ queryKey: ['packs', lang, 'all'], queryFn: () => api('/packs', { params: { lang } }), staleTime: 60_000 });
+}
+
 /** Packs offered for a routine (category slug). */
 export function useRoutinePacks(categories) {
   const lang = useLang();

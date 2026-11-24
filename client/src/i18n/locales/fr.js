@@ -284,6 +284,11 @@ export default {
     questions: 'Une question sur une commande ou vos données ? Notre équipe vous répond.',
   },
   packs: {
+    railTitle: 'Nos packs routine',
+    pageTitle: 'Tous nos packs routine',
+    viewAll: 'Voir les {{count}} packs',
+    findMine: 'Trouver le pack pour ma peau',
+    empty: 'Nos packs arrivent bientôt. En attendant, découvrez toute la boutique.',
     period: { morning: 'Routine du matin', night: 'Routine du soir', any: 'Matin et soir' },
     partialMatch: "Aucune routine ciblée ne couvre certaines préoccupations. Voici les routines disponibles.",
     sectionEyebrow: 'Packs routine',
