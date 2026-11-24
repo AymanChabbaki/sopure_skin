@@ -12,6 +12,7 @@ import { reviewsRouter } from './reviews.js';
 import { articlesRouter } from './articles.js';
 import { packsRouter, videosRouter } from './packs.js';
 import { statsRouter } from './stats.js';
+import { promosRouter } from './promos.js';
 import { settingsRouter, uploadsRouter, teamRouter, subscribersRouter } from './system.js';
 
 export const adminRouter = Router();
@@ -88,6 +89,7 @@ adminRouter.use('/reviews', reviewsRouter);
 adminRouter.use('/articles', articlesRouter);
 adminRouter.use('/packs', packsRouter);
 adminRouter.use('/videos', videosRouter);
+adminRouter.use('/promos', promosRouter);
 adminRouter.use('/settings', settingsRouter);
 adminRouter.use('/uploads', uploadsRouter);
 adminRouter.use('/team', teamRouter);

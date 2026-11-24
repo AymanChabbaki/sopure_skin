@@ -15,6 +15,8 @@ import { api } from '../lib/api.js';
 import { CITIES } from '../lib/cities.js';
 import { cn, formatPrice } from '../lib/format.js';
 import { track } from '../lib/pixel.js';
+import { promoDiscount } from '../lib/promo.js';
+import { PromoCode } from '../components/cart/PromoCode.jsx';
 
 const OTHER = '__other__';
 const PHONE_RE = /^(\+212|0)[\s.-]?[5-7](?:[\s.-]?\d){8}$/;
@@ -43,6 +45,8 @@ export default function Checkout() {
   const queryClient = useQueryClient();
   const items = useCart((s) => s.items);
   const clear = useCart((s) => s.clear);
+  const promo = useCart((s) => s.promo);
+  const setPromo = useCart((s) => s.setPromo);
   const count = useCartCount();
   const subtotal = useCartSubtotal();
 
@@ -102,7 +106,8 @@ export default function Checkout() {
   const cityOther = useWatch({ control, name: 'cityOther' });
   const city = citySelect === OTHER ? cityOther : citySelect;
   const shipping = computeShipping(settings?.shipping, city, count);
-  const total = subtotal + (shipping ?? 0);
+  const { discount, below } = promoDiscount(promo, subtotal, shipping);
+  const total = subtotal + (shipping ?? 0) - discount;
 
   const order = useMutation({
     mutationFn: (values) =>
@@ -118,6 +123,8 @@ export default function Checkout() {
           paymentMethod: values.paymentMethod,
           locale: i18n.language,
           items: items.map((i) => ({ productId: i.id, quantity: i.quantity, size: i.size || undefined })),
+          // A code below its minimum is not sent: the order goes through at the normal price
+          promoCode: promo && !below ? promo.code : undefined,
         },
       }),
     onSuccess: (result) => {
@@ -126,7 +133,15 @@ export default function Checkout() {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       navigate(lp('/order/success'), { state: result, replace: true });
     },
-    onError: (err) => toast.error(err.body?.error || t('common.error')),
+    onError: (err) => {
+      // The code stopped being valid since it was applied (expired, used up…): drop it so the next try goes through
+      const reason = err.body?.details?.promo;
+      if (reason) {
+        setPromo(null);
+        return toast.error(t(`promo.errors.${['expired', 'usedUp'].includes(reason) ? reason : 'invalid'}`), { description: t('promo.removed') });
+      }
+      toast.error(err.body?.error || t('common.error'));
+    },
   });
 
   if (!items.length && !placed.current) return <Navigate to={lp('/cart')} replace />;
@@ -234,7 +249,10 @@ export default function Checkout() {
                   </li>
                 ))}
               </ul>
-              <dl className="mt-6 space-y-3 border-t border-line pt-5 text-sm">
+              <div className="mt-5 border-t border-line pt-4">
+                <PromoCode />
+              </div>
+              <dl className="mt-4 space-y-3 border-t border-line pt-5 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-muted">{t('cart.subtotal')}</dt>
                   <dd>{formatPrice(subtotal)}</dd>
@@ -255,6 +273,14 @@ export default function Checkout() {
                     </AnimatePresence>
                   </dd>
                 </div>
+                {discount > 0 && (
+                  <div className="flex justify-between">
+                    <dt className="text-muted">
+                      {t('promo.discount')} <span className="font-mono text-xs">({promo.code})</span>
+                    </dt>
+                    <dd className="font-medium text-emerald-700">−{formatPrice(discount)}</dd>
+                  </div>
+                )}
                 <div className="flex justify-between border-t border-line pt-4 text-base">
                   <dt className="font-medium">{t('cart.total')}</dt>
                   <dd className="text-xl font-semibold text-brand-700">{formatPrice(total)}</dd>

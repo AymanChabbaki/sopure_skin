@@ -295,6 +295,18 @@ export default {
     updated: 'آخر تحديث: {{date}}',
     questions: 'عندك سؤال على طلب أو على بياناتك؟ فريقنا كيجاوبك.',
   },
+  promo: {
+    question: 'عندك كود تخفيض؟',
+    label: 'كود التخفيض',
+    placeholder: 'أدخلي الكود',
+    apply: 'تطبيق',
+    remove: 'حذف الكود',
+    discount: 'التخفيض',
+    freeShipping: 'توصيل مجاني',
+    below: 'أضيفي {{amount}} أخرى للاستفادة من هذا الكود.',
+    removed: 'تم حذف الكود، يمكنك تأكيد الطلب بالسعر العادي.',
+    errors: { invalid: 'كود التخفيض غير صالح.', expired: 'انتهت صلاحية كود التخفيض.', usedUp: 'كود التخفيض لم يعد متاحًا.' },
+  },
   packs: {
     addPack: 'أضيفي الباقة',
     addSelectionShort: 'أضيفي {{count}} منتجات',

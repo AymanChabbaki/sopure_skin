@@ -11,6 +11,9 @@ export const useCart = create(
   persist(
     (set, get) => ({
       items: [],
+      // Promo code checked by /api/promo: { code, type, value, minSubtotal } (the server applies it again on the order)
+      promo: null,
+      setPromo: (promo) => set({ promo }),
       isOpen: false,
       open: () => set({ isOpen: true }),
       close: () => set({ isOpen: false }),
@@ -50,14 +53,14 @@ export const useCart = create(
           items: quantity <= 0 ? state.items.filter((i) => i.key !== key) : state.items.map((i) => (i.key === key ? { ...i, quantity } : i)),
         })),
       remove: (key) => set((state) => ({ items: state.items.filter((i) => i.key !== key) })),
-      clear: () => set({ items: [] }),
+      clear: () => set({ items: [], promo: null }),
       count: () => get().items.reduce((s, i) => s + i.quantity, 0),
       subtotal: () => get().items.reduce((s, i) => s + i.price * i.quantity, 0),
     }),
     {
       name: 'sps-cart',
       version: 1,
-      partialize: (s) => ({ items: s.items }),
+      partialize: (s) => ({ items: s.items, promo: s.promo }),
       // v0 carts had one line per product, keyed by id
       migrate: (persisted) => ({ ...persisted, items: (persisted?.items || []).map((i) => ({ ...i, key: i.key || lineKey(i.id, i.size) })) }),
     },

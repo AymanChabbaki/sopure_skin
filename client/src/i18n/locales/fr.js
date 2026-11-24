@@ -283,6 +283,18 @@ export default {
     updated: 'Mise à jour : {{date}}',
     questions: 'Une question sur une commande ou vos données ? Notre équipe vous répond.',
   },
+  promo: {
+    question: 'Vous avez un code promo ?',
+    label: 'Code promo',
+    placeholder: 'Entrez votre code',
+    apply: 'Appliquer',
+    remove: 'Retirer le code',
+    discount: 'Réduction',
+    freeShipping: 'Livraison offerte',
+    below: 'Ajoutez encore {{amount}} pour profiter de ce code.',
+    removed: 'Le code a été retiré, vous pouvez confirmer la commande au prix normal.',
+    errors: { invalid: 'Ce code promo n’est pas valide.', expired: 'Ce code promo a expiré.', usedUp: 'Ce code promo n’est plus disponible.' },
+  },
   packs: {
     addPack: 'Ajouter le pack',
     addSelectionShort: 'Ajouter {{count}} produits',

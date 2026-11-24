@@ -178,6 +178,12 @@ export default function OrderDetail() {
               <dt className="text-muted">Livraison</dt>
               <dd>{Number(order.shipping_fee) === 0 ? <span className="text-emerald-700">Offerte</span> : money(order.shipping_fee)}</dd>
             </div>
+            {Number(order.discount) > 0 && (
+              <div className="flex justify-between">
+                <dt className="text-muted">Code promo <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 font-mono text-xs text-emerald-700">{order.promo_code}</span></dt>
+                <dd className="text-emerald-700">−{money(order.discount)}</dd>
+              </div>
+            )}
             <div className="flex justify-between border-t border-line pt-2 text-base font-semibold">
               <dt>{order.payment_method === 'bank_transfer' ? 'Total à régler par virement' : 'Total à encaisser à la livraison'}</dt>
               <dd className="text-brand-700">{money(order.total)}</dd>

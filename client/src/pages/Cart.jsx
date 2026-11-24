@@ -8,6 +8,8 @@ import { useCart, useCartCount, useCartSubtotal } from '../store/cart.js';
 import { useSettings, shippingSummary } from '../hooks/useStore.js';
 import { useLocalePath } from '../hooks/useLocalePath.js';
 import { formatPrice } from '../lib/format.js';
+import { promoDiscount } from '../lib/promo.js';
+import { PromoCode } from '../components/cart/PromoCode.jsx';
 
 export default function Cart() {
   const { t } = useTranslation();
@@ -15,6 +17,9 @@ export default function Cart() {
   const items = useCart((s) => s.items);
   const count = useCartCount();
   const subtotal = useCartSubtotal();
+  const promo = useCart((st) => st.promo);
+  // Free-delivery codes depend on the city: the amount is shown at checkout
+  const { discount } = promoDiscount(promo?.type === 'shipping' ? null : promo, subtotal, 0);
   const { data: settings } = useSettings();
   const s = settings?.shipping;
 
@@ -58,11 +63,22 @@ export default function Cart() {
                     {s && count > s.freeAboveItems ? (
                       <span className="font-medium text-emerald-700">{t('common.free')}</span>
                     ) : (
-                      <span className="text-xs text-muted">{t('product.deliveryInfo', shippingSummary(s))}</span>
+                      <span className="text-xs text-muted">
+                        {promo?.type === 'shipping' ? t('promo.freeShipping') : t('product.deliveryInfo', shippingSummary(s))}
+                      </span>
                     )}
                   </dd>
                 </div>
+                {discount > 0 && (
+                  <div className="flex justify-between">
+                    <dt className="text-muted">{t('promo.discount')}</dt>
+                    <dd className="font-medium text-emerald-700">−{formatPrice(discount)}</dd>
+                  </div>
+                )}
               </dl>
+              <div className="mt-5 border-t border-line pt-4">
+                <PromoCode />
+              </div>
               <Link to={lp('/checkout')} className="btn-primary mt-6 w-full py-4">
                 {t('cart.checkout')} <ArrowRight className="size-4 rtl:-scale-x-100" />
               </Link>

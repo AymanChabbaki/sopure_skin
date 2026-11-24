@@ -12,6 +12,7 @@ import { purchaseEvent, sendMetaEvents } from '../lib/metaCapi.js';
 import { markChanged } from '../lib/publish.js';
 import { estimatedDeliveryDate } from '../lib/delivery.js';
 import { CDN_API } from '../lib/cache.js';
+import { normalizeCode, promoDiscount, promoProblem, publicPromo, PROMO_MESSAGES } from '../lib/promo.js';
 
 export const publicRouter = Router();
 
@@ -192,6 +193,7 @@ const orderSchema = z.object({
   notes: z.string().trim().max(500).optional(),
   locale: z.enum(['fr', 'en', 'ar']).default('fr'),
   paymentMethod: z.enum(['cod', 'bank_transfer']).default('cod'),
+  promoCode: z.string().trim().max(40).optional(),
   items: z
     .array(z.object({ productId: z.number().int().positive(), quantity: z.number().int().min(1).max(50), size: z.string().trim().max(40).nullish() }))
     .min(1)
@@ -235,18 +237,29 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
     const shippingFee = computeShipping({ city: data.city, itemsCount }, settings.shipping);
     // "casa", "الدار البيضاء"… are stored as one city so stats group correctly
     data.city = canonicalCity(data.city, settings.shipping);
-    const total = subtotal + shippingFee;
+    // Promo code: re-checked here (and locked, so a limited code cannot be used twice at the same time)
+    let discount = 0;
+    let promoCode = null;
+    if (data.promoCode) {
+      const { rows: [promo] } = await db.query('SELECT * FROM promo_codes WHERE code = $1 FOR UPDATE', [normalizeCode(data.promoCode)]);
+      const problem = promoProblem(promo, subtotal);
+      if (problem) throw new HttpError(400, PROMO_MESSAGES[problem], { promo: problem, minSubtotal: promo ? Number(promo.min_subtotal) : undefined });
+      discount = promoDiscount(promo, subtotal, shippingFee);
+      promoCode = promo.code;
+      await db.query('UPDATE promo_codes SET uses = uses + 1 WHERE id = $1', [promo.id]);
+    }
+    const total = subtotal + shippingFee - discount;
 
     // Order number is derived from the serial id, so it is unique without a race
     const { rows: [{ id }] } = await db.query(`SELECT nextval(pg_get_serial_sequence('orders', 'id'))::int AS id`);
     const number = `SPS-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${String(id).padStart(4, '0')}`;
     const { rows: [created] } = await db.query(
       `INSERT INTO orders (id, number, customer_name, phone, email, city, address, notes, locale,
-                           items_count, subtotal, shipping_fee, total, payment_method)
-       VALUES ($13,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$14)
-       RETURNING id, number, subtotal, shipping_fee, total, items_count, created_at`,
+                           items_count, subtotal, shipping_fee, total, payment_method, promo_code, discount)
+       VALUES ($13,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$14,$15,$16)
+       RETURNING id, number, subtotal, shipping_fee, total, items_count, created_at, promo_code, discount`,
       [number, data.customerName, data.phone, data.email || null, data.city, data.address, data.notes || null,
-        data.locale, itemsCount, subtotal, shippingFee, total, id, data.paymentMethod],
+        data.locale, itemsCount, subtotal, shippingFee, total, id, data.paymentMethod, promoCode, discount],
     );
 
     for (const l of lines) {
@@ -281,6 +294,8 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
     itemsCount: order.items_count,
     subtotal: order.subtotal,
     shippingFee: order.shipping_fee,
+    promoCode: order.promo_code,
+    discount: order.discount,
     total: order.total,
     createdAt: order.created_at,
     paymentMethod: data.paymentMethod,
@@ -290,6 +305,20 @@ publicRouter.post('/orders', orderLimiter, validate(orderSchema), async (req, re
     } : null,
   });
 });
+
+/** Checks a promo code from the cart. The order route applies it again, so this is only for display. */
+publicRouter.post(
+  '/promo',
+  rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: true, legacyHeaders: false }),
+  validate(z.object({ code: z.string().trim().min(1).max(40), subtotal: z.number().min(0) })),
+  async (req, res) => {
+    const { rows: [promo] } = await query('SELECT * FROM promo_codes WHERE code = $1', [normalizeCode(req.valid.code)]);
+    const problem = promoProblem(promo, req.valid.subtotal);
+    // A code below its minimum is still returned: the cart shows the minimum to reach
+    if (problem && problem !== 'minSubtotal') return res.status(400).json({ error: PROMO_MESSAGES[problem], details: { promo: problem } });
+    res.set('Cache-Control', 'no-store').json(publicPromo(promo));
+  },
+);
 
 publicRouter.post(
   '/newsletter',

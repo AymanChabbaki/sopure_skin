@@ -283,6 +283,18 @@ export default {
     updated: 'Last updated: {{date}}',
     questions: 'A question about an order or your data? Our team is here to help.',
   },
+  promo: {
+    question: 'Have a promo code?',
+    label: 'Promo code',
+    placeholder: 'Enter your code',
+    apply: 'Apply',
+    remove: 'Remove the code',
+    discount: 'Discount',
+    freeShipping: 'Free delivery',
+    below: 'Add {{amount}} more to use this code.',
+    removed: 'The code was removed, you can place the order at the normal price.',
+    errors: { invalid: 'This promo code is not valid.', expired: 'This promo code has expired.', usedUp: 'This promo code is no longer available.' },
+  },
   packs: {
     addPack: 'Add the pack',
     addSelectionShort: 'Add {{count}} products',

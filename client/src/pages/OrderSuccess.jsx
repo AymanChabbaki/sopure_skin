@@ -63,6 +63,7 @@ export default function OrderSuccess() {
         <p className="mt-1 text-3xl font-semibold text-brand-700">{formatPrice(order.total)}</p>
         <p className="mt-2 text-xs text-muted">
           {t('cart.subtotal')} {formatPrice(order.subtotal)} · {t('cart.shipping')} {order.shippingFee ? formatPrice(order.shippingFee) : t('common.free')}
+          {Number(order.discount) > 0 && <> · {t('promo.discount')} {order.promoCode} −{formatPrice(order.discount)}</>}
         </p>
       </motion.div>
       <div className="mt-8 flex flex-wrap justify-center gap-3">

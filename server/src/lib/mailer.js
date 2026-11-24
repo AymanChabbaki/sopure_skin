@@ -136,6 +136,7 @@ export function orderEmail(order, items) {
       <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:12px">
         <tr><td style="padding:3px 0;color:#6b7c80">Sous-total (${order.items_count} produit${order.items_count > 1 ? 's' : ''})</td><td style="text-align:right">${dh(order.subtotal)}</td></tr>
         <tr><td style="padding:3px 0;color:#6b7c80">Livraison</td><td style="text-align:right">${Number(order.shipping_fee) ? dh(order.shipping_fee) : 'Offerte'}</td></tr>
+        ${Number(order.discount) ? `<tr><td style="padding:3px 0;color:#6b7c80">Code promo ${esc(order.promo_code)}</td><td style="text-align:right;color:#047857">−${dh(order.discount)}</td></tr>` : ''}
         <tr><td style="padding:6px 0;font-weight:bold;font-size:16px">Total à encaisser</td><td style="text-align:right;font-weight:bold;font-size:16px">${dh(order.total)}</td></tr>
       </table>
       <a href="${esc(adminUrl)}" style="display:block;margin-top:22px;background:#13282d;color:#fff;text-decoration:none;text-align:center;padding:14px;border-radius:999px;font-weight:bold">Voir la commande dans l'admin</a>
@@ -152,6 +153,7 @@ export function orderEmail(order, items) {
     ...items.map((i) => `- ${i.name} x${i.quantity} : ${dh(i.line_total)}`),
     '',
     `Livraison : ${Number(order.shipping_fee) ? dh(order.shipping_fee) : 'offerte'}`,
+    ...(Number(order.discount) ? [`Code promo ${order.promo_code} : -${dh(order.discount)}`] : []),
     `Total : ${dh(order.total)}`,
     order.payment_method === 'bank_transfer' ? 'Paiement : virement bancaire (coordonnées à communiquer à la cliente).' : 'Paiement : à la livraison.',
     '',
