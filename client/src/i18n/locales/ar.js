@@ -296,6 +296,12 @@ export default {
     questions: 'عندك سؤال على طلب أو على بياناتك؟ فريقنا كيجاوبك.',
   },
   packs: {
+    addPack: 'أضيفي الباقة',
+    addSelectionShort: 'أضيفي {{count}} منتجات',
+    chips: { grasse: 'بشرة دهنية', mixte: 'بشرة مختلطة', normale: 'بشرة عادية', seche: 'بشرة جافة', mature: 'بشرة ناضجة', yeux: 'محيط العين' },
+    showDetails: 'عرض التفاصيل',
+    hideDetails: 'إخفاء التفاصيل',
+    filterAll: 'الكل',
     railTitle: 'باقات الروتين',
     pageTitle: 'جميع باقات الروتين',
     viewAll: 'عرض الباقات ({{count}})',

@@ -1,7 +1,6 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Sparkles } from 'lucide-react';
-import { PageHeader } from '../components/ui/Primitives.jsx';
 import { AllPacks } from '../components/product/Packs.jsx';
 import { useLocalePath } from '../hooks/useLocalePath.js';
 
@@ -11,11 +10,16 @@ export default function Packs() {
   const lp = useLocalePath();
   return (
     <>
-      <PageHeader eyebrow={t('packs.sectionEyebrow')} title={t('packs.pageTitle')} subtitle={t('packs.subtitle')}>
-        <Link to={lp('/routine')} className="btn-outline mt-6">
-          <Sparkles className="size-4" /> {t('packs.findMine')}
-        </Link>
-      </PageHeader>
+      <section className="bg-gradient-to-b from-brand-50 to-white">
+        <div className="container-x pt-8 pb-6 sm:pt-12 sm:pb-8">
+          <p className="eyebrow mb-2">{t('packs.sectionEyebrow')}</p>
+          <h1 className="font-display text-3xl text-ink sm:text-5xl">{t('packs.pageTitle')}</h1>
+          <p className="mt-2 max-w-2xl text-sm text-muted sm:text-base">{t('packs.subtitle')}</p>
+          <Link to={lp('/routine')} className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline">
+            <Sparkles className="size-4" /> {t('packs.findMine')}
+          </Link>
+        </div>
+      </section>
       <AllPacks className="container-x pb-20" />
     </>
   );

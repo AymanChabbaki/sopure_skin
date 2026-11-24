@@ -284,6 +284,12 @@ export default {
     questions: 'Une question sur une commande ou vos données ? Notre équipe vous répond.',
   },
   packs: {
+    addPack: 'Ajouter le pack',
+    addSelectionShort: 'Ajouter {{count}} produits',
+    chips: { grasse: 'Peau grasse', mixte: 'Peau mixte', normale: 'Peau normale', seche: 'Peau sèche', mature: 'Peau mature', yeux: 'Contour des yeux' },
+    showDetails: 'Voir le détail',
+    hideDetails: 'Masquer le détail',
+    filterAll: 'Tous',
     railTitle: 'Nos packs routine',
     pageTitle: 'Tous nos packs routine',
     viewAll: 'Voir les {{count}} packs',

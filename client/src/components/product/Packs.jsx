@@ -3,7 +3,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'motion/react';
-import { Check, ChevronLeft, ChevronRight, PackageCheck, ShoppingBag } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, PackageCheck, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAllPacks, useRoutinePacks } from '../../hooks/useStore.js';
 import { useLocalePath } from '../../hooks/useLocalePath.js';
@@ -19,11 +19,13 @@ const available = (p) => (p.sizes?.length ? Boolean(firstSize(p)) : p.inStock);
  * One pack: every product is ticked by default, the customer can untick some,
  * then adds the whole selection to the cart in one click.
  */
-export function PackCard({ pack, index, className }) {
+export function PackCard({ pack, index, className, compact = false }) {
   const { t } = useTranslation();
   const lp = useLocalePath();
   const add = useCart((s) => s.add);
   const [picked, setPicked] = useState(() => new Set(pack.products.filter(available).map((p) => p.id)));
+  // Compact card (home, shop, /packs): photos only, the detailed list opens on demand
+  const [open, setOpen] = useState(!compact);
   const [sizes, setSizes] = useState(() => Object.fromEntries(pack.products.filter((p) => p.sizes?.length).map((p) => [p.id, firstSize(p)?.label])));
 
   const sizeOf = (p) => p.sizes?.find((z) => z.label === sizes[p.id]) || null;
@@ -55,20 +57,57 @@ export function PackCard({ pack, index, className }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ delay: Math.min(index, 3) * 0.08 }}
-      className={cn('flex flex-col overflow-hidden rounded-[2rem] border border-line bg-white shadow-soft', className)}
+      className={cn('flex flex-col overflow-hidden border border-line bg-white shadow-soft', compact ? 'rounded-3xl' : 'rounded-[2rem]', className)}
     >
-      <header className="bg-gradient-to-br from-brand-50 to-sand px-6 py-5">
-        <p className="eyebrow flex items-center gap-1.5">
-          <PackageCheck className="size-4" /> {t('packs.eyebrow', { count: pack.products.length })}
+      <header className={cn('bg-gradient-to-br from-brand-50 to-sand', compact ? 'px-4 py-3.5' : 'px-6 py-5')}>
+        <p className={cn('eyebrow flex items-center gap-1.5', compact && 'text-[10px]')}>
+          <PackageCheck className={compact ? 'size-3.5' : 'size-4'} /> {t('packs.eyebrow', { count: pack.products.length })}
+          {compact && pack.routinePeriod && pack.routinePeriod !== 'none' && <span className="normal-case tracking-normal">· {t(`packs.period.${pack.routinePeriod}`)}</span>}
         </p>
-        <h3 className="mt-2 font-display text-2xl leading-tight text-ink">{pack.name}</h3>
-        {pack.routinePeriod && pack.routinePeriod !== 'none' && (
+        <h3 className={cn('font-display leading-tight text-ink first-letter:uppercase', compact ? 'mt-1 line-clamp-2 text-lg' : 'mt-2 text-2xl')}>{pack.name.trim()}</h3>
+        {!compact && pack.routinePeriod && pack.routinePeriod !== 'none' && (
           <p className="mt-1 text-xs font-semibold text-brand-700">{t(`packs.period.${pack.routinePeriod}`)}</p>
         )}
-        {pack.description && <p className="mt-1.5 text-sm text-muted">{pack.description}</p>}
+        {pack.description && <p className={cn('text-muted', compact ? 'mt-1 line-clamp-2 text-xs' : 'mt-1.5 text-sm')}>{pack.description}</p>}
       </header>
 
-      <div className="flex-1 px-4">
+      {compact && (
+        <div className="flex gap-2 overflow-x-auto px-4 pt-3.5 pb-1 [scrollbar-width:none]">
+          {pack.products.map((p) => {
+            const on = picked.has(p.id);
+            const canBuy = available(p);
+            return (
+              <button
+                key={p.id}
+                type="button"
+                role="checkbox"
+                aria-checked={on}
+                aria-label={p.name}
+                disabled={!canBuy}
+                onClick={() => toggle(p.id)}
+                className="w-[4.25rem] shrink-0 text-center"
+              >
+                <span className={cn('relative block aspect-square overflow-hidden rounded-2xl border-2 bg-sand transition', on ? 'border-brand-500' : 'border-transparent opacity-40 grayscale')}>
+                  {p.images?.[0] && <img src={p.images[0].thumbUrl} alt="" loading="lazy" className="size-full object-contain p-1 mix-blend-multiply" />}
+                  <span className={cn('absolute end-1 top-1 grid size-4 place-items-center rounded-full border transition', on ? 'border-brand-500 bg-brand-500 text-white' : 'border-zinc-300 bg-white')}>
+                    {on && <Check className="size-2.5" strokeWidth={3.5} />}
+                  </span>
+                </span>
+                <span className={cn('mt-1 block text-[11px] font-medium tabular-nums', !canBuy && 'text-rose-600')}>
+                  {canBuy ? formatPrice(priceOf(p)) : t('common.outOfStock')}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {compact && (
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="mx-4 mt-1 flex items-center justify-center gap-1 rounded-xl py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50">
+          {t(open ? 'packs.hideDetails' : 'packs.showDetails')} <ChevronDown className={cn('size-3.5 transition', open && 'rotate-180')} />
+        </button>
+      )}
+
+      {open && <div className="flex-1 px-4">
         {groups.filter(([, products]) => products.length).map(([slot, products]) => (
           <div key={slot} className={cn(slot !== 'all' && 'mt-4')}>
             {slot !== 'all' && <h4 className="rounded-xl bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-800">{t(`packs.period.${slot}`)}</h4>}
@@ -124,18 +163,19 @@ export function PackCard({ pack, index, className }) {
             </ul>
           </div>
         ))}
-      </div>
+      </div>}
+      {compact && !open && <div className="flex-1" />}
 
-      <footer className="border-t border-line p-5">
-        <div className="mb-3 flex items-baseline justify-between">
-          <span className="text-sm text-muted">{t('packs.selected', { count: chosen.length, total: pack.products.length })}</span>
-          <motion.span key={total} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="text-xl font-semibold text-ink">
+      <footer className={cn('border-t border-line', compact ? 'mt-2 p-4' : 'p-5')}>
+        <div className={cn('flex items-baseline justify-between', compact ? 'mb-2.5' : 'mb-3')}>
+          <span className={cn('text-muted', compact ? 'text-xs' : 'text-sm')}>{t('packs.selected', { count: chosen.length, total: pack.products.length })}</span>
+          <motion.span key={total} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className={cn('font-semibold text-ink', compact ? 'text-lg' : 'text-xl')}>
             {formatPrice(total)}
           </motion.span>
         </div>
-        <motion.button whileTap={{ scale: 0.98 }} type="button" onClick={addAll} disabled={!chosen.length} className="btn-primary w-full py-3.5 disabled:opacity-50">
+        <motion.button whileTap={{ scale: 0.98 }} type="button" onClick={addAll} disabled={!chosen.length} className={cn('btn-primary w-full disabled:opacity-50', compact ? 'py-3 text-sm' : 'py-3.5')}>
           <ShoppingBag className="size-4" />
-          {chosen.length === pack.products.length ? t('packs.addAll') : t('packs.addSelection', { count: chosen.length })}
+          {chosen.length === pack.products.length ? t(compact ? 'packs.addPack' : 'packs.addAll') : t(compact ? 'packs.addSelectionShort' : 'packs.addSelection', { count: chosen.length })}
         </motion.button>
       </footer>
     </motion.article>
@@ -192,16 +232,16 @@ export function PacksRail({ className, limit = 10 }) {
       <SectionHeading eyebrow={t('packs.sectionEyebrow')} title={t('packs.railTitle')} subtitle={t('packs.subtitle')} link={lp('/packs')} linkLabel={t('packs.viewAll', { count: packs.length })} />
       <div className="relative">
         <div className="overflow-hidden" ref={emblaRef}>
-          <div className="-ms-4 flex items-stretch sm:-ms-6">
+          <div className="-ms-3 flex items-stretch sm:-ms-5">
             {isLoading
               ? [0, 1, 2].map((i) => (
-                  <div key={i} className="min-w-0 shrink-0 basis-[86%] ps-4 sm:basis-[48%] sm:ps-6 lg:basis-1/3">
-                    <Skeleton className="h-96 rounded-[2rem]" />
+                  <div key={i} className="min-w-0 shrink-0 basis-[80%] ps-3 sm:basis-[45%] sm:ps-5 lg:basis-1/3 xl:basis-1/4">
+                    <Skeleton className="h-72 rounded-3xl" />
                   </div>
                 ))
               : shown.map((pack, i) => (
-                  <div key={pack.id} className="flex min-w-0 shrink-0 basis-[86%] ps-4 sm:basis-[48%] sm:ps-6 lg:basis-1/3">
-                    <PackCard pack={pack} index={i} className="w-full" />
+                  <div key={pack.id} className="flex min-w-0 shrink-0 basis-[80%] ps-3 sm:basis-[45%] sm:ps-5 lg:basis-1/3 xl:basis-1/4">
+                    <PackCard pack={pack} index={i} className="w-full" compact />
                   </div>
                 ))}
           </div>
@@ -229,23 +269,42 @@ export function PacksRail({ className, limit = 10 }) {
   );
 }
 
-/** Every pack in a grid (the /packs page). */
+/** Pack names say who they are for ("pack peau mixte - acné"): filter on those words. */
+const FILTERS = ['grasse', 'mixte', 'normale', 'seche', 'mature', 'yeux'];
+const plain = (str) => str.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+/** Every pack in a grid (the /packs page), with skin-type chips. */
 export function AllPacks({ className }) {
   const { t } = useTranslation();
   const lp = useLocalePath();
   const { data: packs = [], isLoading } = useAllPacks();
+  const [filter, setFilter] = useState(null);
+  const matches = (pack, key) => plain(pack.name).includes(key);
+  const chips = FILTERS.filter((key) => packs.some((p) => matches(p, key)));
+  const shown = filter ? packs.filter((p) => matches(p, filter)) : packs;
+  const chipCls = (on) => cn('shrink-0 rounded-full border px-4 py-2 text-sm transition', on ? 'border-brand-500 bg-brand-500 text-white' : 'border-line bg-white text-ink hover:border-brand-300');
   return (
     <section className={className}>
-      {isLoading ? (
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {[0, 1, 2].map((i) => (
-            <Skeleton key={i} className="h-96 rounded-[2rem]" />
+      {chips.length > 1 && (
+        <div className="-mx-4 mb-5 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0">
+          <button type="button" onClick={() => setFilter(null)} className={chipCls(!filter)}>{t('packs.filterAll')}</button>
+          {chips.map((key) => (
+            <button key={key} type="button" onClick={() => setFilter(key)} className={chipCls(filter === key)}>
+              {t(`packs.chips.${key}`)}
+            </button>
           ))}
         </div>
-      ) : packs.length ? (
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {packs.map((pack, i) => (
-            <PackCard key={pack.id} pack={pack} index={i % 3} />
+      )}
+      {isLoading ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-72 rounded-3xl" />
+          ))}
+        </div>
+      ) : shown.length ? (
+        <div className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {shown.map((pack, i) => (
+            <PackCard key={pack.id} pack={pack} index={i % 3} compact />
           ))}
         </div>
       ) : (
