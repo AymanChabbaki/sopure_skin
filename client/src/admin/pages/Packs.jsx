@@ -190,7 +190,7 @@ function PackEditor({ pack, categories, products, onClose }) {
           <div>
             <p className="label">Routines où afficher ce pack</p>
             <p className="mb-2 text-xs text-muted">Pour un pack yeux, choisissez « Contour des yeux » ou une routine yeux ciblée.</p>
-            <div className="flex max-h-52 flex-wrap gap-1.5 overflow-y-auto">
+            <div className="flex flex-wrap gap-1.5">
               {routines.map((c) => {
                 const on = form.categoryIds.includes(c.id);
                 return (
