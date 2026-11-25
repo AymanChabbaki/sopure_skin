@@ -260,13 +260,17 @@ export function PromoBanner() {
   const { t } = useTranslation();
   const lp = useLocalePath();
   const { data } = useSettings();
+  const free = freeShippingParams(data?.shipping, t);
+  const items = data?.shipping?.freeAboveItems ?? 5;
+  // Badge: the product count when that rule is on, otherwise the amount
+  const badge = items > 0 ? `${items + 1}+` : `${free.amount} DH`;
 
   return (
     <section className="container-x py-8">
       <Reveal className="relative grid overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-sand to-brand-50 md:grid-cols-5">
         <div className="relative z-10 p-8 sm:p-12 md:col-span-3">
           <p className="eyebrow">{t('home.promoEyebrow')}</p>
-          <h2 className="mt-3 font-display text-4xl leading-tight text-ink sm:text-5xl">{t('home.promoTitle', freeShippingParams(data?.shipping, t))}</h2>
+          <h2 className="mt-3 font-display text-4xl leading-tight text-ink sm:text-5xl">{t('home.promoTitle', free)}</h2>
           <p className="mt-4 max-w-lg text-muted">{t('home.promoText')}</p>
           <Link to={lp('/shop')} className="btn-dark group mt-8 px-8 py-4">
             {t('common.discover')} <ArrowRight className="size-4 transition group-hover:translate-x-1 rtl:-scale-x-100" />
@@ -280,10 +284,10 @@ export function PromoBanner() {
           >
             <Gift className="size-16 text-brand-500" strokeWidth={1.25} />
             <span className="absolute -top-2 -end-2 grid size-16 place-items-center rounded-full bg-brand-500 text-center text-xs leading-tight font-semibold text-white">
-              {n + 1}+
+              {badge}
             </span>
           </motion.div>
-          {Array.from({ length: n + 1 }, (_, i) => (
+          {Array.from({ length: 6 }, (_, i) => (
             <motion.span
               key={i}
               aria-hidden
