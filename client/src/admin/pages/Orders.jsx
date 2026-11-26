@@ -6,8 +6,7 @@ import { Card, PageTitle, Pagination, SearchInput, StatusBadge, ORDER_STATUSES, 
 import { Skeleton } from '../../components/ui/Primitives.jsx';
 import { cn } from '../../lib/format.js';
 
-/** "06 12.." -> "212612.." for wa.me links */
-export const waNumber = (phone) => phone.replace(/\D/g, '').replace(/^0/, '212');
+import { waNumber, orderWhatsappLink } from '../whatsapp.js';
 
 const plural = (n, word) => `${n} ${word}${n > 1 ? 's' : ''}`;
 
@@ -132,7 +131,14 @@ export default function Orders() {
                           <a href={`tel:${o.phone}`} className="icon-btn size-8" aria-label="Appeler">
                             <Phone className="size-4" />
                           </a>
-                          <a href={`https://wa.me/${waNumber(o.phone)}`} target="_blank" rel="noreferrer" className="icon-btn size-8 text-[#25D366]" aria-label="WhatsApp">
+                          <a
+                            href={o.status === 'shipped' ? orderWhatsappLink(o) : `https://wa.me/${waNumber(o.phone)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="icon-btn size-8 text-[#25D366]"
+                            aria-label="WhatsApp"
+                            title={o.status === 'shipped' ? 'Prévenir le client que sa commande est expédiée' : 'WhatsApp'}
+                          >
                             <FaWhatsapp className="size-4" />
                           </a>
                         </div>

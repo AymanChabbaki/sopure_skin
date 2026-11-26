@@ -37,7 +37,7 @@ ordersRouter.get('/', async (req, res) => {
   const [list, count, counts] = await Promise.all([
     query(
       `SELECT id, number, customer_name AS "customerName", phone, city, items_count AS "itemsCount",
-              total, shipping_fee AS "shippingFee", payment_method AS "paymentMethod", status, created_at AS "createdAt",
+              total, shipping_fee AS "shippingFee", payment_method AS "paymentMethod", status, locale, created_at AS "createdAt",
               (SELECT json_build_object(
                         'total', count(*),
                         'delivered', count(*) FILTER (WHERE p.status = 'delivered'),

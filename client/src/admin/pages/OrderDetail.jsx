@@ -5,7 +5,7 @@ import { ArrowLeft, Phone, MapPin, Mail, Printer, Trash2, Check, StickyNote, Sta
 import { FaWhatsapp } from 'react-icons/fa6';
 import { Card, ConfirmDialog, StatusBadge, ORDER_STATUSES, adminApi, patchCache, useAdminMutation, useAdminQuery, money, dateTime } from '../ui.jsx';
 import { Skeleton } from '../../components/ui/Primitives.jsx';
-import { waNumber } from './Orders.jsx';
+import { waNumber, orderWhatsappLink } from '../whatsapp.js';
 import { cn } from '../../lib/format.js';
 
 const FLOW = ['pending', 'confirmed', 'shipped', 'delivered'];
@@ -78,9 +78,6 @@ export default function OrderDetail() {
   const stepIndex = FLOW.indexOf(order.status);
   const off = ['cancelled', 'returned'].includes(order.status);
   const reviewText = order.status === 'delivered' ? reviewRequestText(order) : null;
-  const waText = encodeURIComponent(
-    `Bonjour ${order.customer_name}, nous vous contactons de la part de So Pure Skin pour confirmer votre commande ${order.number} d'un montant de ${money(order.total)}. Merci !`,
-  );
 
   return (
     <>
@@ -219,7 +216,13 @@ export default function OrderDetail() {
               <a href={`tel:${order.phone}`} className="btn-outline py-2.5 text-sm">
                 <Phone className="size-4" /> Appeler
               </a>
-              <a href={`https://wa.me/${waNumber(order.phone)}?text=${waText}`} target="_blank" rel="noreferrer" className="btn bg-[#25D366] py-2.5 text-sm text-white">
+              <a
+                href={orderWhatsappLink(order)}
+                target="_blank"
+                rel="noreferrer"
+                className="btn bg-[#25D366] py-2.5 text-sm text-white"
+                title={order.status === 'shipped' ? 'Prévient le client que sa commande est expédiée' : 'Message de confirmation de la commande'}
+              >
                 <FaWhatsapp className="size-4" /> WhatsApp
               </a>
               {reviewText && (
